@@ -1,0 +1,103 @@
+# Renewable Energy IoT Monitoring System - Cursor Rules
+
+## Project Overview
+This is an IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
+
+## Tech Stack & Architecture
+- **Data Flow**: MQTT → Node-RED → InfluxDB → Grafana
+- **Containerization**: Docker & Docker Compose
+- **MQTT Broker**: Eclipse Mosquitto
+- **Database**: InfluxDB 2.x (time-series)
+- **Visualization**: Grafana
+- **Data Processing**: Node-RED flows
+- **Simulation**: Realistic renewable energy device data
+
+## Development Guidelines
+
+### Code Style & Standards
+- Use TypeScript for Node-RED function nodes when possible
+- Follow JSON schema validation for MQTT payloads
+- Implement comprehensive error handling in all flows
+- Use descriptive variable names following camelCase convention
+- Include JSDoc comments for complex functions
+- Prefer async/await over callbacks for asynchronous operations
+
+### Docker & Containerization
+- Use multi-stage builds for optimization
+- Implement health checks for all services
+- Use named volumes for persistent data
+- Follow the principle of least privilege for container security
+- Use environment variables for configuration
+- Include proper restart policies (unless-stopped)
+
+### MQTT Communication
+- Follow hierarchical topic structure: `devices/{device_type}/{device_id}/{data_type}`
+- Use QoS level 1 for reliable delivery of critical data
+- Implement retained messages for device status
+- Include timestamps in all messages (ISO 8601 format)
+- Use JSON payloads with consistent schema
+- Implement proper authentication and authorization
+
+### InfluxDB Schema Design
+- Use measurement names that reflect device types (e.g., `photovoltaic_data`, `wind_turbine_data`, `energy_storage_data`)
+- Implement proper tagging strategy: device_id, location, status as tags
+- Store numeric values as fields, metadata as tags
+- Use appropriate data retention policies
+- Include proper indexing for query performance
+
+### Node-RED Flow Development
+- Create modular, reusable subflows
+- Use consistent naming conventions for nodes
+- Implement proper error handling with catch nodes
+- Use function nodes for complex logic, simple nodes for basic operations
+- Include status indicators for flow monitoring
+- Group related nodes logically
+
+### Renewable Energy Device Simulation
+- Implement realistic mathematical models for each device type:
+  - **Photovoltaic**: Include irradiance, temperature, and efficiency variations
+  - **Wind Turbine**: Model power curves based on wind speed
+  - **Biogas Plant**: Include gas flow rates and methane concentration
+  - **Heat Boiler**: Model efficiency and temperature relationships
+  - **Energy Storage**: Model battery state of charge, charge/discharge cycles, temperature effects, and degradation over time
+- Use time-based patterns (daily cycles, seasonal variations)
+- Include fault scenarios for system resilience testing
+- Implement realistic noise and fluctuations in data
+
+### Grafana Dashboard Design
+- Create responsive dashboards with proper time range handling
+- Use appropriate visualization types for each metric
+- Implement proper alerting rules for system faults
+- Include both real-time and historical data views
+- Use consistent color schemes and themes
+- Implement proper data source configuration
+
+### Data Validation & Quality
+- Validate all incoming MQTT messages against defined schemas
+- Implement data range checks for sensor values
+- Use proper error handling for database operations
+- Include data integrity checks in Node-RED flows
+- Implement proper logging for debugging and monitoring
+
+### Performance Optimization
+- Use appropriate query optimization for InfluxDB
+- Implement proper connection pooling
+- Use batch processing for high-volume data
+- Implement proper caching strategies
+- Monitor resource usage and set appropriate limits
+
+### Security Best Practices
+- Use proper authentication for all services
+- Implement SSL/TLS encryption for data transmission
+- Use environment variables for sensitive configuration
+- Implement proper access controls
+- Regular security updates for all components
+
+### Testing & Validation
+- Implement end-to-end testing for data flow
+- Create unit tests for Node-RED function nodes
+- Use Docker health checks for service validation
+- Implement proper monitoring and alerting
+- Include performance benchmarking
+
+## File Structure Conventions
