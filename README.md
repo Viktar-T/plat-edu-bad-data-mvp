@@ -1,68 +1,39 @@
 # IoT Renewable Energy Monitoring System
 
-A comprehensive IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems.
-
-## 🚀 Project Overview
-
-This system provides real-time monitoring, data collection, and visualization for renewable energy infrastructure using modern IoT technologies and containerized microservices architecture.
-
-### Key Features
-
-- **Real-time Data Collection**: MQTT-based sensor data ingestion
-- **Data Processing**: Node-RED flows for data transformation and validation
-- **Time-Series Database**: InfluxDB for efficient storage of sensor data
-- **Visualization**: Grafana dashboards for real-time and historical data
-- **Containerized**: Docker-based deployment for easy scaling and management
-- **Multi-Device Support**: Photovoltaic, Wind Turbine, Biogas, Heat Boiler, Energy Storage
+A comprehensive IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Devices   │───▶│    MQTT     │───▶│  Node-RED   │───▶│  InfluxDB   │
-│ (Sensors)   │    │  (Mosquitto)│    │ (Processing)│    │ (Database)  │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-                                                              │
-                                                              ▼
-                                                   ┌─────────────┐
-                                                   │   Grafana   │
-                                                   │(Visualization)│
-                                                   └─────────────┘
-```
-
-## 🛠️ Tech Stack
-
-- **MQTT Broker**: Eclipse Mosquitto
-- **Data Processing**: Node-RED with TypeScript
-- **Database**: InfluxDB 2.x (Time-series)
-- **Visualization**: Grafana
-- **Containerization**: Docker & Docker Compose
-- **Language**: TypeScript/JavaScript
-
-## 📁 Project Structure
-
-```
-├── docker-compose/          # Docker Compose configurations
-├── node-red/               # Node-RED flows and configurations
-├── mosquitto/              # MQTT broker configurations
-├── influxdb/               # InfluxDB configurations and scripts
-├── grafana/                # Grafana dashboards and configurations
-├── docs/                   # Documentation
-│   ├── architecture.md     # System architecture documentation
-│   └── development-workflow.md # Development and deployment guide
-├── scripts/                # Utility scripts
-├── .env.example           # Environment variables template
-├── docker-compose.yml     # Main Docker Compose file
-└── README.md              # This file
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB      │
+│                 │    │   (Mosquitto)   │    │   (Processing)  │    │   (Database)    │
+│ • Photovoltaic  │    │                 │    │                 │    │                 │
+│ • Wind Turbine  │    │ • Topic Routing │    │ • Data Validation│    │ • Time-series   │
+│ • Biogas Plant  │    │ • Authentication│    │ • Transformation│    │ • Measurements  │
+│ • Heat Boiler   │    │ • QoS Management│    │ • Aggregation   │    │ • Retention     │
+│ • Energy Storage│    │ • Message Retain│    │ • Error Handling│    │ • Queries       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                   ┌─────────────────┐
+                                                                   │   Grafana       │
+                                                                   │ (Visualization) │
+                                                                   │                 │
+                                                                   │ • Dashboards    │
+                                                                   │ • Alerts        │
+                                                                   │ • Analytics     │
+                                                                   │ • Reports       │
+                                                                   └─────────────────┘
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker Desktop (v20.10+)
-- Docker Compose (v2.0+)
+- Docker and Docker Compose
 - Git
+- mosquitto-clients (for testing)
 
 ### Installation
 
@@ -72,81 +43,272 @@ This system provides real-time monitoring, data collection, and visualization fo
    cd plat-edu-bad-data-mvp
    ```
 
-2. **Set up environment variables**
+2. **Set up MQTT broker with authentication**
    ```bash
-   cp .env.example .env
-   # Edit .env with your specific configurations
+   # Run the setup script (Linux/macOS)
+   ./scripts/setup-mqtt.sh
+   
+   # Or manually copy environment template
+   cp env.example .env
+   # Edit .env with your credentials
    ```
 
-3. **Start the services**
+3. **Start all services**
    ```bash
    docker-compose up -d
    ```
 
-4. **Access the services**
-   - **Grafana**: http://localhost:3000 (admin/admin)
-   - **Node-RED**: http://localhost:1880
-   - **InfluxDB**: http://localhost:8086
-   - **MQTT Broker**: localhost:1883
+4. **Verify services are running**
+   ```bash
+   docker-compose ps
+   ```
 
-## 📊 Monitoring Dashboard
+5. **Test MQTT connectivity**
+   ```bash
+   ./scripts/mqtt-test.sh
+   ```
 
-The system provides comprehensive dashboards for:
+## 📁 Project Structure
 
-- **Real-time Energy Production**: Live monitoring of all energy sources
-- **Historical Analysis**: Long-term trends and performance metrics
-- **Device Status**: Health monitoring and alerting
-- **Efficiency Metrics**: Performance optimization insights
-- **Predictive Analytics**: Energy production forecasting
+```
+plat-edu-bad-data-mvp/
+├── docker-compose.yml          # Docker services configuration
+├── env.example                 # Environment variables template
+├── README.md                   # This file
+├── docs/                       # Documentation
+│   ├── architecture.md         # System architecture
+│   ├── mqtt-configuration.md   # MQTT broker configuration guide
+│   └── decisions/              # Architecture decisions
+├── mosquitto/                  # MQTT broker configuration
+│   └── config/
+│       ├── mosquitto.conf      # Main broker configuration
+│       ├── passwd              # Password file (generated)
+│       └── acl                 # Access control list
+├── node-red/                   # Node-RED configuration
+├── influxdb/                   # InfluxDB configuration
+├── grafana/                    # Grafana configuration
+└── scripts/                    # Utility scripts
+    ├── setup-mqtt.sh          # MQTT setup script
+    ├── mqtt-test.sh           # MQTT connectivity testing
+    └── simulate-devices.sh    # Device simulation
+```
 
-## 🔧 Development
+## 🔐 MQTT Configuration
 
-### Adding New Devices
+### Topic Structure
 
-1. Create device simulation in `scripts/`
-2. Add MQTT topic structure in `mosquitto/`
-3. Create Node-RED flow in `node-red/`
-4. Add InfluxDB measurement in `influxdb/`
-5. Create Grafana dashboard in `grafana/`
+The system uses a hierarchical topic structure for scalable messaging:
 
-### Code Standards
+```
+devices/{device_type}/{device_id}/{data_type}
+```
 
-- Use TypeScript for Node-RED function nodes
-- Follow JSON schema validation for MQTT payloads
-- Implement comprehensive error handling
-- Use descriptive variable names (camelCase)
-- Include JSDoc comments for complex functions
+**Topic Categories:**
+- **Device Data**: `devices/{device_type}/{device_id}/data` - Telemetry data
+- **Device Status**: `devices/{device_type}/{device_id}/status` - Operational status
+- **Device Commands**: `devices/{device_type}/{device_id}/commands` - Control commands
+- **System Health**: `system/health/{service_name}` - Service health monitoring
+- **System Alerts**: `system/alerts/{severity}` - System alerts and notifications
 
-## 🔒 Security
+**Supported Device Types:**
+- `photovoltaic` - Solar panel systems
+- `wind_turbine` - Wind power generators
+- `biogas_plant` - Biogas production facilities
+- `heat_boiler` - Thermal energy systems
+- `energy_storage` - Battery storage systems
 
-- MQTT authentication and authorization
-- SSL/TLS encryption for data transmission
-- Environment variables for sensitive configuration
-- Proper access controls and user management
-- Regular security updates
+### Security Features
 
-## 📈 Performance
+- ✅ **Authentication**: Username/password authentication for all devices and services
+- ✅ **Access Control**: Topic-based permissions with ACL
+- ✅ **No Anonymous Access**: Anonymous connections disabled
+- ✅ **Persistence**: Message storage and recovery
+- ✅ **Logging**: Comprehensive logging for monitoring and debugging
+- ✅ **WebSocket Support**: Web application connectivity on port 9001
 
-- Optimized InfluxDB queries
-- Connection pooling
-- Batch processing for high-volume data
-- Proper caching strategies
-- Resource monitoring and limits
+### Example Topics
+
+```
+devices/photovoltaic/pv_001/data
+devices/wind_turbine/wt_001/status
+devices/energy_storage/es_001/commands
+system/health/mosquitto
+system/alerts/critical
+```
 
 ## 🧪 Testing
 
-- End-to-end data flow testing
-- Unit tests for Node-RED function nodes
-- Docker health checks for service validation
-- Performance benchmarking
-- Load testing for high-volume scenarios
+### MQTT Connectivity Testing
+
+The `scripts/mqtt-test.sh` script provides comprehensive testing:
+
+```bash
+# Basic connectivity test
+./scripts/mqtt-test.sh
+
+# Test with custom credentials
+./scripts/mqtt-test.sh -u admin -P mypassword
+
+# Test specific device
+./scripts/mqtt-test.sh --pv-user pv_001 --pv-password device_password_123
+```
+
+### Manual Testing
+
+```bash
+# Test basic connectivity
+mosquitto_pub -h localhost -p 1883 -u admin -P password -t test/topic -m "Hello World"
+
+# Test device data publishing
+mosquitto_pub -h localhost -p 1883 -u pv_001 -P password \
+  -t devices/photovoltaic/pv_001/data \
+  -m '{"device_id":"pv_001","data":{"power":500}}'
+
+# Test device command subscription
+mosquitto_sub -h localhost -p 1883 -u pv_001 -P password \
+  -t devices/photovoltaic/pv_001/commands
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Copy `env.example` to `.env` and configure:
+
+```bash
+# MQTT Configuration
+MQTT_PORT=1883
+MQTT_WS_PORT=9001
+MQTT_ADMIN_USER=admin
+MQTT_ADMIN_PASSWORD=your_secure_password
+
+# Performance Tuning
+MOSQUITTO_MAX_CONNECTIONS=1000
+MOSQUITTO_MAX_QUEUED_MESSAGES=100
+MOSQUITTO_AUTOSAVE_INTERVAL=1800
+
+# Logging
+MOSQUITTO_LOG_LEVEL=information
+```
+
+### Service Ports
+
+- **MQTT Broker**: 1883 (MQTT), 9001 (WebSocket)
+- **Node-RED**: 1880 (Web UI)
+- **InfluxDB**: 8086 (HTTP API)
+- **Grafana**: 3000 (Web UI)
+
+## 📊 Data Flow
+
+1. **IoT Devices** publish telemetry data to MQTT topics
+2. **MQTT Broker** routes messages based on topic structure
+3. **Node-RED** subscribes to device topics, validates and transforms data
+4. **InfluxDB** stores time-series data with proper retention policies
+5. **Grafana** visualizes data through dashboards and alerts
+
+### Example Data Format
+
+```json
+{
+  "device_id": "pv_001",
+  "device_type": "photovoltaic",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "irradiance": 850.5,
+    "temperature": 45.2,
+    "voltage": 48.3,
+    "current": 12.1,
+    "power_output": 584.43
+  },
+  "status": "operational",
+  "location": "site_a"
+}
+```
+
+## 🛡️ Security
+
+### Authentication
+
+- Each device has unique credentials
+- Service accounts for Node-RED, Grafana, and monitoring
+- Admin account for system management
+- Regular password rotation recommended
+
+### Access Control
+
+- Device-specific topic permissions
+- Service accounts with appropriate read/write access
+- Wildcard permissions for scalable device management
+- Principle of least privilege enforced
+
+### Network Security
+
+- Firewall rules for MQTT ports
+- SSL/TLS encryption for production (configured but disabled by default)
+- Network segmentation for IoT devices
+- VPN access for remote management
+
+## 📈 Monitoring
+
+### Health Checks
+
+All services include Docker health checks:
+
+```bash
+# Check service health
+docker-compose ps
+
+# View service logs
+docker-compose logs mosquitto
+docker-compose logs node-red
+docker-compose logs influxdb
+docker-compose logs grafana
+```
+
+### Metrics
+
+- Connection count and message throughput
+- Authentication failures and access violations
+- System resource usage
+- Data processing performance
+
+## 🔄 Development
+
+### Adding New Devices
+
+1. **Generate device credentials**:
+   ```bash
+   mosquitto_passwd -b mosquitto/config/passwd new_device_id new_password
+   ```
+
+2. **Add ACL permissions**:
+   ```bash
+   # Add to mosquitto/config/acl
+   topic write devices/device_type/new_device_id/data
+   topic write devices/device_type/new_device_id/status
+   topic read devices/device_type/new_device_id/commands
+   ```
+
+3. **Update environment variables**:
+   ```bash
+   # Add to .env
+   NEW_DEVICE_ID_PASSWORD=new_password
+   ```
+
+### Simulating Devices
+
+Use the device simulation script:
+
+```bash
+./scripts/simulate-devices.sh
+```
 
 ## 📚 Documentation
 
-- [Architecture Documentation](docs/architecture.md)
-- [Development Workflow](docs/development-workflow.md)
-- [API Documentation](docs/api.md)
-- [Deployment Guide](docs/deployment.md)
+- [System Architecture](docs/architecture.md) - Detailed system design
+- [MQTT Configuration](docs/mqtt-configuration.md) - Complete MQTT setup guide
+- [Development Workflow](docs/development-workflow.md) - Development guidelines
+- [Architecture Decisions](docs/decisions/) - Design decision records
 
 ## 🤝 Contributing
 
@@ -158,21 +320,32 @@ The system provides comprehensive dashboards for:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🆘 Support
 
-For support and questions:
-- Create an issue in the repository
-- Check the documentation in the `docs/` folder
-- Review the troubleshooting guide
+For issues and questions:
 
-## 🔄 Version History
+1. Check the [documentation](docs/)
+2. Review [troubleshooting guide](docs/mqtt-configuration.md#troubleshooting)
+3. Open an issue on GitHub
+4. Contact the development team
 
-- **v1.0.0**: Initial release with basic monitoring capabilities
-- **v1.1.0**: Added energy storage monitoring
-- **v1.2.0**: Enhanced security and performance optimizations
+## 🔄 Updates
 
----
+### Recent Changes
 
-**Built with ❤️ for sustainable energy monitoring** 
+- ✅ Complete MQTT broker configuration with authentication
+- ✅ Topic-based access control implementation
+- ✅ Comprehensive testing scripts
+- ✅ Security best practices documentation
+- ✅ Environment variable configuration
+- ✅ Docker service integration
+
+### Roadmap
+
+- [ ] SSL/TLS certificate management
+- [ ] Advanced monitoring and alerting
+- [ ] Multi-site deployment support
+- [ ] API gateway integration
+- [ ] Mobile application support 

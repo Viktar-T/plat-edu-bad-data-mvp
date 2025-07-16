@@ -6,17 +6,24 @@ services:
     image: eclipse-mosquitto:2.0.18
     container_name: iot-mosquitto
     ports:
-      - "1883:1883"      # MQTT
-      - "9001:9001"      # WebSocket
+      - "${MQTT_PORT:-1883}:1883"      # MQTT
+      - "${MQTT_WS_PORT:-9001}:9001"   # WebSocket
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     environment:
       - TZ=UTC
+      - MOSQUITTO_CONFIG_FILE=/mosquitto/config/mosquitto.conf
+      - MOSQUITTO_PASSWORD_FILE=/mosquitto/config/passwd
+      - MOSQUITTO_ACL_FILE=/mosquitto/config/acl
+      - MOSQUITTO_LOG_LEVEL=${MOSQUITTO_LOG_LEVEL:-information}
+      - MOSQUITTO_MAX_CONNECTIONS=${MOSQUITTO_MAX_CONNECTIONS:-1000}
+      - MOSQUITTO_MAX_QUEUED_MESSAGES=${MOSQUITTO_MAX_QUEUED_MESSAGES:-100}
+      - MOSQUITTO_AUTOSAVE_INTERVAL=${MOSQUITTO_AUTOSAVE_INTERVAL:-1800}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "health/check", "-m", "ping"]
+      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-u", "${MQTT_ADMIN_USER:-admin}", "-P", "${MQTT_ADMIN_PASSWORD:-admin_password_456}", "-t", "system/health/mosquitto", "-m", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3

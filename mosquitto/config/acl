@@ -1,0 +1,198 @@
+# Mosquitto Access Control List (ACL)
+# IoT Renewable Energy Monitoring System
+# Format: topic [read|write|readwrite] username
+
+# =============================================================================
+# TOPIC STRUCTURE DEFINITION
+# =============================================================================
+
+# Topic patterns:
+# devices/{device_type}/{device_id}/data      - Telemetry data (write by device, read by services)
+# devices/{device_type}/{device_id}/status    - Device status (write by device, read by services)
+# devices/{device_type}/{device_id}/commands  - Control commands (write by services, read by device)
+# system/health/{service_name}                - System health (write by services, read by all)
+# system/alerts/{severity}                    - System alerts (write by services, read by all)
+
+# =============================================================================
+# PHOTOVOLTAIC DEVICE PERMISSIONS
+# =============================================================================
+
+# PV Device 001 - Can publish data and status, subscribe to commands
+topic write devices/photovoltaic/pv_001/data
+topic write devices/photovoltaic/pv_001/status
+topic read devices/photovoltaic/pv_001/commands
+
+# PV Device 002 - Can publish data and status, subscribe to commands
+topic write devices/photovoltaic/pv_002/data
+topic write devices/photovoltaic/pv_002/status
+topic read devices/photovoltaic/pv_002/commands
+
+# PV Device 003 - Can publish data and status, subscribe to commands
+topic write devices/photovoltaic/pv_003/data
+topic write devices/photovoltaic/pv_003/status
+topic read devices/photovoltaic/pv_003/commands
+
+# =============================================================================
+# WIND TURBINE DEVICE PERMISSIONS
+# =============================================================================
+
+# Wind Turbine 001 - Can publish data and status, subscribe to commands
+topic write devices/wind_turbine/wt_001/data
+topic write devices/wind_turbine/wt_001/status
+topic read devices/wind_turbine/wt_001/commands
+
+# Wind Turbine 002 - Can publish data and status, subscribe to commands
+topic write devices/wind_turbine/wt_002/data
+topic write devices/wind_turbine/wt_002/status
+topic read devices/wind_turbine/wt_002/commands
+
+# Wind Turbine 003 - Can publish data and status, subscribe to commands
+topic write devices/wind_turbine/wt_003/data
+topic write devices/wind_turbine/wt_003/status
+topic read devices/wind_turbine/wt_003/commands
+
+# =============================================================================
+# BIOGAS PLANT DEVICE PERMISSIONS
+# =============================================================================
+
+# Biogas Plant 001 - Can publish data and status, subscribe to commands
+topic write devices/biogas_plant/bg_001/data
+topic write devices/biogas_plant/bg_001/status
+topic read devices/biogas_plant/bg_001/commands
+
+# Biogas Plant 002 - Can publish data and status, subscribe to commands
+topic write devices/biogas_plant/bg_002/data
+topic write devices/biogas_plant/bg_002/status
+topic read devices/biogas_plant/bg_002/commands
+
+# =============================================================================
+# HEAT BOILER DEVICE PERMISSIONS
+# =============================================================================
+
+# Heat Boiler 001 - Can publish data and status, subscribe to commands
+topic write devices/heat_boiler/hb_001/data
+topic write devices/heat_boiler/hb_001/status
+topic read devices/heat_boiler/hb_001/commands
+
+# Heat Boiler 002 - Can publish data and status, subscribe to commands
+topic write devices/heat_boiler/hb_002/data
+topic write devices/heat_boiler/hb_002/status
+topic read devices/heat_boiler/hb_002/commands
+
+# =============================================================================
+# ENERGY STORAGE DEVICE PERMISSIONS
+# =============================================================================
+
+# Energy Storage 001 - Can publish data and status, subscribe to commands
+topic write devices/energy_storage/es_001/data
+topic write devices/energy_storage/es_001/status
+topic read devices/energy_storage/es_001/commands
+
+# Energy Storage 002 - Can publish data and status, subscribe to commands
+topic write devices/energy_storage/es_002/data
+topic write devices/energy_storage/es_002/status
+topic read devices/energy_storage/es_002/commands
+
+# Energy Storage 003 - Can publish data and status, subscribe to commands
+topic write devices/energy_storage/es_003/data
+topic write devices/energy_storage/es_003/status
+topic read devices/energy_storage/es_003/commands
+
+# =============================================================================
+# NODE-RED SERVICE PERMISSIONS
+# =============================================================================
+
+# Node-RED can read all device data and status, write commands
+topic read devices/+/+/data
+topic read devices/+/+/status
+topic write devices/+/+/commands
+
+# Node-RED can publish system health and alerts
+topic write system/health/+
+topic write system/alerts/+
+
+# Node-RED can read system health and alerts
+topic read system/health/+
+topic read system/alerts/+
+
+# =============================================================================
+# GRAFANA SERVICE PERMISSIONS
+# =============================================================================
+
+# Grafana can read all device data and status for visualization
+topic read devices/+/+/data
+topic read devices/+/+/status
+
+# Grafana can read system health and alerts
+topic read system/health/+
+topic read system/alerts/+
+
+# =============================================================================
+# BRIDGE SERVICE PERMISSIONS
+# =============================================================================
+
+# Bridge can read/write all topics for external replication
+topic readwrite devices/+/+/data
+topic readwrite devices/+/+/status
+topic readwrite devices/+/+/commands
+topic readwrite system/health/+
+topic readwrite system/alerts/+
+
+# =============================================================================
+# ADMINISTRATIVE PERMISSIONS
+# =============================================================================
+
+# Admin has full access to all topics
+topic readwrite #
+
+# =============================================================================
+# MONITORING SERVICE PERMISSIONS
+# =============================================================================
+
+# Monitor can read all topics for system monitoring
+topic read #
+
+# Monitor can publish system health and alerts
+topic write system/health/+
+topic write system/alerts/+
+
+# =============================================================================
+# WILDCARD PERMISSIONS FOR NEW DEVICES
+# =============================================================================
+
+# Allow new photovoltaic devices to publish data and status, subscribe to commands
+topic write devices/photovoltaic/+/data
+topic write devices/photovoltaic/+/status
+topic read devices/photovoltaic/+/commands
+
+# Allow new wind turbine devices to publish data and status, subscribe to commands
+topic write devices/wind_turbine/+/data
+topic write devices/wind_turbine/+/status
+topic read devices/wind_turbine/+/commands
+
+# Allow new biogas plant devices to publish data and status, subscribe to commands
+topic write devices/biogas_plant/+/data
+topic write devices/biogas_plant/+/status
+topic read devices/biogas_plant/+/commands
+
+# Allow new heat boiler devices to publish data and status, subscribe to commands
+topic write devices/heat_boiler/+/data
+topic write devices/heat_boiler/+/status
+topic read devices/heat_boiler/+/commands
+
+# Allow new energy storage devices to publish data and status, subscribe to commands
+topic write devices/energy_storage/+/data
+topic write devices/energy_storage/+/status
+topic read devices/energy_storage/+/commands
+
+# =============================================================================
+# SECURITY NOTES
+# =============================================================================
+
+# 1. Each device can only access its own topics
+# 2. Services have appropriate read/write permissions
+# 3. Admin has full access for management
+# 4. Monitor has read-only access for system monitoring
+# 5. Wildcard permissions allow for easy device addition
+# 6. Bridge has full access for external replication
+# 7. Regular review and update of permissions recommended 
