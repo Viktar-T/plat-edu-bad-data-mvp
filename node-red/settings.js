@@ -248,6 +248,186 @@ module.exports = {
 
     // MQTT broker settings for internal communication
     mqttBroker: {
+        host: process.env.MQTT_BROKER_HOST || "mosquitto",
+        port: process.env.MQTT_BROKER_PORT || 1883,
+        clientId: process.env.MQTT_CLIENT_ID || "node-red-simulation",
+        username: process.env.MQTT_USERNAME || "node-red",
+        password: process.env.MQTT_PASSWORD || "node-red-password",
+        keepalive: 60,
+        reconnectPeriod: 5000,
+        connectTimeout: 30000,
+        clean: true,
+        encoding: 'utf8'
+    },
+
+    // =============================================================================
+    // INFLUXDB SETTINGS
+    // =============================================================================
+
+    // InfluxDB configuration for time-series data storage
+    influxdb: {
+        host: process.env.INFLUXDB_HOST || "influxdb",
+        port: process.env.INFLUXDB_PORT || 8086,
+        protocol: process.env.INFLUXDB_PROTOCOL || "http",
+        token: process.env.INFLUXDB_TOKEN || "your-influxdb-token",
+        organization: process.env.INFLUXDB_ORG || "renewable_energy",
+        bucket: process.env.INFLUXDB_BUCKET || "iot_data",
+        precision: "ms",
+        timeout: 10000
+    },
+
+    // =============================================================================
+    // SIMULATION SETTINGS
+    // =============================================================================
+
+    // Device simulation configuration
+    simulation: {
+        // Simulation intervals (seconds)
+        intervals: {
+            photovoltaic: 30,
+            wind_turbine: 30,
+            biogas_plant: 30,
+            heat_boiler: 30,
+            energy_storage: 30
+        },
+        
+        // Fault probabilities (0-1)
+        faultProbabilities: {
+            photovoltaic: 0.001,
+            wind_turbine: 0.002,
+            biogas_plant: 0.0015,
+            heat_boiler: 0.002,
+            energy_storage: 0.001
+        },
+        
+        // Data validation ranges
+        validationRanges: {
+            photovoltaic: {
+                irradiance: { min: 0, max: 1200 },
+                temperature: { min: -40, max: 100 },
+                voltage: { min: 0, max: 100 },
+                current: { min: 0, max: 20 },
+                power_output: { min: 0, max: 1000 }
+            },
+            wind_turbine: {
+                wind_speed: { min: 0, max: 50 },
+                wind_direction: { min: 0, max: 360 },
+                rotor_speed: { min: 0, max: 25 },
+                vibration: { min: 0, max: 20 },
+                power_output: { min: 0, max: 2500 },
+                temperature: { min: -20, max: 80 }
+            },
+            biogas_plant: {
+                gas_flow: { min: 0, max: 200 },
+                methane_concentration: { min: 30, max: 85 },
+                temperature: { min: 20, max: 60 },
+                ph: { min: 6.0, max: 8.5 },
+                power_output: { min: 0, max: 500 }
+            },
+            heat_boiler: {
+                temperature: { min: 50, max: 150 },
+                pressure: { min: 0.5, max: 5.0 },
+                efficiency: { min: 60, max: 98 },
+                power_output: { min: 0, max: 500 }
+            },
+            energy_storage: {
+                state_of_charge: { min: 0, max: 100 },
+                voltage: { min: 300, max: 500 },
+                current: { min: -100, max: 100 },
+                temperature: { min: -10, max: 60 },
+                cycle_count: { min: 0, max: 10000 },
+                power_output: { min: -50, max: 50 }
+            }
+        }
+    },
+
+    // =============================================================================
+    // ERROR HANDLING SETTINGS
+    // =============================================================================
+
+    // Error handling and monitoring configuration
+    errorHandling: {
+        // Maximum retry attempts for failed operations
+        maxRetries: 3,
+        
+        // Retry delay in milliseconds
+        retryDelay: 5000,
+        
+        // Error logging configuration
+        logging: {
+            enabled: true,
+            level: "error", // error, warn, info, debug
+            maxLogSize: 1000,
+            retention: "7d"
+        },
+        
+        // Alert thresholds
+        alerts: {
+            dataValidationErrors: 10, // Alert after 10 validation errors
+            mqttConnectionFailures: 5, // Alert after 5 connection failures
+            influxdbWriteFailures: 5, // Alert after 5 write failures
+            simulationFaults: 20 // Alert after 20 simulation faults
+        }
+    },
+
+    // =============================================================================
+    // PERFORMANCE SETTINGS
+    // =============================================================================
+
+    // Performance optimization settings
+    performance: {
+        // Message buffer settings
+        messageBuffer: {
+            maxLength: 100,
+            flushInterval: 5000 // milliseconds
+        },
+        
+        // Database batch settings
+        database: {
+            batchSize: 100,
+            batchTimeout: 10000, // milliseconds
+            maxConcurrentWrites: 5
+        },
+        
+        // MQTT settings
+        mqtt: {
+            maxConcurrentPublishes: 10,
+            publishTimeout: 5000, // milliseconds
+            qos: 1
+        }
+    },
+
+    // =============================================================================
+    // SECURITY SETTINGS
+    // =============================================================================
+
+    // Security configuration
+    security: {
+        // Data encryption
+        encryption: {
+            enabled: process.env.ENCRYPTION_ENABLED === 'true',
+            algorithm: 'aes-256-gcm',
+            key: process.env.ENCRYPTION_KEY || 'your-encryption-key'
+        },
+        
+        // Authentication
+        authentication: {
+            enabled: true,
+            method: 'credentials', // credentials, oauth2, jwt
+            sessionTimeout: 3600000 // 1 hour in milliseconds
+        },
+        
+        // Access control
+        accessControl: {
+            enabled: true,
+            defaultRole: 'user',
+            roles: {
+                admin: ['read', 'write', 'delete', 'configure'],
+                operator: ['read', 'write'],
+                viewer: ['read']
+            }
+        }
+    }
         host: process.env.MQTT_BROKER_HOST || 'localhost',
         port: process.env.MQTT_BROKER_PORT || 1883,
         username: process.env.MQTT_USERNAME,
