@@ -43,15 +43,7 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
    cd plat-edu-bad-data-mvp
    ```
 
-2. **Set up MQTT broker with authentication**
-   ```bash
-   # Run the setup script (Linux/macOS)
-   ./scripts/setup-mqtt.sh
-   
-   # Or manually copy environment template
-   cp env.example .env
-   # Edit .env with your credentials
-   ```
+2. 
 
 3. **Start all services**
    ```bash

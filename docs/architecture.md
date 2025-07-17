@@ -60,6 +60,8 @@ The IoT Renewable Energy Monitoring System follows a microservices architecture 
 
 ### 2. MQTT Broker (Mosquitto)
 
+![MQTT Publish/Subscribe Architecture](img/MQTT-Architecture.png)
+
 #### Configuration
 - **Port**: 1883 (standard), 8883 (SSL)
 - **Authentication**: Username/password or certificate-based
