@@ -54,8 +54,13 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
    ```bash
    docker-compose ps
    ```
+5. **Direct Browser Access Tests**
+   - Node-RED: http://localhost:1880 ✅ (Should show Node-RED editor)
+   - Grafana: http://localhost:3000 ✅ (Login: admin/admin)
+   - InfluxDB: http://localhost:8086 ✅ (Login: admin/adminpassword)
+   - MQTT: localhost:1883 -- Not browsable (MQTT protocol only)
 
-5. **Test MQTT connectivity**
+6. **Test MQTT connectivity**
    ```bash
    ./scripts/mqtt-test.sh
    ```
