@@ -1,0 +1,118 @@
+{
+  "name": "laboratory_equipment_data",
+  "description": "Laboratory equipment measurement data",
+  "columns": [
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP",
+      "primary_key": true
+    },
+    {
+      "name": "equipment_id",
+      "type": "STRING",
+      "tag": true
+    },
+    {
+      "name": "equipment_type",
+      "type": "STRING",
+      "tag": true
+    },
+    {
+      "name": "location",
+      "type": "STRING",
+      "tag": true
+    },
+    {
+      "name": "status",
+      "type": "STRING",
+      "tag": true
+    },
+    {
+      "name": "measurement_value",
+      "type": "DOUBLE",
+      "description": "Measurement value"
+    },
+    {
+      "name": "calibration_status",
+      "type": "STRING",
+      "description": "Calibration status (calibrated, expired, pending)"
+    },
+    {
+      "name": "measurement_unit",
+      "type": "STRING",
+      "description": "Unit of measurement"
+    },
+    {
+      "name": "measurement_type",
+      "type": "STRING",
+      "description": "Type of measurement (voltage, current, temperature, etc.)"
+    },
+    {
+      "name": "accuracy",
+      "type": "DOUBLE",
+      "description": "Measurement accuracy percentage"
+    },
+    {
+      "name": "resolution",
+      "type": "DOUBLE",
+      "description": "Measurement resolution"
+    },
+    {
+      "name": "range_min",
+      "type": "DOUBLE",
+      "description": "Minimum measurement range"
+    },
+    {
+      "name": "range_max",
+      "type": "DOUBLE",
+      "description": "Maximum measurement range"
+    },
+    {
+      "name": "last_calibration_date",
+      "type": "TIMESTAMP",
+      "description": "Date of last calibration"
+    },
+    {
+      "name": "next_calibration_date",
+      "type": "TIMESTAMP",
+      "description": "Date of next scheduled calibration"
+    },
+    {
+      "name": "operator_id",
+      "type": "STRING",
+      "description": "ID of the operator using the equipment"
+    },
+    {
+      "name": "experiment_id",
+      "type": "STRING",
+      "description": "ID of the experiment being conducted"
+    },
+    {
+      "name": "maintenance_required",
+      "type": "BOOLEAN",
+      "description": "Whether maintenance is required"
+    }
+  ],
+  "indexes": [
+    {
+      "columns": ["equipment_id", "timestamp"],
+      "type": "BTREE"
+    },
+    {
+      "columns": ["equipment_type", "timestamp"],
+      "type": "BTREE"
+    },
+    {
+      "columns": ["location", "timestamp"],
+      "type": "BTREE"
+    },
+    {
+      "columns": ["calibration_status", "timestamp"],
+      "type": "BTREE"
+    }
+  ],
+  "partitioning": {
+    "strategy": "time",
+    "interval": "1d"
+  }
+} 

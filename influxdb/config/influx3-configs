@@ -1,0 +1,435 @@
+# InfluxDB 3.x Configuration for Renewable Energy Monitoring System
+# This configuration replaces the bucket-based approach of InfluxDB 2.x
+
+# Database Configuration
+# Databases replace buckets in InfluxDB 3.x
+databases:
+  - name: renewable-energy-monitoring
+    description: "Primary database for renewable energy device data"
+    retention_days: 10
+    schema:
+      tables:
+        - name: photovoltaic_data
+          description: "Photovoltaic panel performance data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: device_type
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: power_output
+              type: DOUBLE
+              description: "Power output in watts"
+            - name: voltage
+              type: DOUBLE
+              description: "Voltage in volts"
+            - name: current
+              type: DOUBLE
+              description: "Current in amperes"
+            - name: temperature
+              type: DOUBLE
+              description: "Panel temperature in Celsius"
+            - name: irradiance
+              type: DOUBLE
+              description: "Solar irradiance in W/m²"
+            - name: efficiency
+              type: DOUBLE
+              description: "Panel efficiency percentage"
+
+        - name: wind_turbine_data
+          description: "Wind turbine performance data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: device_type
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: power_output
+              type: DOUBLE
+              description: "Power output in watts"
+            - name: wind_speed
+              type: DOUBLE
+              description: "Wind speed in m/s"
+            - name: direction
+              type: DOUBLE
+              description: "Wind direction in degrees"
+            - name: rotor_speed
+              type: DOUBLE
+              description: "Rotor speed in RPM"
+            - name: vibration
+              type: DOUBLE
+              description: "Vibration level in mm/s"
+
+        - name: biogas_plant_data
+          description: "Biogas plant performance data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: device_type
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: power_output
+              type: DOUBLE
+              description: "Power output in watts"
+            - name: gas_flow
+              type: DOUBLE
+              description: "Gas flow rate in m³/h"
+            - name: methane_concentration
+              type: DOUBLE
+              description: "Methane concentration percentage"
+            - name: temperature
+              type: DOUBLE
+              description: "Temperature in Celsius"
+            - name: ph_level
+              type: DOUBLE
+              description: "pH level"
+
+        - name: heat_boiler_data
+          description: "Heat boiler performance data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: device_type
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: power_output
+              type: DOUBLE
+              description: "Power output in watts"
+            - name: temperature
+              type: DOUBLE
+              description: "Temperature in Celsius"
+            - name: pressure
+              type: DOUBLE
+              description: "Pressure in bar"
+            - name: efficiency
+              type: DOUBLE
+              description: "Boiler efficiency percentage"
+            - name: fuel_consumption
+              type: DOUBLE
+              description: "Fuel consumption rate"
+
+        - name: energy_storage_data
+          description: "Energy storage system data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: storage_id
+              type: STRING
+              tag: true
+            - name: storage_type
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: state_of_charge
+              type: DOUBLE
+              description: "State of charge percentage"
+            - name: charge_power
+              type: DOUBLE
+              description: "Charge power in watts"
+            - name: discharge_power
+              type: DOUBLE
+              description: "Discharge power in watts"
+            - name: voltage
+              type: DOUBLE
+              description: "Battery voltage in volts"
+            - name: current
+              type: DOUBLE
+              description: "Current in amperes"
+            - name: temperature
+              type: DOUBLE
+              description: "Temperature in Celsius"
+            - name: cycle_count
+              type: INTEGER
+              description: "Charge/discharge cycle count"
+            - name: health_status
+              type: STRING
+              description: "Battery health status"
+
+        - name: laboratory_equipment_data
+          description: "Laboratory equipment measurement data"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: equipment_id
+              type: STRING
+              tag: true
+            - name: equipment_type
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: status
+              type: STRING
+              tag: true
+            - name: measurement_value
+              type: DOUBLE
+              description: "Measurement value"
+            - name: calibration_status
+              type: STRING
+              description: "Calibration status"
+
+  - name: sensor-data
+    description: "Raw sensor data from all devices"
+    retention_days: 7
+    schema:
+      tables:
+        - name: raw_sensor_data
+          description: "Raw sensor readings"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: sensor_id
+              type: STRING
+              tag: true
+            - name: sensor_type
+              type: STRING
+              tag: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: value
+              type: DOUBLE
+              description: "Raw sensor value"
+            - name: unit
+              type: STRING
+              description: "Measurement unit"
+
+  - name: alerts
+    description: "System alerts and notifications"
+    retention_days: 30
+    schema:
+      tables:
+        - name: system_alerts
+          description: "System alerts and notifications"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: alert_id
+              type: STRING
+              tag: true
+            - name: alert_type
+              type: STRING
+              tag: true
+            - name: severity
+              type: STRING
+              tag: true
+            - name: device_id
+              type: STRING
+              tag: true
+            - name: location
+              type: STRING
+              tag: true
+            - name: message
+              type: STRING
+              description: "Alert message"
+            - name: threshold_value
+              type: DOUBLE
+              description: "Threshold value that triggered alert"
+            - name: current_value
+              type: DOUBLE
+              description: "Current value at time of alert"
+            - name: acknowledged
+              type: BOOLEAN
+              description: "Whether alert has been acknowledged"
+
+  - name: system-metrics
+    description: "System performance and health metrics"
+    retention_days: 15
+    schema:
+      tables:
+        - name: system_performance
+          description: "System performance metrics"
+          columns:
+            - name: timestamp
+              type: TIMESTAMP
+              primary_key: true
+            - name: service_name
+              type: STRING
+              tag: true
+            - name: metric_type
+              type: STRING
+              tag: true
+            - name: cpu_usage
+              type: DOUBLE
+              description: "CPU usage percentage"
+            - name: memory_usage
+              type: DOUBLE
+              description: "Memory usage percentage"
+            - name: disk_usage
+              type: DOUBLE
+              description: "Disk usage percentage"
+            - name: network_io
+              type: DOUBLE
+              description: "Network I/O in bytes/s"
+
+# Token Configuration
+# InfluxDB 3.x uses a new token system
+tokens:
+  admin_token:
+    name: "admin-token"
+    description: "Administrative token for database management"
+    permissions:
+      - database: "*"
+        permissions: ["READ", "WRITE", "DELETE", "CREATE", "DROP"]
+  
+  application_token:
+    name: "application-token"
+    description: "Application token for data ingestion and queries"
+    permissions:
+      - database: "renewable-energy-monitoring"
+        permissions: ["READ", "WRITE"]
+      - database: "sensor-data"
+        permissions: ["READ", "WRITE"]
+      - database: "alerts"
+        permissions: ["READ", "WRITE"]
+      - database: "system-metrics"
+        permissions: ["READ", "WRITE"]
+  
+  read_only_token:
+    name: "read-only-token"
+    description: "Read-only token for dashboards and analytics"
+    permissions:
+      - database: "renewable-energy-monitoring"
+        permissions: ["READ"]
+      - database: "sensor-data"
+        permissions: ["READ"]
+      - database: "alerts"
+        permissions: ["READ"]
+      - database: "system-metrics"
+        permissions: ["READ"]
+
+# Object Storage Configuration
+# InfluxDB 3.x uses object storage for cost-effective data retention
+object_store:
+  type: "file"  # Use "s3" for production with S3-compatible storage
+  config:
+    # File-based storage for MVP (local filesystem)
+    path: "/var/lib/influxdb3/object_store"
+    
+    # S3 configuration for production (commented out)
+    # endpoint: "s3.amazonaws.com"
+    # bucket: "renewable-energy-data"
+    # region: "us-east-1"
+    # access_key_id: "${S3_ACCESS_KEY}"
+    # secret_access_key: "${S3_SECRET_KEY}"
+    # use_ssl: true
+
+# Performance Optimization Settings
+performance:
+  # Time-based partitioning for efficient queries
+  partitioning:
+    strategy: "time"
+    interval: "1d"  # Daily partitioning
+  
+  # Compression settings optimized for sensor data
+  compression:
+    algorithm: "zstd"
+    level: 3
+  
+  # Query optimization
+  query_cache:
+    enabled: true
+    size_mb: 512
+  
+  # Write optimization
+  write_buffer:
+    size_mb: 64
+    flush_interval_ms: 1000
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 30
+  format: "parquet"  # InfluxDB 3.x supports Parquet format
+  location: "/var/lib/influxdb3/backups"
+  
+  # S3 backup configuration (for production)
+  # s3_backup:
+  #   bucket: "renewable-energy-backups"
+  #   region: "us-east-1"
+  #   path: "daily"
+
+# Monitoring and Health Checks
+monitoring:
+  health_check_endpoint: "/health"
+  metrics_endpoint: "/metrics"
+  readiness_endpoint: "/ready"
+  
+  # Performance monitoring
+  slow_query_threshold_ms: 1000
+  max_concurrent_queries: 100
+  max_memory_usage_mb: 2048
+
+# Security Configuration
+security:
+  # TLS/SSL configuration
+  tls:
+    enabled: false  # Enable for production
+    cert_file: "/etc/influxdb3/certs/server.crt"
+    key_file: "/etc/influxdb3/certs/server.key"
+    ca_file: "/etc/influxdb3/certs/ca.crt"
+  
+  # Authentication
+  auth:
+    enabled: true
+    token_expiry_days: 365
+  
+  # Network security
+  network:
+    bind_address: "0.0.0.0:8086"
+    max_connections: 1000
+    connection_timeout_seconds: 30 
