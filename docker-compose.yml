@@ -37,7 +37,6 @@ services:
       - "8086:8086"
     volumes:
       - ./influxdb/data:/var/lib/influxdb2
-      - ./influxdb/config:/etc/influxdb2
       - ./influxdb/scripts:/docker-entrypoint-initdb.d
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
@@ -49,7 +48,7 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-your-super-secret-auth-token}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,8 +74,12 @@ services:
       - NODE_RED_EDITOR_THEME=dark
       - NODE_RED_DISABLE_EDITOR=false
       - NODE_RED_DISABLE_FLOWS=false
-      - NODE_RED_HOME=/usr/src/node-red
+      - NODE_RED_HOME=/data
       - NODE_RED_OPTIONS=--max-old-space-size=512
+      - NODE_RED_SETTINGS_FILE=/data/settings.js
+      # Node-RED Authentication
+      - NODE_RED_USERNAME=admin
+      - NODE_RED_PASSWORD=adminpassword
     restart: unless-stopped
     depends_on:
       mosquitto:
@@ -84,11 +87,11 @@ services:
       influxdb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:1880/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:1880/health || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 180s
     entrypoint: ["/bin/bash", "/startup.sh"]
     networks:
       - iot-network

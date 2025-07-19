@@ -77,6 +77,11 @@ else
     install_plugins
 fi
 
+# Ensure settings file is in the correct location
+echo "🔧 Setting up Node-RED configuration..."
+mkdir -p /usr/src/node-red/.node-red
+cp /data/settings.js /usr/src/node-red/.node-red/settings.js
+
 # Start Node-RED directly without su command to avoid permission issues
 echo "🚀 Starting Node-RED..."
 exec npm start 
