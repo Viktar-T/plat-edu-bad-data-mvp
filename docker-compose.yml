@@ -33,6 +33,7 @@ services:
   influxdb:
     image: influxdb:3-core
     container_name: iot-influxdb3
+    user: "0:0"
     ports:
       - "8086:8086"
     volumes:
@@ -40,27 +41,12 @@ services:
       - ./influxdb/config:/etc/influxdb3/config
       - ./influxdb/scripts:/docker-entrypoint-initdb.d
       - ./influxdb/backups:/var/lib/influxdb3/backups
-    environment:
-      # InfluxDB 3.x Configuration
-      - INFLUXDB3_OBJECT_STORE=file
-      - INFLUXDB3_DATA_DIR=/var/lib/influxdb3
-      - INFLUXDB3_NODE_IDENTIFIER_PREFIX=renewable-energy
-      - INFLUXDB3_HTTP_BIND_ADDR=0.0.0.0:8086
-      - INFLUXDB3_HTTP_AUTH_ENABLED=true
-      - INFLUXDB3_HTTP_AUTH_TOKEN=${INFLUXDB3_ADMIN_TOKEN:-your-super-secret-admin-token}
-      - INFLUXDB3_HTTP_AUTH_ORG=${INFLUXDB3_ORG:-renewable_energy}
-      # Performance Settings
-      - INFLUXDB3_QUERY_CACHE_SIZE_MB=512
-      - INFLUXDB3_WRITE_BUFFER_SIZE_MB=64
-      - INFLUXDB3_WRITE_BUFFER_FLUSH_INTERVAL_MS=1000
-      # Security Settings
-      - INFLUXDB3_TLS_ENABLED=false
-      - INFLUXDB3_NETWORK_MAX_CONNECTIONS=1000
-      - INFLUXDB3_NETWORK_CONNECTION_TIMEOUT_SECONDS=30
-      # Monitoring
-      - INFLUXDB3_MONITORING_SLOW_QUERY_THRESHOLD_MS=1000
-      - INFLUXDB3_MONITORING_MAX_CONCURRENT_QUERIES=100
-      - INFLUXDB3_MONITORING_MAX_MEMORY_USAGE_MB=2048
+    command: >
+      --object-store file
+      --data-dir /var/lib/influxdb3
+      --node-id renewable-energy
+      --http-bind 0.0.0.0:8086
+      --without-auth
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
