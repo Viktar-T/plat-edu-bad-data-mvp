@@ -57,7 +57,8 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
 5. **Direct Browser Access Tests**
    - Node-RED: http://localhost:1880 ✅ (no Login, Should show Node-RED editor)
    - Grafana: http://localhost:3000 ✅ (Login: admin/admin)
-   - InfluxDB: http://localhost:8086 ✅ (Login: admin/adminpassword)
+   - InfluxDB: http://localhost:8086/ ✅ (Time-series database. Without Web Interface)
+     - Rick's Explorer: http://localhost:5002 (InfluxDB 3 web interface)
    - MQTT: localhost:1883 -- Not browsable (MQTT protocol only)
 
 6. **Test MQTT connectivity**

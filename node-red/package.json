@@ -24,15 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "node-red": "^3.1.0",
-    "node-red-contrib-chartjs": "^0.2.0",
-    "node-red-contrib-cron-plus": "^2.1.0",
-    "node-red-contrib-email": "^0.3.1",
     "node-red-contrib-influxdb": "^0.6.0",
-    "node-red-contrib-json": "^0.2.0",
-    "node-red-contrib-moment": "^3.0.0",
-    "node-red-contrib-mqtt-broker": "^0.2.9",
-    "node-red-contrib-simple-gate": "^0.2.0",
-    "node-red-contrib-telegrambot": "^0.4.0",
     "node-red-dashboard": "^3.6.0"
   },
   "devDependencies": {
