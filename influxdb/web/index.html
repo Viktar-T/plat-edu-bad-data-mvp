@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renewable Energy IoT - InfluxDB 3 Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 30px 20px;
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .nav-button {
+            display: block;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .nav-button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .nav-button.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea.form-control {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #d62c1a;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 400px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .database-list {
+            list-style: none;
+        }
+
+        .database-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .database-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .loading:after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .example-queries {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .example-query {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-query:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .example-query code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Renewable Energy IoT</h1>
+            <p>InfluxDB 3 Administration Panel</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>Navigation</h3>
+                <button class="nav-button active" onclick="showSection('overview')">📊 Overview</button>
+                <button class="nav-button" onclick="showSection('databases')">🗃️ Databases</button>
+                <button class="nav-button" onclick="showSection('query')">🔍 SQL Query</button>
+                <button class="nav-button" onclick="showSection('write')">✏️ Write Data</button>
+                <button class="nav-button" onclick="showSection('system')">⚙️ System Info</button>
+            </div>
+
+            <div class="content-area">
+                <!-- Overview Section -->
+                <div id="overview" class="section active">
+                    <div class="card">
+                        <h3>🎯 System Overview</h3>
+                        <p>Welcome to your InfluxDB 3 administration panel. This interface allows you to:</p>
+                        <ul style="margin: 20px 0; padding-left: 20px;">
+                            <li>📊 Manage databases for your renewable energy data</li>
+                            <li>🔍 Execute SQL queries to analyze your IoT sensor data</li>
+                            <li>✏️ Write test data for photovoltaic, wind, and energy storage systems</li>
+                            <li>⚙️ Monitor system health and performance</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔧 Quick Actions</h3>
+                        <button class="btn" onclick="createSampleDatabase()">Create Sample Database</button>
+                        <button class="btn btn-success" onclick="insertSampleData()">Insert Sample Data</button>
+                        <button class="btn" onclick="showSection('query')">Run Test Query</button>
+                    </div>
+
+                    <div id="connection-status" class="card">
+                        <h3>📡 Connection Status</h3>
+                        <div id="status-indicator" class="loading">Checking connection...</div>
+                    </div>
+                </div>
+
+                <!-- Databases Section -->
+                <div id="databases" class="section">
+                    <div class="card">
+                        <h3>🗃️ Database Management</h3>
+                        <div class="form-group">
+                            <label for="new-db-name">Create New Database:</label>
+                            <input type="text" id="new-db-name" class="form-control" placeholder="renewable_energy">
+                            <button class="btn" style="margin-top: 10px;" onclick="createDatabase()">Create Database</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📋 Existing Databases</h3>
+                        <div id="database-list" class="loading">Loading databases...</div>
+                        <button class="btn" onclick="loadDatabases()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Query Section -->
+                <div id="query" class="section">
+                    <div class="card">
+                        <h3>🔍 SQL Query Editor</h3>
+                        
+                        <div class="example-queries">
+                            <h4>📝 Example Queries (Click to use):</h4>
+                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SHOW DATABASES">
+                                <code>SHOW DATABASES</code> - List all databases
+                            </div>
+                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SELECT * FROM photovoltaic ORDER BY time DESC LIMIT 10">
+                                <code>SELECT * FROM photovoltaic ORDER BY time DESC LIMIT 10</code> - Recent solar data
+                            </div>
+                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SELECT AVG(power) as avg_power FROM wind_turbine WHERE time >= now() - interval '1 hour'">
+                                <code>SELECT AVG(power) FROM wind_turbine WHERE time >= now() - interval '1 hour'</code> - Hourly wind average
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sql-query">SQL Query:</label>
+                            <textarea id="sql-query" class="form-control" placeholder="SELECT * FROM your_table LIMIT 10"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="query-database">Database:</label>
+                            <input type="text" id="query-database" class="form-control" value="renewable_energy" placeholder="Database name">
+                        </div>
+
+                        <button class="btn" onclick="executeQuery()">▶️ Execute Query</button>
+                        <button class="btn" onclick="clearResults()">🧹 Clear Results</button>
+                    </div>
+
+                    <div id="query-results" class="results"></div>
+                </div>
+
+                <!-- Write Data Section -->
+                <div id="write" class="section">
+                    <div class="card">
+                        <h3>✏️ Write Test Data</h3>
+                        <div class="form-group">
+                            <label for="write-database">Database:</label>
+                            <input type="text" id="write-database" class="form-control" value="renewable_energy">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="line-protocol">Line Protocol Data:</label>
+                            <textarea id="line-protocol" class="form-control" placeholder="photovoltaic,sensor=pv001,location=roof voltage=24.5,current=8.2,power=200.6"></textarea>
+                        </div>
+
+                        <button class="btn" onclick="writeData()">📝 Write Data</button>
+                        <button class="btn btn-success" onclick="generateSampleData()">🎲 Generate Sample Data</button>
+                    </div>
+                </div>
+
+                <!-- System Info Section -->
+                <div id="system" class="section">
+                    <div class="card">
+                        <h3>⚙️ System Information</h3>
+                        <div id="system-info" class="loading">Loading system information...</div>
+                        <button class="btn" onclick="loadSystemInfo()">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INFLUXDB_URL = 'http://localhost:8086';
+
+        // Show/hide sections
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Load section-specific data
+            if (sectionId === 'databases') {
+                loadDatabases();
+            } else if (sectionId === 'system') {
+                loadSystemInfo();
+            }
+        }
+
+        // Check connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${INFLUXDB_URL}/health`);
+                const status = await response.text();
+                
+                if (response.ok && status === 'OK') {
+                    document.getElementById('status-indicator').innerHTML = 
+                        '<div class="status success">✅ Connected to InfluxDB 3</div>';
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                document.getElementById('status-indicator').innerHTML = 
+                    '<div class="status error">❌ Unable to connect to InfluxDB</div>';
+            }
+        }
+
+        // Create database
+        async function createDatabase() {
+            const dbName = document.getElementById('new-db-name').value;
+            if (!dbName) {
+                showStatus('Please enter a database name', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${INFLUXDB_URL}/api/v3/configure/database`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ db: dbName })
+                });
+
+                if (response.ok) {
+                    showStatus(`Database "${dbName}" created successfully!`, 'success');
+                    document.getElementById('new-db-name').value = '';
+                    loadDatabases();
+                } else {
+                    const error = await response.text();
+                    showStatus(`Error creating database: ${error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Load databases
+        async function loadDatabases() {
+            const listElement = document.getElementById('database-list');
+            listElement.innerHTML = '<div class="loading">Loading databases...</div>';
+
+            try {
+                const response = await fetch(`${INFLUXDB_URL}/api/v3/configure/database?format=json`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.databases && data.databases.length > 0) {
+                        listElement.innerHTML = '<ul class="database-list">' +
+                            data.databases.map(db => `
+                                <li class="database-item">
+                                    <span class="database-name">${db}</span>
+                                    <button class="btn btn-danger" onclick="deleteDatabase('${db}')">Delete</button>
+                                </li>
+                            `).join('') + '</ul>';
+                    } else {
+                        listElement.innerHTML = '<div class="status info">No databases found</div>';
+                    }
+                } else {
+                    throw new Error('Failed to load databases');
+                }
+            } catch (error) {
+                listElement.innerHTML = `<div class="status error">Error loading databases: ${error.message}</div>`;
+            }
+        }
+
+        // Execute SQL query
+        async function executeQuery() {
+            const query = document.getElementById('sql-query').value;
+            const database = document.getElementById('query-database').value;
+            
+            if (!query) {
+                showStatus('Please enter a SQL query', 'error');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('query-results');
+            resultsDiv.innerHTML = '<div class="loading">Executing query...</div>';
+
+            try {
+                let url = `${INFLUXDB_URL}/api/v3/query_sql`;
+                if (database) {
+                    url += `?db=${encodeURIComponent(database)}`;
+                }
+                url += `&q=${encodeURIComponent(query)}`;
+
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    displayResults(data, 'Query executed successfully');
+                } else {
+                    const error = await response.text();
+                    resultsDiv.innerHTML = `<div class="status error">Query error: ${error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Write data
+        async function writeData() {
+            const database = document.getElementById('write-database').value;
+            const lineProtocol = document.getElementById('line-protocol').value;
+            
+            if (!database || !lineProtocol) {
+                showStatus('Please enter both database and line protocol data', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${INFLUXDB_URL}/api/v3/write_lp?db=${encodeURIComponent(database)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: lineProtocol
+                });
+
+                if (response.ok) {
+                    showStatus('Data written successfully!', 'success');
+                    document.getElementById('line-protocol').value = '';
+                } else {
+                    const error = await response.text();
+                    showStatus(`Write error: ${error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Generate sample data
+        function generateSampleData() {
+            const samples = [
+                'photovoltaic,sensor=pv001,location=roof voltage=24.5,current=8.2,power=200.6',
+                'wind_turbine,sensor=wt001,location=field wind_speed=12.3,power=850.4,rpm=45',
+                'energy_storage,sensor=es001,location=basement soc=85.2,voltage=48.1,temperature=23.4',
+                'biogas_plant,sensor=bg001,location=facility gas_flow=45.6,methane_concentration=65.2,temperature=38.5',
+                'heat_boiler,sensor=hb001,location=building inlet_temp=60.2,outlet_temp=80.5,efficiency=92.3'
+            ];
+            
+            const randomSample = samples[Math.floor(Math.random() * samples.length)];
+            document.getElementById('line-protocol').value = randomSample;
+        }
+
+        // Set query in editor
+        function setQuery(query) {
+            document.getElementById('sql-query').value = query;
+        }
+
+        // Create sample database and data
+        async function createSampleDatabase() {
+            document.getElementById('new-db-name').value = 'renewable_energy';
+            await createDatabase();
+        }
+
+        async function insertSampleData() {
+            document.getElementById('write-database').value = 'renewable_energy';
+            
+            const sampleData = [
+                'photovoltaic,sensor=pv001,location=roof voltage=24.5,current=8.2,power=200.6',
+                'wind_turbine,sensor=wt001,location=field wind_speed=12.3,power=850.4,rpm=45',
+                'energy_storage,sensor=es001,location=basement soc=85.2,voltage=48.1,temperature=23.4'
+            ];
+
+            for (const data of sampleData) {
+                document.getElementById('line-protocol').value = data;
+                await writeData();
+                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+            }
+        }
+
+        // Load system info
+        async function loadSystemInfo() {
+            const infoDiv = document.getElementById('system-info');
+            infoDiv.innerHTML = '<div class="loading">Loading system information...</div>';
+
+            try {
+                const [healthResponse, pingResponse] = await Promise.all([
+                    fetch(`${INFLUXDB_URL}/health`),
+                    fetch(`${INFLUXDB_URL}/ping`)
+                ]);
+
+                let systemInfo = '<div class="card">';
+                
+                if (healthResponse.ok) {
+                    systemInfo += '<p><strong>Health Status:</strong> ✅ Healthy</p>';
+                } else {
+                    systemInfo += '<p><strong>Health Status:</strong> ❌ Unhealthy</p>';
+                }
+
+                if (pingResponse.ok) {
+                    const pingData = await pingResponse.text();
+                    systemInfo += '<p><strong>Ping Response:</strong> ✅ Responsive</p>';
+                }
+
+                systemInfo += `<p><strong>InfluxDB URL:</strong> ${INFLUXDB_URL}</p>`;
+                systemInfo += `<p><strong>API Version:</strong> v3</p>`;
+                systemInfo += `<p><strong>Authentication:</strong> Disabled (Development Mode)</p>`;
+                systemInfo += '</div>';
+
+                infoDiv.innerHTML = systemInfo;
+            } catch (error) {
+                infoDiv.innerHTML = `<div class="status error">Error loading system info: ${error.message}</div>`;
+            }
+        }
+
+        // Utility functions
+        function showStatus(message, type) {
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            
+            // Find the active section and prepend the status
+            const activeSection = document.querySelector('.section.active');
+            activeSection.insertBefore(status, activeSection.firstChild);
+            
+            // Remove after 5 seconds
+            setTimeout(() => status.remove(), 5000);
+        }
+
+        function displayResults(data, message) {
+            const resultsDiv = document.getElementById('query-results');
+            
+            let html = `<div class="card"><div class="status success">${message}</div>`;
+            html += '<div class="table-container">';
+            html += '<pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto;">';
+            html += data;
+            html += '</pre></div></div>';
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function clearResults() {
+            document.getElementById('query-results').innerHTML = '';
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadDatabases();
+        });
+    </script>
+</body>
+</html> 

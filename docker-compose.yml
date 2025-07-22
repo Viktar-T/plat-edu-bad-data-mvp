@@ -132,6 +132,27 @@ services:
     networks:
       - iot-network
 
+  # InfluxDB 3 Web Interface - Simple Admin Panel
+  influxdb-admin:
+    image: nginx:alpine
+    container_name: iot-influxdb-admin
+    ports:
+      - "5002:80"
+    volumes:
+      - ./influxdb/web:/usr/share/nginx/html
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - iot-network
+
 
 networks:
   iot-network:
