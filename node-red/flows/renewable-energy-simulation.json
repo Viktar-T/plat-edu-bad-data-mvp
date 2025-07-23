@@ -1,800 +1,845 @@
-{
-  "id": "renewable-energy-simulation",
-  "label": "Renewable Energy Device Simulation",
-  "nodes": [
-    {
-      "id": "photovoltaic-simulation",
-      "type": "tab",
-      "label": "Photovoltaic Simulation",
-      "disabled": false,
-      "info": "Simulates photovoltaic panel data with realistic solar patterns"
-    },
-    {
-      "id": "wind-turbine-simulation",
-      "type": "tab",
-      "label": "Wind Turbine Simulation",
-      "disabled": false,
-      "info": "Simulates wind turbine data with realistic wind patterns"
-    },
-    {
-      "id": "biogas-plant-simulation",
-      "type": "tab",
-      "label": "Biogas Plant Simulation",
-      "disabled": false,
-      "info": "Simulates biogas plant data with realistic gas production patterns"
-    },
-    {
-      "id": "heat-boiler-simulation",
-      "type": "tab",
-      "label": "Heat Boiler Simulation",
-      "disabled": false,
-      "info": "Simulates heat boiler data with realistic thermal patterns"
-    },
-    {
-      "id": "energy-storage-simulation",
-      "type": "tab",
-      "label": "Energy Storage Simulation",
-      "disabled": false,
-      "info": "Simulates energy storage system data with realistic battery patterns"
-    },
-    {
-      "id": "data-validation",
-      "type": "tab",
-      "label": "Data Validation & Processing",
-      "disabled": false,
-      "info": "Validates and processes all device data before storage"
-    },
-    {
-      "id": "error-handling",
-      "type": "tab",
-      "label": "Error Handling & Monitoring",
-      "disabled": false,
-      "info": "Centralized error handling and system monitoring"
-    }
-  ],
-  "configs": [],
-  "subflows": [],
-  "groups": [],
-  "flows": [
-    {
-      "id": "photovoltaic-simulation",
-      "label": "Photovoltaic Simulation",
-      "nodes": [
-        {
-          "id": "pv-inject-30s",
-          "type": "inject",
-          "z": "photovoltaic-simulation",
-          "name": "30s Interval",
-          "props": [
-            {
-              "p": "payload"
-            }
-          ],
-          "repeat": "30",
-          "crontab": "",
-          "once": false,
-          "onceDelay": 0.1,
-          "topic": "",
-          "payload": "",
-          "payloadType": "date",
-          "x": 120,
-          "y": 80,
-          "wires": [["pv-simulation-function"]]
-        },
-        {
-          "id": "pv-simulation-function",
-          "type": "function",
-          "z": "photovoltaic-simulation",
-          "name": "PV Data Generator",
-          "func": "// Photovoltaic Panel Data Simulation\n// Realistic mathematical model with seasonal and daily variations\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\nconst latitude = 45.0; // Example latitude\n\n// Solar irradiance model (W/m²)\nfunction calculateIrradiance() {\n    // Seasonal variation (peak in summer)\n    const seasonalFactor = 0.5 + 0.5 * Math.cos(2 * Math.PI * (dayOfYear - 172) / 365);\n    \n    // Daily variation (peak at solar noon)\n    const solarNoon = 12; // Approximate solar noon\n    const dailyFactor = Math.max(0, Math.cos(Math.PI * (hour - solarNoon) / 12));\n    \n    // Base irradiance with realistic fluctuations\n    const baseIrradiance = 1000; // Standard test conditions\n    const noise = (Math.random() - 0.5) * 50; // ±25 W/m² noise\n    \n    return Math.max(0, baseIrradiance * seasonalFactor * dailyFactor + noise);\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 25; // Standard test conditions\n    const irradiance = calculateIrradiance();\n    const tempRise = irradiance * 0.03; // Temperature rise due to irradiance\n    const ambientTemp = 20 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24); // Daily ambient cycle\n    const noise = (Math.random() - 0.5) * 5; // ±2.5°C noise\n    \n    return baseTemp + tempRise + ambientTemp + noise;\n}\n\n// Voltage model (V)\nfunction calculateVoltage() {\n    const baseVoltage = 48; // Nominal voltage\n    const temp = calculateTemperature();\n    const tempCoeff = -0.003; // Temperature coefficient (%/°C)\n    const voltageVariation = baseVoltage * tempCoeff * (temp - 25) / 100;\n    const noise = (Math.random() - 0.5) * 2; // ±1V noise\n    \n    return Math.max(0, baseVoltage + voltageVariation + noise);\n}\n\n// Current model (A)\nfunction calculateCurrent() {\n    const irradiance = calculateIrradiance();\n    const baseCurrent = 12; // Nominal current\n    const currentVariation = baseCurrent * (irradiance / 1000);\n    const noise = (Math.random() - 0.5) * 0.5; // ±0.25A noise\n    \n    return Math.max(0, currentVariation + noise);\n}\n\n// Power output model (W)\nfunction calculatePowerOutput() {\n    const voltage = calculateVoltage();\n    const current = calculateCurrent();\n    const temp = calculateTemperature();\n    \n    // Temperature efficiency factor\n    const tempEfficiency = 1 - 0.004 * (temp - 25);\n    \n    // Dirt and aging factor (gradual degradation)\n    const agingFactor = 0.98; // 2% degradation per year\n    \n    return Math.max(0, voltage * current * tempEfficiency * agingFactor);\n}\n\n// Generate data with fault scenarios\nfunction generatePVData() {\n    const faultProbability = 0.001; // 0.1% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let irradiance = calculateIrradiance();\n    let temperature = calculateTemperature();\n    let voltage = calculateVoltage();\n    let current = calculateCurrent();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // Shading fault\n                irradiance *= 0.3;\n                current *= 0.3;\n                powerOutput *= 0.3;\n                break;\n            case 1: // Temperature fault\n                temperature += 30;\n                voltage *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 2: // Connection fault\n                voltage *= 0.5;\n                current *= 0.5;\n                powerOutput *= 0.25;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `pv_${String(Math.floor(Math.random() * 10) + 1).padStart(3, '0')}`,\n        device_type: 'photovoltaic',\n        timestamp: now.toISOString(),\n        data: {\n            irradiance: Math.round(irradiance * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_a',\n        fault_type: isFault ? ['shading', 'temperature', 'connection'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst pvData = generatePVData();\nmsg.payload = pvData;\nmsg.topic = `devices/photovoltaic/${pvData.device_id}/telemetry`;\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 80,
-          "wires": [["pv-mqtt-output", "pv-validation"]]
-        },
-        {
-          "id": "pv-mqtt-output",
-          "type": "mqtt out",
-          "z": "photovoltaic-simulation",
-          "name": "MQTT Output",
-          "topic": "",
-          "qos": "1",
-          "retain": false,
-          "respTopic": "",
-          "contentType": "",
-          "userProps": "",
-          "correl": "",
-          "expiry": "",
-          "broker": "mqtt-broker",
-          "x": 520,
-          "y": 80,
-          "wires": []
-        },
-        {
-          "id": "pv-validation",
-          "type": "function",
-          "z": "photovoltaic-simulation",
-          "name": "Data Validation",
-          "func": "// Validate photovoltaic data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    irradiance: { min: 0, max: 1200 },\n    temperature: { min: -40, max: 100 },\n    voltage: { min: 0, max: 100 },\n    current: { min: 0, max: 20 },\n    power_output: { min: 0, max: 1000 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > data.data.voltage * data.data.current * 1.1) {\n    errors.push('Power output exceeds voltage * current');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 160,
-          "wires": [["pv-error-handling"]]
-        },
-        {
-          "id": "pv-error-handling",
-          "type": "switch",
-          "z": "photovoltaic-simulation",
-          "name": "Error Check",
-          "property": "status",
-          "propertyType": "msg",
-          "rules": [
-            {
-              "t": "eq",
-              "v": "valid",
-              "vt": "str"
-            },
-            {
-              "t": "eq",
-              "v": "invalid",
-              "vt": "str"
-            }
-          ],
-          "check": "all",
-          "repair": false,
-          "outputs": 2,
-          "x": 520,
-          "y": 160,
-          "wires": [["pv-influxdb"], ["pv-error-log"]]
-        },
-        {
-          "id": "pv-influxdb",
-          "type": "influxdb out",
-          "z": "photovoltaic-simulation",
-          "influxdb": "influxdb-config",
-          "name": "Store Data",
-          "measurement": "photovoltaic_data",
-          "precision": "ms",
-          "retentionPolicy": "",
-          "database": "",
-          "precisionV18FluxV20": "ms",
-          "retentionPolicyV18Flux": "",
-          "org": "renewable_energy",
-          "bucket": "iot_data",
-          "x": 720,
-          "y": 120,
-          "wires": []
-        },
-        {
-          "id": "pv-error-log",
-          "type": "debug",
-          "z": "photovoltaic-simulation",
-          "name": "Error Log",
-          "active": true,
-          "tosidebar": true,
-          "console": false,
-          "tostatus": false,
-          "complete": "payload",
-          "targetType": "msg",
-          "statusVal": "",
-          "statusType": "auto",
-          "x": 720,
-          "y": 160,
-          "wires": []
-        }
+[
+  {
+    "id": "pv-inject-30s",
+    "type": "inject",
+    "z": "photovoltaic-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "pv-simulation-function"
       ]
-    },
-    {
-      "id": "wind-turbine-simulation",
-      "label": "Wind Turbine Simulation",
-      "nodes": [
-        {
-          "id": "wt-inject-30s",
-          "type": "inject",
-          "z": "wind-turbine-simulation",
-          "name": "30s Interval",
-          "props": [
-            {
-              "p": "payload"
-            }
-          ],
-          "repeat": "30",
-          "crontab": "",
-          "once": false,
-          "onceDelay": 0.1,
-          "topic": "",
-          "payload": "",
-          "payloadType": "date",
-          "x": 120,
-          "y": 80,
-          "wires": [["wt-simulation-function"]]
-        },
-        {
-          "id": "wt-simulation-function",
-          "type": "function",
-          "z": "wind-turbine-simulation",
-          "name": "Wind Turbine Data Generator",
-          "func": "// Wind Turbine Data Simulation\n// Realistic mathematical model with wind patterns and power curves\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Wind speed model (m/s)\nfunction calculateWindSpeed() {\n    // Seasonal variation (higher in winter)\n    const seasonalFactor = 0.7 + 0.3 * Math.sin(2 * Math.PI * (dayOfYear - 80) / 365);\n    \n    // Daily variation (higher during day)\n    const dailyFactor = 0.8 + 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    \n    // Base wind speed with realistic fluctuations\n    const baseWindSpeed = 8; // Average wind speed\n    const turbulence = (Math.random() - 0.5) * 4; // ±2 m/s turbulence\n    const gusts = Math.random() < 0.1 ? (Math.random() * 5) : 0; // 10% chance of gusts\n    \n    return Math.max(0, baseWindSpeed * seasonalFactor * dailyFactor + turbulence + gusts);\n}\n\n// Wind direction model (degrees)\nfunction calculateWindDirection() {\n    const baseDirection = 180; // Prevailing wind direction\n    const variation = (Math.random() - 0.5) * 60; // ±30° variation\n    return (baseDirection + variation + 360) % 360;\n}\n\n// Rotor speed model (RPM)\nfunction calculateRotorSpeed() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3; // Cut-in wind speed\n    const ratedSpeed = 12; // Rated wind speed\n    const maxSpeed = 25; // Cut-out wind speed\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0; // Turbine stopped\n    }\n    \n    // Power curve relationship\n    const tipSpeedRatio = 7; // Typical tip speed ratio\n    const rotorDiameter = 90; // meters\n    const rotorSpeed = (windSpeed * tipSpeedRatio * 60) / (Math.PI * rotorDiameter);\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 2; // ±1 RPM noise\n    \n    return Math.max(0, rotorSpeed + noise);\n}\n\n// Vibration model (mm/s)\nfunction calculateVibration() {\n    const rotorSpeed = calculateRotorSpeed();\n    const baseVibration = 2; // Base vibration level\n    const speedFactor = rotorSpeed / 15; // Normalized speed factor\n    const noise = (Math.random() - 0.5) * 1; // ±0.5 mm/s noise\n    \n    return Math.max(0, baseVibration * speedFactor + noise);\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3;\n    const ratedSpeed = 12;\n    const maxSpeed = 25;\n    const ratedPower = 2000; // kW\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0;\n    }\n    \n    let powerOutput;\n    if (windSpeed < ratedSpeed) {\n        // Power curve (cubic relationship)\n        const powerFactor = Math.pow((windSpeed - cutInSpeed) / (ratedSpeed - cutInSpeed), 3);\n        powerOutput = ratedPower * powerFactor;\n    } else {\n        // Rated power\n        powerOutput = ratedPower;\n    }\n    \n    // Efficiency factors\n    const availability = 0.95; // 95% availability\n    const efficiency = 0.85; // 85% efficiency\n    \n    return powerOutput * availability * efficiency;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const ambientTemp = 15 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const rotorSpeed = calculateRotorSpeed();\n    const tempRise = rotorSpeed * 0.1; // Temperature rise due to operation\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return ambientTemp + tempRise + noise;\n}\n\n// Generate data with fault scenarios\nfunction generateWindTurbineData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let windSpeed = calculateWindSpeed();\n    let windDirection = calculateWindDirection();\n    let rotorSpeed = calculateRotorSpeed();\n    let vibration = calculateVibration();\n    let powerOutput = calculatePowerOutput();\n    let temperature = calculateTemperature();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High vibration fault\n                vibration *= 3;\n                rotorSpeed *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 1: // Temperature fault\n                temperature += 20;\n                rotorSpeed *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Gearbox fault\n                rotorSpeed *= 0.5;\n                vibration *= 2;\n                powerOutput *= 0.3;\n                break;\n            case 3: // Generator fault\n                powerOutput *= 0.2;\n                temperature += 15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `wt_${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,\n        device_type: 'wind_turbine',\n        timestamp: now.toISOString(),\n        data: {\n            wind_speed: Math.round(windSpeed * 100) / 100,\n            wind_direction: Math.round(windDirection),\n            rotor_speed: Math.round(rotorSpeed * 100) / 100,\n            vibration: Math.round(vibration * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_b',\n        fault_type: isFault ? ['vibration', 'temperature', 'gearbox', 'generator'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst wtData = generateWindTurbineData();\nmsg.payload = wtData;\nmsg.topic = `devices/wind_turbine/${wtData.device_id}/telemetry`;\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 80,
-          "wires": [["wt-mqtt-output", "wt-validation"]]
-        },
-        {
-          "id": "wt-mqtt-output",
-          "type": "mqtt out",
-          "z": "wind-turbine-simulation",
-          "name": "MQTT Output",
-          "topic": "",
-          "qos": "1",
-          "retain": false,
-          "respTopic": "",
-          "contentType": "",
-          "userProps": "",
-          "correl": "",
-          "expiry": "",
-          "broker": "mqtt-broker",
-          "x": 520,
-          "y": 80,
-          "wires": []
-        },
-        {
-          "id": "wt-validation",
-          "type": "function",
-          "z": "wind-turbine-simulation",
-          "name": "Data Validation",
-          "func": "// Validate wind turbine data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    wind_speed: { min: 0, max: 50 },\n    wind_direction: { min: 0, max: 360 },\n    rotor_speed: { min: 0, max: 25 },\n    vibration: { min: 0, max: 20 },\n    power_output: { min: 0, max: 2500 },\n    temperature: { min: -20, max: 80 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > 0 && data.data.wind_speed < 3) {\n    errors.push('Power output with low wind speed');\n}\n\nif (data.data.vibration > 10 && data.data.rotor_speed > 0) {\n    errors.push('High vibration during operation');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 160,
-          "wires": [["wt-error-handling"]]
-        },
-        {
-          "id": "wt-error-handling",
-          "type": "switch",
-          "z": "wind-turbine-simulation",
-          "name": "Error Check",
-          "property": "status",
-          "propertyType": "msg",
-          "rules": [
-            {
-              "t": "eq",
-              "v": "valid",
-              "vt": "str"
-            },
-            {
-              "t": "eq",
-              "v": "invalid",
-              "vt": "str"
-            }
-          ],
-          "check": "all",
-          "repair": false,
-          "outputs": 2,
-          "x": 520,
-          "y": 160,
-          "wires": [["wt-influxdb"], ["wt-error-log"]]
-        },
-        {
-          "id": "wt-influxdb",
-          "type": "influxdb out",
-          "z": "wind-turbine-simulation",
-          "influxdb": "influxdb-config",
-          "name": "Store Data",
-          "measurement": "wind_turbine_data",
-          "precision": "ms",
-          "retentionPolicy": "",
-          "database": "",
-          "precisionV18FluxV20": "ms",
-          "retentionPolicyV18Flux": "",
-          "org": "renewable_energy",
-          "bucket": "iot_data",
-          "x": 720,
-          "y": 120,
-          "wires": []
-        },
-        {
-          "id": "wt-error-log",
-          "type": "debug",
-          "z": "wind-turbine-simulation",
-          "name": "Error Log",
-          "active": true,
-          "tosidebar": true,
-          "console": false,
-          "tostatus": false,
-          "complete": "payload",
-          "targetType": "msg",
-          "statusVal": "",
-          "statusType": "auto",
-          "x": 720,
-          "y": 160,
-          "wires": []
-        }
-      ]
-    },
-    {
-      "id": "biogas-plant-simulation",
-      "label": "Biogas Plant Simulation",
-      "nodes": [
-        {
-          "id": "bg-inject-30s",
-          "type": "inject",
-          "z": "biogas-plant-simulation",
-          "name": "30s Interval",
-          "props": [
-            {
-              "p": "payload"
-            }
-          ],
-          "repeat": "30",
-          "crontab": "",
-          "once": false,
-          "onceDelay": 0.1,
-          "topic": "",
-          "payload": "",
-          "payloadType": "date",
-          "x": 120,
-          "y": 80,
-          "wires": [["bg-simulation-function"]]
-        },
-        {
-          "id": "bg-simulation-function",
-          "type": "function",
-          "z": "biogas-plant-simulation",
-          "name": "Biogas Plant Data Generator",
-          "func": "// Biogas Plant Data Simulation\n// Realistic mathematical model for anaerobic digestion\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 35; // Optimal digestion temperature\n    const dailyVariation = 2 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const seasonalVariation = 3 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const noise = (Math.random() - 0.5) * 1; // ±0.5°C noise\n    \n    return baseTemp + dailyVariation + seasonalVariation + noise;\n}\n\n// pH model\nfunction calculatePH() {\n    const basePH = 7.2; // Optimal pH for methanogens\n    const temp = calculateTemperature();\n    const tempEffect = (temp - 35) * 0.01; // pH change with temperature\n    const noise = (Math.random() - 0.5) * 0.2; // ±0.1 pH noise\n    \n    return Math.max(6.5, Math.min(8.0, basePH + tempEffect + noise));\n}\n\n// Gas flow rate model (m³/h)\nfunction calculateGasFlow() {\n    const temp = calculateTemperature();\n    const ph = calculatePH();\n    \n    // Temperature effect on gas production\n    const tempFactor = Math.exp(-Math.pow((temp - 35) / 10, 2));\n    \n    // pH effect on gas production\n    const phFactor = Math.exp(-Math.pow((ph - 7.2) / 0.5, 2));\n    \n    // Base gas production with daily variations\n    const baseFlow = 100; // m³/h\n    const dailyVariation = 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    const noise = (Math.random() - 0.5) * 10; // ±5 m³/h noise\n    \n    return Math.max(0, baseFlow * tempFactor * phFactor * (1 + dailyVariation) + noise);\n}\n\n// Methane concentration model (%)\nfunction calculateMethaneConcentration() {\n    const temp = calculateTemperature();\n    const ph = calculatePH();\n    \n    // Optimal conditions for methane production\n    const tempOptimal = Math.exp(-Math.pow((temp - 35) / 5, 2));\n    const phOptimal = Math.exp(-Math.pow((ph - 7.2) / 0.3, 2));\n    \n    const baseConcentration = 60; // %\n    const variation = (tempOptimal + phOptimal) / 2;\n    const noise = (Math.random() - 0.5) * 5; // ±2.5% noise\n    \n    return Math.max(40, Math.min(80, baseConcentration * variation + noise));\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const gasFlow = calculateGasFlow();\n    const methaneConcentration = calculateMethaneConcentration();\n    \n    // Energy content of methane (kWh/m³)\n    const methaneEnergy = 10.5; // kWh/m³\n    \n    // Generator efficiency\n    const generatorEfficiency = 0.35; // 35% electrical efficiency\n    \n    // Calculate power output\n    const methaneFlow = gasFlow * methaneConcentration / 100;\n    const powerOutput = methaneFlow * methaneEnergy * generatorEfficiency;\n    \n    return Math.max(0, powerOutput);\n}\n\n// Generate data with fault scenarios\nfunction generateBiogasData() {\n    const faultProbability = 0.0015; // 0.15% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let temperature = calculateTemperature();\n    let ph = calculatePH();\n    let gasFlow = calculateGasFlow();\n    let methaneConcentration = calculateMethaneConcentration();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // Temperature fault\n                temperature += 15;\n                gasFlow *= 0.5;\n                methaneConcentration *= 0.7;\n                powerOutput *= 0.4;\n                break;\n            case 1: // pH fault\n                ph = 5.5; // Acidic conditions\n                gasFlow *= 0.3;\n                methaneConcentration *= 0.5;\n                powerOutput *= 0.2;\n                break;\n            case 2: // Gas leak fault\n                gasFlow *= 0.2;\n                methaneConcentration *= 0.8;\n                powerOutput *= 0.15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `bg_${String(Math.floor(Math.random() * 3) + 1).padStart(3, '0')}`,\n        device_type: 'biogas_plant',\n        timestamp: now.toISOString(),\n        data: {\n            gas_flow: Math.round(gasFlow * 100) / 100,\n            methane_concentration: Math.round(methaneConcentration * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            ph: Math.round(ph * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_c',\n        fault_type: isFault ? ['temperature', 'ph', 'gas_leak'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst bgData = generateBiogasData();\nmsg.payload = bgData;\nmsg.topic = `devices/biogas_plant/${bgData.device_id}/telemetry`;\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 80,
-          "wires": [["bg-mqtt-output", "bg-validation"]]
-        },
-        {
-          "id": "bg-mqtt-output",
-          "type": "mqtt out",
-          "z": "biogas-plant-simulation",
-          "name": "MQTT Output",
-          "topic": "",
-          "qos": "1",
-          "retain": false,
-          "respTopic": "",
-          "contentType": "",
-          "userProps": "",
-          "correl": "",
-          "expiry": "",
-          "broker": "mqtt-broker",
-          "x": 520,
-          "y": 80,
-          "wires": []
-        },
-        {
-          "id": "bg-validation",
-          "type": "function",
-          "z": "biogas-plant-simulation",
-          "name": "Data Validation",
-          "func": "// Validate biogas plant data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    gas_flow: { min: 0, max: 200 },\n    methane_concentration: { min: 30, max: 85 },\n    temperature: { min: 20, max: 60 },\n    ph: { min: 6.0, max: 8.5 },\n    power_output: { min: 0, max: 500 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nconst expectedPower = data.data.gas_flow * data.data.methane_concentration / 100 * 10.5 * 0.35;\nif (Math.abs(data.data.power_output - expectedPower) > expectedPower * 0.2) {\n    errors.push('Power output inconsistent with gas flow and methane concentration');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 160,
-          "wires": [["bg-error-handling"]]
-        },
-        {
-          "id": "bg-error-handling",
-          "type": "switch",
-          "z": "biogas-plant-simulation",
-          "name": "Error Check",
-          "property": "status",
-          "propertyType": "msg",
-          "rules": [
-            {
-              "t": "eq",
-              "v": "valid",
-              "vt": "str"
-            },
-            {
-              "t": "eq",
-              "v": "invalid",
-              "vt": "str"
-            }
-          ],
-          "check": "all",
-          "repair": false,
-          "outputs": 2,
-          "x": 520,
-          "y": 160,
-          "wires": [["bg-influxdb"], ["bg-error-log"]]
-        },
-        {
-          "id": "bg-influxdb",
-          "type": "influxdb out",
-          "z": "biogas-plant-simulation",
-          "influxdb": "influxdb-config",
-          "name": "Store Data",
-          "measurement": "biogas_plant_data",
-          "precision": "ms",
-          "retentionPolicy": "",
-          "database": "",
-          "precisionV18FluxV20": "ms",
-          "retentionPolicyV18Flux": "",
-          "org": "renewable_energy",
-          "bucket": "iot_data",
-          "x": 720,
-          "y": 120,
-          "wires": []
-        },
-        {
-          "id": "bg-error-log",
-          "type": "debug",
-          "z": "biogas-plant-simulation",
-          "name": "Error Log",
-          "active": true,
-          "tosidebar": true,
-          "console": false,
-          "tostatus": false,
-          "complete": "payload",
-          "targetType": "msg",
-          "statusVal": "",
-          "statusType": "auto",
-          "x": 720,
-          "y": 160,
-          "wires": []
-        }
-      ]
-    },
-    {
-      "id": "heat-boiler-simulation",
-      "label": "Heat Boiler Simulation",
-      "nodes": [
-        {
-          "id": "hb-inject-30s",
-          "type": "inject",
-          "z": "heat-boiler-simulation",
-          "name": "30s Interval",
-          "props": [
-            {
-              "p": "payload"
-            }
-          ],
-          "repeat": "30",
-          "crontab": "",
-          "once": false,
-          "onceDelay": 0.1,
-          "topic": "",
-          "payload": "",
-          "payloadType": "date",
-          "x": 120,
-          "y": 80,
-          "wires": [["hb-simulation-function"]]
-        },
-        {
-          "id": "hb-simulation-function",
-          "type": "function",
-          "z": "heat-boiler-simulation",
-          "name": "Heat Boiler Data Generator",
-          "func": "// Heat Boiler Data Simulation\n// Realistic mathematical model for thermal systems\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    // Seasonal variation (higher demand in winter)\n    const seasonalFactor = 0.3 + 0.7 * Math.cos(2 * Math.PI * (dayOfYear - 172) / 365);\n    \n    // Daily variation (higher demand in morning/evening)\n    const morningPeak = Math.exp(-Math.pow((hour - 7) / 2, 2));\n    const eveningPeak = Math.exp(-Math.pow((hour - 19) / 2, 2));\n    const dailyFactor = Math.max(morningPeak, eveningPeak);\n    \n    const baseTemp = 80; // Operating temperature\n    const demandFactor = seasonalFactor * (0.5 + 0.5 * dailyFactor);\n    const noise = (Math.random() - 0.5) * 5; // ±2.5°C noise\n    \n    return baseTemp + demandFactor * 20 + noise;\n}\n\n// Pressure model (bar)\nfunction calculatePressure() {\n    const temp = calculateTemperature();\n    const basePressure = 2.0; // Base pressure\n    const tempEffect = (temp - 80) * 0.02; // Pressure change with temperature\n    const noise = (Math.random() - 0.5) * 0.2; // ±0.1 bar noise\n    \n    return Math.max(1.0, Math.min(4.0, basePressure + tempEffect + noise));\n}\n\n// Efficiency model (%)\nfunction calculateEfficiency() {\n    const temp = calculateTemperature();\n    const pressure = calculatePressure();\n    \n    // Temperature effect on efficiency\n    const tempEfficiency = Math.exp(-Math.pow((temp - 85) / 20, 2));\n    \n    // Pressure effect on efficiency\n    const pressureEfficiency = Math.exp(-Math.pow((pressure - 2.5) / 1.0, 2));\n    \n    const baseEfficiency = 85; // %\n    const combinedEfficiency = tempEfficiency * pressureEfficiency;\n    const noise = (Math.random() - 0.5) * 3; // ±1.5% noise\n    \n    return Math.max(70, Math.min(95, baseEfficiency * combinedEfficiency + noise));\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const temp = calculateTemperature();\n    const efficiency = calculateEfficiency();\n    \n    // Heat demand calculation\n    const baseDemand = 100; // kW\n    const tempDemand = (temp - 60) * 2; // Higher temp = higher demand\n    \n    // Efficiency factor\n    const efficiencyFactor = efficiency / 100;\n    \n    const powerOutput = (baseDemand + tempDemand) / efficiencyFactor;\n    \n    return Math.max(0, powerOutput);\n}\n\n// Generate data with fault scenarios\nfunction generateHeatBoilerData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let temperature = calculateTemperature();\n    let pressure = calculatePressure();\n    let efficiency = calculateEfficiency();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // High temperature fault\n                temperature += 30;\n                pressure += 1.0;\n                efficiency *= 0.8;\n                powerOutput *= 0.9;\n                break;\n            case 1: // Low pressure fault\n                pressure *= 0.5;\n                efficiency *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Efficiency fault\n                efficiency *= 0.5;\n                powerOutput *= 0.7;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `hb_${String(Math.floor(Math.random() * 4) + 1).padStart(3, '0')}`,\n        device_type: 'heat_boiler',\n        timestamp: now.toISOString(),\n        data: {\n            temperature: Math.round(temperature * 100) / 100,\n            pressure: Math.round(pressure * 100) / 100,\n            efficiency: Math.round(efficiency * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_d',\n        fault_type: isFault ? ['high_temperature', 'low_pressure', 'efficiency'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst hbData = generateHeatBoilerData();\nmsg.payload = hbData;\nmsg.topic = `devices/heat_boiler/${hbData.device_id}/telemetry`;\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 80,
-          "wires": [["hb-mqtt-output", "hb-validation"]]
-        },
-        {
-          "id": "hb-mqtt-output",
-          "type": "mqtt out",
-          "z": "heat-boiler-simulation",
-          "name": "MQTT Output",
-          "topic": "",
-          "qos": "1",
-          "retain": false,
-          "respTopic": "",
-          "contentType": "",
-          "userProps": "",
-          "correl": "",
-          "expiry": "",
-          "broker": "mqtt-broker",
-          "x": 520,
-          "y": 80,
-          "wires": []
-        },
-        {
-          "id": "hb-validation",
-          "type": "function",
-          "z": "heat-boiler-simulation",
-          "name": "Data Validation",
-          "func": "// Validate heat boiler data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    temperature: { min: 50, max: 150 },\n    pressure: { min: 0.5, max: 5.0 },\n    efficiency: { min: 60, max: 98 },\n    power_output: { min: 0, max: 500 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.efficiency < 70 && data.data.power_output > 0) {\n    errors.push('Low efficiency with power output');\n}\n\nif (data.data.pressure < 1.0 && data.data.temperature > 80) {\n    errors.push('Low pressure with high temperature');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 160,
-          "wires": [["hb-error-handling"]]
-        },
-        {
-          "id": "hb-error-handling",
-          "type": "switch",
-          "z": "heat-boiler-simulation",
-          "name": "Error Check",
-          "property": "status",
-          "propertyType": "msg",
-          "rules": [
-            {
-              "t": "eq",
-              "v": "valid",
-              "vt": "str"
-            },
-            {
-              "t": "eq",
-              "v": "invalid",
-              "vt": "str"
-            }
-          ],
-          "check": "all",
-          "repair": false,
-          "outputs": 2,
-          "x": 520,
-          "y": 160,
-          "wires": [["hb-influxdb"], ["hb-error-log"]]
-        },
-        {
-          "id": "hb-influxdb",
-          "type": "influxdb out",
-          "z": "heat-boiler-simulation",
-          "influxdb": "influxdb-config",
-          "name": "Store Data",
-          "measurement": "heat_boiler_data",
-          "precision": "ms",
-          "retentionPolicy": "",
-          "database": "",
-          "precisionV18FluxV20": "ms",
-          "retentionPolicyV18Flux": "",
-          "org": "renewable_energy",
-          "bucket": "iot_data",
-          "x": 720,
-          "y": 120,
-          "wires": []
-        },
-        {
-          "id": "hb-error-log",
-          "type": "debug",
-          "z": "heat-boiler-simulation",
-          "name": "Error Log",
-          "active": true,
-          "tosidebar": true,
-          "console": false,
-          "tostatus": false,
-          "complete": "payload",
-          "targetType": "msg",
-          "statusVal": "",
-          "statusType": "auto",
-          "x": 720,
-          "y": 160,
-          "wires": []
-        }
-      ]
-    },
-    {
-      "id": "energy-storage-simulation",
-      "label": "Energy Storage Simulation",
-      "nodes": [
-        {
-          "id": "es-inject-30s",
-          "type": "inject",
-          "z": "energy-storage-simulation",
-          "name": "30s Interval",
-          "props": [
-            {
-              "p": "payload"
-            }
-          ],
-          "repeat": "30",
-          "crontab": "",
-          "once": false,
-          "onceDelay": 0.1,
-          "topic": "",
-          "payload": "",
-          "payloadType": "date",
-          "x": 120,
-          "y": 80,
-          "wires": [["es-simulation-function"]]
-        },
-        {
-          "id": "es-simulation-function",
-          "type": "function",
-          "z": "energy-storage-simulation",
-          "name": "Energy Storage Data Generator",
-          "func": "// Energy Storage System Data Simulation\n// Realistic mathematical model for battery systems\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// State of Charge model (%)\nfunction calculateStateOfCharge() {\n    // Daily cycle (charge during day, discharge during night)\n    const solarHours = 6 + 6 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365); // Seasonal variation\n    const isDaytime = hour >= 6 && hour <= 18;\n    \n    let soc = context.get('soc') || 50; // Initialize or get previous SOC\n    \n    if (isDaytime) {\n        // Charging during day\n        const chargeRate = 2; // % per 30 seconds\n        soc = Math.min(95, soc + chargeRate);\n    } else {\n        // Discharging during night\n        const dischargeRate = 1.5; // % per 30 seconds\n        soc = Math.max(5, soc - dischargeRate);\n    }\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 1; // ±0.5% noise\n    soc += noise;\n    \n    // Store for next iteration\n    context.set('soc', soc);\n    \n    return Math.max(0, Math.min(100, soc));\n}\n\n// Voltage model (V)\nfunction calculateVoltage() {\n    const soc = calculateStateOfCharge();\n    const baseVoltage = 400; // Nominal voltage\n    const socEffect = (soc - 50) * 0.5; // Voltage variation with SOC\n    const noise = (Math.random() - 0.5) * 5; // ±2.5V noise\n    \n    return Math.max(350, Math.min(450, baseVoltage + socEffect + noise));\n}\n\n// Current model (A)\nfunction calculateCurrent() {\n    const soc = calculateStateOfCharge();\n    const isDaytime = hour >= 6 && hour <= 18;\n    \n    let current;\n    if (isDaytime) {\n        // Charging current\n        current = 50 + (95 - soc) * 2; // Higher current when SOC is low\n    } else {\n        // Discharging current\n        current = -(30 + soc * 0.5); // Higher current when SOC is high\n    }\n    \n    const noise = (Math.random() - 0.5) * 10; // ±5A noise\n    return current + noise;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const current = Math.abs(calculateCurrent());\n    const baseTemp = 25; // Ambient temperature\n    const currentHeat = current * 0.1; // Heat generation from current\n    const seasonalVariation = 10 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return baseTemp + currentHeat + seasonalVariation + noise;\n}\n\n// Cycle count model\nfunction calculateCycleCount() {\n    let cycleCount = context.get('cycleCount') || 0;\n    const soc = calculateStateOfCharge();\n    \n    // Increment cycle count on full charge/discharge cycles\n    if (soc > 90 && context.get('lastHighSOC') !== true) {\n        context.set('lastHighSOC', true);\n    } else if (soc < 10 && context.get('lastHighSOC') === true) {\n        cycleCount += 0.5; // Half cycle for full discharge\n        context.set('lastHighSOC', false);\n    }\n    \n    context.set('cycleCount', cycleCount);\n    return cycleCount;\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const voltage = calculateVoltage();\n    const current = calculateCurrent();\n    const efficiency = 0.95; // 95% efficiency\n    \n    return (voltage * current * efficiency) / 1000; // Convert to kW\n}\n\n// Generate data with fault scenarios\nfunction generateEnergyStorageData() {\n    const faultProbability = 0.001; // 0.1% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let stateOfCharge = calculateStateOfCharge();\n    let voltage = calculateVoltage();\n    let current = calculateCurrent();\n    let temperature = calculateTemperature();\n    let cycleCount = calculateCycleCount();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High temperature fault\n                temperature += 25;\n                voltage *= 0.9;\n                powerOutput *= 0.8;\n                break;\n            case 1: // Low voltage fault\n                voltage *= 0.7;\n                current *= 0.5;\n                powerOutput *= 0.35;\n                break;\n            case 2: // Overcharge fault\n                stateOfCharge = 98;\n                voltage += 20;\n                temperature += 10;\n                break;\n            case 3: // Deep discharge fault\n                stateOfCharge = 2;\n                voltage *= 0.8;\n                powerOutput *= 0.3;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `es_${String(Math.floor(Math.random() * 6) + 1).padStart(3, '0')}`,\n        device_type: 'energy_storage',\n        timestamp: now.toISOString(),\n        data: {\n            state_of_charge: Math.round(stateOfCharge * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            cycle_count: Math.round(cycleCount * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_e',\n        fault_type: isFault ? ['high_temperature', 'low_voltage', 'overcharge', 'deep_discharge'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst esData = generateEnergyStorageData();\nmsg.payload = esData;\nmsg.topic = `devices/energy_storage/${esData.device_id}/telemetry`;\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 80,
-          "wires": [["es-mqtt-output", "es-validation"]]
-        },
-        {
-          "id": "es-mqtt-output",
-          "type": "mqtt out",
-          "z": "energy-storage-simulation",
-          "name": "MQTT Output",
-          "topic": "",
-          "qos": "1",
-          "retain": false,
-          "respTopic": "",
-          "contentType": "",
-          "userProps": "",
-          "correl": "",
-          "expiry": "",
-          "broker": "mqtt-broker",
-          "x": 520,
-          "y": 80,
-          "wires": []
-        },
-        {
-          "id": "es-validation",
-          "type": "function",
-          "z": "energy-storage-simulation",
-          "name": "Data Validation",
-          "func": "// Validate energy storage data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    state_of_charge: { min: 0, max: 100 },\n    voltage: { min: 300, max: 500 },\n    current: { min: -100, max: 100 },\n    temperature: { min: -10, max: 60 },\n    cycle_count: { min: 0, max: 10000 },\n    power_output: { min: -50, max: 50 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nconst expectedPower = (data.data.voltage * data.data.current * 0.95) / 1000;\nif (Math.abs(data.data.power_output - expectedPower) > Math.abs(expectedPower) * 0.2) {\n    errors.push('Power output inconsistent with voltage and current');\n}\n\nif (data.data.state_of_charge > 95 && data.data.current > 0) {\n    errors.push('Charging with high state of charge');\n}\n\nif (data.data.state_of_charge < 5 && data.data.current < 0) {\n    errors.push('Discharging with low state of charge');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-          "outputs": 1,
-          "noerr": 0,
-          "initialize": "",
-          "finalize": "",
-          "libs": [],
-          "x": 320,
-          "y": 160,
-          "wires": [["es-error-handling"]]
-        },
-        {
-          "id": "es-error-handling",
-          "type": "switch",
-          "z": "energy-storage-simulation",
-          "name": "Error Check",
-          "property": "status",
-          "propertyType": "msg",
-          "rules": [
-            {
-              "t": "eq",
-              "v": "valid",
-              "vt": "str"
-            },
-            {
-              "t": "eq",
-              "v": "invalid",
-              "vt": "str"
-            }
-          ],
-          "check": "all",
-          "repair": false,
-          "outputs": 2,
-          "x": 520,
-          "y": 160,
-          "wires": [["es-influxdb"], ["es-error-log"]]
-        },
-        {
-          "id": "es-influxdb",
-          "type": "influxdb out",
-          "z": "energy-storage-simulation",
-          "influxdb": "influxdb-config",
-          "name": "Store Data",
-          "measurement": "energy_storage_data",
-          "precision": "ms",
-          "retentionPolicy": "",
-          "database": "",
-          "precisionV18FluxV20": "ms",
-          "retentionPolicyV18Flux": "",
-          "org": "renewable_energy",
-          "bucket": "iot_data",
-          "x": 720,
-          "y": 120,
-          "wires": []
-        },
-        {
-          "id": "es-error-log",
-          "type": "debug",
-          "z": "energy-storage-simulation",
-          "name": "Error Log",
-          "active": true,
-          "tosidebar": true,
-          "console": false,
-          "tostatus": false,
-          "complete": "payload",
-          "targetType": "msg",
-          "statusVal": "",
-          "statusType": "auto",
-          "x": 720,
-          "y": 160,
-          "wires": []
-        }
-      ]
-    }
-  ],
-  "version": "3.1.0",
-  "meta": {
-    "version": "3.1.0",
-    "project": "Renewable Energy IoT Monitoring System"
+    ]
   },
-  "group": {
-    "id": "renewable-energy-simulation",
-    "title": "Renewable Energy Device Simulation",
-    "order": 1,
-    "width": "6",
-    "collapse": false,
-    "outputs": 0
+  {
+    "id": "pv-simulation-function",
+    "type": "function",
+    "z": "photovoltaic-simulation",
+    "name": "PV Data Generator",
+    "func": "// Photovoltaic Panel Data Simulation\n// Realistic mathematical model with seasonal and daily variations\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\nconst latitude = 45.0; // Example latitude\n\n// Solar irradiance model (W/m²)\nfunction calculateIrradiance() {\n    // Seasonal variation (peak in summer)\n    const seasonalFactor = 0.5 + 0.5 * Math.cos(2 * Math.PI * (dayOfYear - 172) / 365);\n    \n    // Daily variation (peak at solar noon)\n    const solarNoon = 12; // Approximate solar noon\n    const dailyFactor = Math.max(0, Math.cos(Math.PI * (hour - solarNoon) / 12));\n    \n    // Base irradiance with realistic fluctuations\n    const baseIrradiance = 1000; // Standard test conditions\n    const noise = (Math.random() - 0.5) * 50; // ±25 W/m² noise\n    \n    return Math.max(0, baseIrradiance * seasonalFactor * dailyFactor + noise);\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 25; // Standard test conditions\n    const irradiance = calculateIrradiance();\n    const tempRise = irradiance * 0.03; // Temperature rise due to irradiance\n    const ambientTemp = 20 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24); // Daily ambient cycle\n    const noise = (Math.random() - 0.5) * 5; // ±2.5°C noise\n    \n    return baseTemp + tempRise + ambientTemp + noise;\n}\n\n// Voltage model (V)\nfunction calculateVoltage() {\n    const baseVoltage = 48; // Nominal voltage\n    const temp = calculateTemperature();\n    const tempCoeff = -0.003; // Temperature coefficient (%/°C)\n    const voltageVariation = baseVoltage * tempCoeff * (temp - 25) / 100;\n    const noise = (Math.random() - 0.5) * 2; // ±1V noise\n    \n    return Math.max(0, baseVoltage + voltageVariation + noise);\n}\n\n// Current model (A)\nfunction calculateCurrent() {\n    const irradiance = calculateIrradiance();\n    const baseCurrent = 12; // Nominal current\n    const currentVariation = baseCurrent * (irradiance / 1000);\n    const noise = (Math.random() - 0.5) * 0.5; // ±0.25A noise\n    \n    return Math.max(0, currentVariation + noise);\n}\n\n// Power output model (W)\nfunction calculatePowerOutput() {\n    const voltage = calculateVoltage();\n    const current = calculateCurrent();\n    const temp = calculateTemperature();\n    \n    // Temperature efficiency factor\n    const tempEfficiency = 1 - 0.004 * (temp - 25);\n    \n    // Dirt and aging factor (gradual degradation)\n    const agingFactor = 0.98; // 2% degradation per year\n    \n    return Math.max(0, voltage * current * tempEfficiency * agingFactor);\n}\n\n// Generate data with fault scenarios\nfunction generatePVData() {\n    const faultProbability = 0.001; // 0.1% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let irradiance = calculateIrradiance();\n    let temperature = calculateTemperature();\n    let voltage = calculateVoltage();\n    let current = calculateCurrent();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // Shading fault\n                irradiance *= 0.3;\n                current *= 0.3;\n                powerOutput *= 0.3;\n                break;\n            case 1: // Temperature fault\n                temperature += 30;\n                voltage *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 2: // Connection fault\n                voltage *= 0.5;\n                current *= 0.5;\n                powerOutput *= 0.25;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `pv_${String(Math.floor(Math.random() * 10) + 1).padStart(3, '0')}`,\n        device_type: 'photovoltaic',\n        timestamp: now.toISOString(),\n        data: {\n            irradiance: Math.round(irradiance * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_a',\n        fault_type: isFault ? ['shading', 'temperature', 'connection'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst pvData = generatePVData();\nmsg.payload = pvData;\nmsg.topic = `devices/photovoltaic/${pvData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "pv-mqtt-output",
+        "pv-validation"
+      ]
+    ]
   },
-  "order": 0,
-  "configs": [
-    {
-      "id": "mqtt-broker",
-      "type": "mqtt-broker",
-      "name": "MQTT Broker",
-      "broker": "mosquitto",
-      "port": "1883",
-      "clientid": "node-red-simulation",
-      "autoConnect": true,
-      "usetls": false,
-      "protocolVersion": "4",
-      "keepalive": "60",
-      "cleansession": true,
-      "birthTopic": "",
-      "birthQos": "0",
-      "birthPayload": "",
-      "birthMsg": {},
-      "closeTopic": "",
-      "closeQos": "0",
-      "closePayload": "",
-      "closeMsg": {},
-      "willTopic": "",
-      "willQos": "0",
-      "willPayload": "",
-      "willMsg": {},
-      "userProps": "",
-      "sessionExpiry": ""
-    },
-    {
-      "id": "influxdb-config",
-      "type": "influxdb",
-      "hostname": "influxdb",
-      "port": "8086",
-      "protocol": "http",
-      "database": "iot_data",
-      "name": "InfluxDB",
-      "usetls": false,
-      "tls": "",
-      "influxdbVersion": "2.0",
-      "url": "http://influxdb:8086",
-      "rejectUnauthorized": false,
-      "token": "your-influxdb-token",
-      "organization": "renewable_energy",
-      "bucket": "iot_data"
-    }
-  ]
-} 
+  {
+    "id": "pv-mqtt-output",
+    "type": "mqtt out",
+    "z": "photovoltaic-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "pv-validation",
+    "type": "function",
+    "z": "photovoltaic-simulation",
+    "name": "Data Validation",
+    "func": "// Validate photovoltaic data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    irradiance: { min: 0, max: 1200 },\n    temperature: { min: -40, max: 100 },\n    voltage: { min: 0, max: 100 },\n    current: { min: 0, max: 20 },\n    power_output: { min: 0, max: 1000 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > data.data.voltage * data.data.current * 1.1) {\n    errors.push('Power output exceeds voltage * current');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "pv-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "pv-error-handling",
+    "type": "switch",
+    "z": "photovoltaic-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "pv-influxdb"
+      ],
+      [
+        "pv-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "pv-influxdb",
+    "type": "influxdb out",
+    "z": "photovoltaic-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "photovoltaic_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "pv-error-log",
+    "type": "debug",
+    "z": "photovoltaic-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "wt-inject-30s",
+    "type": "inject",
+    "z": "wind-turbine-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "wt-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "wt-simulation-function",
+    "type": "function",
+    "z": "wind-turbine-simulation",
+    "name": "Wind Turbine Data Generator",
+    "func": "// Wind Turbine Data Simulation\n// Realistic mathematical model with wind patterns and power curves\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Wind speed model (m/s)\nfunction calculateWindSpeed() {\n    // Seasonal variation (higher in winter)\n    const seasonalFactor = 0.7 + 0.3 * Math.sin(2 * Math.PI * (dayOfYear - 80) / 365);\n    \n    // Daily variation (higher during day)\n    const dailyFactor = 0.8 + 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    \n    // Base wind speed with realistic fluctuations\n    const baseWindSpeed = 8; // Average wind speed\n    const turbulence = (Math.random() - 0.5) * 4; // ±2 m/s turbulence\n    const gusts = Math.random() < 0.1 ? (Math.random() * 5) : 0; // 10% chance of gusts\n    \n    return Math.max(0, baseWindSpeed * seasonalFactor * dailyFactor + turbulence + gusts);\n}\n\n// Wind direction model (degrees)\nfunction calculateWindDirection() {\n    const baseDirection = 180; // Prevailing wind direction\n    const variation = (Math.random() - 0.5) * 60; // ±30° variation\n    return (baseDirection + variation + 360) % 360;\n}\n\n// Rotor speed model (RPM)\nfunction calculateRotorSpeed() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3; // Cut-in wind speed\n    const ratedSpeed = 12; // Rated wind speed\n    const maxSpeed = 25; // Cut-out wind speed\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0; // Turbine stopped\n    }\n    \n    // Power curve relationship\n    const tipSpeedRatio = 7; // Typical tip speed ratio\n    const rotorDiameter = 90; // meters\n    const rotorSpeed = (windSpeed * tipSpeedRatio * 60) / (Math.PI * rotorDiameter);\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 2; // ±1 RPM noise\n    \n    return Math.max(0, rotorSpeed + noise);\n}\n\n// Vibration model (mm/s)\nfunction calculateVibration() {\n    const rotorSpeed = calculateRotorSpeed();\n    const baseVibration = 2; // Base vibration level\n    const speedFactor = rotorSpeed / 15; // Normalized speed factor\n    const noise = (Math.random() - 0.5) * 1; // ±0.5 mm/s noise\n    \n    return Math.max(0, baseVibration * speedFactor + noise);\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3;\n    const ratedSpeed = 12;\n    const maxSpeed = 25;\n    const ratedPower = 2000; // kW\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0;\n    }\n    \n    let powerOutput;\n    if (windSpeed < ratedSpeed) {\n        // Power curve (cubic relationship)\n        const powerFactor = Math.pow((windSpeed - cutInSpeed) / (ratedSpeed - cutInSpeed), 3);\n        powerOutput = ratedPower * powerFactor;\n    } else {\n        // Rated power\n        powerOutput = ratedPower;\n    }\n    \n    // Efficiency factors\n    const availability = 0.95; // 95% availability\n    const efficiency = 0.85; // 85% efficiency\n    \n    return powerOutput * availability * efficiency;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const ambientTemp = 15 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const rotorSpeed = calculateRotorSpeed();\n    const tempRise = rotorSpeed * 0.1; // Temperature rise due to operation\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return ambientTemp + tempRise + noise;\n}\n\n// Generate data with fault scenarios\nfunction generateWindTurbineData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let windSpeed = calculateWindSpeed();\n    let windDirection = calculateWindDirection();\n    let rotorSpeed = calculateRotorSpeed();\n    let vibration = calculateVibration();\n    let powerOutput = calculatePowerOutput();\n    let temperature = calculateTemperature();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High vibration fault\n                vibration *= 3;\n                rotorSpeed *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 1: // Temperature fault\n                temperature += 20;\n                rotorSpeed *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Gearbox fault\n                rotorSpeed *= 0.5;\n                vibration *= 2;\n                powerOutput *= 0.3;\n                break;\n            case 3: // Generator fault\n                powerOutput *= 0.2;\n                temperature += 15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `wt_${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,\n        device_type: 'wind_turbine',\n        timestamp: now.toISOString(),\n        data: {\n            wind_speed: Math.round(windSpeed * 100) / 100,\n            wind_direction: Math.round(windDirection),\n            rotor_speed: Math.round(rotorSpeed * 100) / 100,\n            vibration: Math.round(vibration * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_b',\n        fault_type: isFault ? ['vibration', 'temperature', 'gearbox', 'generator'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst wtData = generateWindTurbineData();\nmsg.payload = wtData;\nmsg.topic = `devices/wind_turbine/${wtData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "wt-mqtt-output",
+        "wt-validation"
+      ]
+    ]
+  },
+  {
+    "id": "wt-mqtt-output",
+    "type": "mqtt out",
+    "z": "wind-turbine-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "wt-validation",
+    "type": "function",
+    "z": "wind-turbine-simulation",
+    "name": "Data Validation",
+    "func": "// Validate wind turbine data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    wind_speed: { min: 0, max: 50 },\n    wind_direction: { min: 0, max: 360 },\n    rotor_speed: { min: 0, max: 25 },\n    vibration: { min: 0, max: 20 },\n    power_output: { min: 0, max: 2500 },\n    temperature: { min: -20, max: 80 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > 0 && data.data.wind_speed < 3) {\n    errors.push('Power output with low wind speed');\n}\n\nif (data.data.vibration > 10 && data.data.rotor_speed > 0) {\n    errors.push('High vibration during operation');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "wt-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "wt-error-handling",
+    "type": "switch",
+    "z": "wind-turbine-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "wt-influxdb"
+      ],
+      [
+        "wt-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "wt-influxdb",
+    "type": "influxdb out",
+    "z": "wind-turbine-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "wind_turbine_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "wt-error-log",
+    "type": "debug",
+    "z": "wind-turbine-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "bg-inject-30s",
+    "type": "inject",
+    "z": "biogas-plant-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "bg-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "bg-simulation-function",
+    "type": "function",
+    "z": "biogas-plant-simulation",
+    "name": "Biogas Plant Data Generator",
+    "func": "// Biogas Plant Data Simulation\n// Realistic mathematical model for anaerobic digestion\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 35; // Optimal digestion temperature\n    const dailyVariation = 2 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const seasonalVariation = 3 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const noise = (Math.random() - 0.5) * 1; // ±0.5°C noise\n    \n    return baseTemp + dailyVariation + seasonalVariation + noise;\n}\n\n// pH model\nfunction calculatePH() {\n    const basePH = 7.2; // Optimal pH for methanogens\n    const temp = calculateTemperature();\n    const tempEffect = (temp - 35) * 0.01; // pH change with temperature\n    const noise = (Math.random() - 0.5) * 0.2; // ±0.1 pH noise\n    \n    return Math.max(6.5, Math.min(8.0, basePH + tempEffect + noise));\n}\n\n// Gas flow rate model (m³/h)\nfunction calculateGasFlow() {\n    const temp = calculateTemperature();\n    const ph = calculatePH();\n    \n    // Temperature effect on gas production\n    const tempFactor = Math.exp(-Math.pow((temp - 35) / 10, 2));\n    \n    // pH effect on gas production\n    const phFactor = Math.exp(-Math.pow((ph - 7.2) / 0.5, 2));\n    \n    // Base gas production with daily variations\n    const baseFlow = 100; // m³/h\n    const dailyVariation = 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    const noise = (Math.random() - 0.5) * 10; // ±5 m³/h noise\n    \n    return Math.max(0, baseFlow * tempFactor * phFactor * (1 + dailyVariation) + noise);\n}\n\n// Methane concentration model (%)\nfunction calculateMethaneConcentration() {\n    const temp = calculateTemperature();\n    const ph = calculatePH();\n    \n    // Optimal conditions for methane production\n    const tempOptimal = Math.exp(-Math.pow((temp - 35) / 5, 2));\n    const phOptimal = Math.exp(-Math.pow((ph - 7.2) / 0.3, 2));\n    \n    const baseConcentration = 60; // %\n    const variation = (tempOptimal + phOptimal) / 2;\n    const noise = (Math.random() - 0.5) * 5; // ±2.5% noise\n    \n    return Math.max(40, Math.min(80, baseConcentration * variation + noise));\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const gasFlow = calculateGasFlow();\n    const methaneConcentration = calculateMethaneConcentration();\n    \n    // Energy content of methane (kWh/m³)\n    const methaneEnergy = 10.5; // kWh/m³\n    \n    // Generator efficiency\n    const generatorEfficiency = 0.35; // 35% electrical efficiency\n    \n    // Calculate power output\n    const methaneFlow = gasFlow * methaneConcentration / 100;\n    const powerOutput = methaneFlow * methaneEnergy * generatorEfficiency;\n    \n    return Math.max(0, powerOutput);\n}\n\n// Generate data with fault scenarios\nfunction generateBiogasData() {\n    const faultProbability = 0.0015; // 0.15% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let temperature = calculateTemperature();\n    let ph = calculatePH();\n    let gasFlow = calculateGasFlow();\n    let methaneConcentration = calculateMethaneConcentration();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // Temperature fault\n                temperature += 15;\n                gasFlow *= 0.5;\n                methaneConcentration *= 0.7;\n                powerOutput *= 0.4;\n                break;\n            case 1: // pH fault\n                ph = 5.5; // Acidic conditions\n                gasFlow *= 0.3;\n                methaneConcentration *= 0.5;\n                powerOutput *= 0.2;\n                break;\n            case 2: // Gas leak fault\n                gasFlow *= 0.2;\n                methaneConcentration *= 0.8;\n                powerOutput *= 0.15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `bg_${String(Math.floor(Math.random() * 3) + 1).padStart(3, '0')}`,\n        device_type: 'biogas_plant',\n        timestamp: now.toISOString(),\n        data: {\n            gas_flow: Math.round(gasFlow * 100) / 100,\n            methane_concentration: Math.round(methaneConcentration * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            ph: Math.round(ph * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_c',\n        fault_type: isFault ? ['temperature', 'ph', 'gas_leak'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst bgData = generateBiogasData();\nmsg.payload = bgData;\nmsg.topic = `devices/biogas_plant/${bgData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "bg-mqtt-output",
+        "bg-validation"
+      ]
+    ]
+  },
+  {
+    "id": "bg-mqtt-output",
+    "type": "mqtt out",
+    "z": "biogas-plant-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "bg-validation",
+    "type": "function",
+    "z": "biogas-plant-simulation",
+    "name": "Data Validation",
+    "func": "// Validate biogas plant data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    gas_flow: { min: 0, max: 200 },\n    methane_concentration: { min: 30, max: 85 },\n    temperature: { min: 20, max: 60 },\n    ph: { min: 6.0, max: 8.5 },\n    power_output: { min: 0, max: 500 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nconst expectedPower = data.data.gas_flow * data.data.methane_concentration / 100 * 10.5 * 0.35;\nif (Math.abs(data.data.power_output - expectedPower) > expectedPower * 0.2) {\n    errors.push('Power output inconsistent with gas flow and methane concentration');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "bg-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "bg-error-handling",
+    "type": "switch",
+    "z": "biogas-plant-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "bg-influxdb"
+      ],
+      [
+        "bg-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "bg-influxdb",
+    "type": "influxdb out",
+    "z": "biogas-plant-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "biogas_plant_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "bg-error-log",
+    "type": "debug",
+    "z": "biogas-plant-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "hb-inject-30s",
+    "type": "inject",
+    "z": "heat-boiler-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "hb-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "hb-simulation-function",
+    "type": "function",
+    "z": "heat-boiler-simulation",
+    "name": "Heat Boiler Data Generator",
+    "func": "// Heat Boiler Data Simulation\n// Realistic mathematical model for thermal systems\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    // Seasonal variation (higher demand in winter)\n    const seasonalFactor = 0.3 + 0.7 * Math.cos(2 * Math.PI * (dayOfYear - 172) / 365);\n    \n    // Daily variation (higher demand in morning/evening)\n    const morningPeak = Math.exp(-Math.pow((hour - 7) / 2, 2));\n    const eveningPeak = Math.exp(-Math.pow((hour - 19) / 2, 2));\n    const dailyFactor = Math.max(morningPeak, eveningPeak);\n    \n    const baseTemp = 80; // Operating temperature\n    const demandFactor = seasonalFactor * (0.5 + 0.5 * dailyFactor);\n    const noise = (Math.random() - 0.5) * 5; // ±2.5°C noise\n    \n    return baseTemp + demandFactor * 20 + noise;\n}\n\n// Pressure model (bar)\nfunction calculatePressure() {\n    const temp = calculateTemperature();\n    const basePressure = 2.0; // Base pressure\n    const tempEffect = (temp - 80) * 0.02; // Pressure change with temperature\n    const noise = (Math.random() - 0.5) * 0.2; // ±0.1 bar noise\n    \n    return Math.max(1.0, Math.min(4.0, basePressure + tempEffect + noise));\n}\n\n// Efficiency model (%)\nfunction calculateEfficiency() {\n    const temp = calculateTemperature();\n    const pressure = calculatePressure();\n    \n    // Temperature effect on efficiency\n    const tempEfficiency = Math.exp(-Math.pow((temp - 85) / 20, 2));\n    \n    // Pressure effect on efficiency\n    const pressureEfficiency = Math.exp(-Math.pow((pressure - 2.5) / 1.0, 2));\n    \n    const baseEfficiency = 85; // %\n    const combinedEfficiency = tempEfficiency * pressureEfficiency;\n    const noise = (Math.random() - 0.5) * 3; // ±1.5% noise\n    \n    return Math.max(70, Math.min(95, baseEfficiency * combinedEfficiency + noise));\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const temp = calculateTemperature();\n    const efficiency = calculateEfficiency();\n    \n    // Heat demand calculation\n    const baseDemand = 100; // kW\n    const tempDemand = (temp - 60) * 2; // Higher temp = higher demand\n    \n    // Efficiency factor\n    const efficiencyFactor = efficiency / 100;\n    \n    const powerOutput = (baseDemand + tempDemand) / efficiencyFactor;\n    \n    return Math.max(0, powerOutput);\n}\n\n// Generate data with fault scenarios\nfunction generateHeatBoilerData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let temperature = calculateTemperature();\n    let pressure = calculatePressure();\n    let efficiency = calculateEfficiency();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // High temperature fault\n                temperature += 30;\n                pressure += 1.0;\n                efficiency *= 0.8;\n                powerOutput *= 0.9;\n                break;\n            case 1: // Low pressure fault\n                pressure *= 0.5;\n                efficiency *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Efficiency fault\n                efficiency *= 0.5;\n                powerOutput *= 0.7;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `hb_${String(Math.floor(Math.random() * 4) + 1).padStart(3, '0')}`,\n        device_type: 'heat_boiler',\n        timestamp: now.toISOString(),\n        data: {\n            temperature: Math.round(temperature * 100) / 100,\n            pressure: Math.round(pressure * 100) / 100,\n            efficiency: Math.round(efficiency * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_d',\n        fault_type: isFault ? ['high_temperature', 'low_pressure', 'efficiency'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst hbData = generateHeatBoilerData();\nmsg.payload = hbData;\nmsg.topic = `devices/heat_boiler/${hbData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "hb-mqtt-output",
+        "hb-validation"
+      ]
+    ]
+  },
+  {
+    "id": "hb-mqtt-output",
+    "type": "mqtt out",
+    "z": "heat-boiler-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "hb-validation",
+    "type": "function",
+    "z": "heat-boiler-simulation",
+    "name": "Data Validation",
+    "func": "// Validate heat boiler data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    temperature: { min: 50, max: 150 },\n    pressure: { min: 0.5, max: 5.0 },\n    efficiency: { min: 60, max: 98 },\n    power_output: { min: 0, max: 500 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.efficiency < 70 && data.data.power_output > 0) {\n    errors.push('Low efficiency with power output');\n}\n\nif (data.data.pressure < 1.0 && data.data.temperature > 80) {\n    errors.push('Low pressure with high temperature');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "hb-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "hb-error-handling",
+    "type": "switch",
+    "z": "heat-boiler-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "hb-influxdb"
+      ],
+      [
+        "hb-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "hb-influxdb",
+    "type": "influxdb out",
+    "z": "heat-boiler-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "heat_boiler_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "hb-error-log",
+    "type": "debug",
+    "z": "heat-boiler-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "es-inject-30s",
+    "type": "inject",
+    "z": "energy-storage-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "es-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "es-simulation-function",
+    "type": "function",
+    "z": "energy-storage-simulation",
+    "name": "Energy Storage Data Generator",
+    "func": "// Energy Storage System Data Simulation\n// Realistic mathematical model for battery systems\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// State of Charge model (%)\nfunction calculateStateOfCharge() {\n    // Daily cycle (charge during day, discharge during night)\n    const solarHours = 6 + 6 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365); // Seasonal variation\n    const isDaytime = hour >= 6 && hour <= 18;\n    \n    let soc = context.get('soc') || 50; // Initialize or get previous SOC\n    \n    if (isDaytime) {\n        // Charging during day\n        const chargeRate = 2; // % per 30 seconds\n        soc = Math.min(95, soc + chargeRate);\n    } else {\n        // Discharging during night\n        const dischargeRate = 1.5; // % per 30 seconds\n        soc = Math.max(5, soc - dischargeRate);\n    }\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 1; // ±0.5% noise\n    soc += noise;\n    \n    // Store for next iteration\n    context.set('soc', soc);\n    \n    return Math.max(0, Math.min(100, soc));\n}\n\n// Voltage model (V)\nfunction calculateVoltage() {\n    const soc = calculateStateOfCharge();\n    const baseVoltage = 400; // Nominal voltage\n    const socEffect = (soc - 50) * 0.5; // Voltage variation with SOC\n    const noise = (Math.random() - 0.5) * 5; // ±2.5V noise\n    \n    return Math.max(350, Math.min(450, baseVoltage + socEffect + noise));\n}\n\n// Current model (A)\nfunction calculateCurrent() {\n    const soc = calculateStateOfCharge();\n    const isDaytime = hour >= 6 && hour <= 18;\n    \n    let current;\n    if (isDaytime) {\n        // Charging current\n        current = 50 + (95 - soc) * 2; // Higher current when SOC is low\n    } else {\n        // Discharging current\n        current = -(30 + soc * 0.5); // Higher current when SOC is high\n    }\n    \n    const noise = (Math.random() - 0.5) * 10; // ±5A noise\n    return current + noise;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const current = Math.abs(calculateCurrent());\n    const baseTemp = 25; // Ambient temperature\n    const currentHeat = current * 0.1; // Heat generation from current\n    const seasonalVariation = 10 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return baseTemp + currentHeat + seasonalVariation + noise;\n}\n\n// Cycle count model\nfunction calculateCycleCount() {\n    let cycleCount = context.get('cycleCount') || 0;\n    const soc = calculateStateOfCharge();\n    \n    // Increment cycle count on full charge/discharge cycles\n    if (soc > 90 && context.get('lastHighSOC') !== true) {\n        context.set('lastHighSOC', true);\n    } else if (soc < 10 && context.get('lastHighSOC') === true) {\n        cycleCount += 0.5; // Half cycle for full discharge\n        context.set('lastHighSOC', false);\n    }\n    \n    context.set('cycleCount', cycleCount);\n    return cycleCount;\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const voltage = calculateVoltage();\n    const current = calculateCurrent();\n    const efficiency = 0.95; // 95% efficiency\n    \n    return (voltage * current * efficiency) / 1000; // Convert to kW\n}\n\n// Generate data with fault scenarios\nfunction generateEnergyStorageData() {\n    const faultProbability = 0.001; // 0.1% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let stateOfCharge = calculateStateOfCharge();\n    let voltage = calculateVoltage();\n    let current = calculateCurrent();\n    let temperature = calculateTemperature();\n    let cycleCount = calculateCycleCount();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High temperature fault\n                temperature += 25;\n                voltage *= 0.9;\n                powerOutput *= 0.8;\n                break;\n            case 1: // Low voltage fault\n                voltage *= 0.7;\n                current *= 0.5;\n                powerOutput *= 0.35;\n                break;\n            case 2: // Overcharge fault\n                stateOfCharge = 98;\n                voltage += 20;\n                temperature += 10;\n                break;\n            case 3: // Deep discharge fault\n                stateOfCharge = 2;\n                voltage *= 0.8;\n                powerOutput *= 0.3;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `es_${String(Math.floor(Math.random() * 6) + 1).padStart(3, '0')}`,\n        device_type: 'energy_storage',\n        timestamp: now.toISOString(),\n        data: {\n            state_of_charge: Math.round(stateOfCharge * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            cycle_count: Math.round(cycleCount * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_e',\n        fault_type: isFault ? ['high_temperature', 'low_voltage', 'overcharge', 'deep_discharge'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst esData = generateEnergyStorageData();\nmsg.payload = esData;\nmsg.topic = `devices/energy_storage/${esData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "es-mqtt-output",
+        "es-validation"
+      ]
+    ]
+  },
+  {
+    "id": "es-mqtt-output",
+    "type": "mqtt out",
+    "z": "energy-storage-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "es-validation",
+    "type": "function",
+    "z": "energy-storage-simulation",
+    "name": "Data Validation",
+    "func": "// Validate energy storage data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    state_of_charge: { min: 0, max: 100 },\n    voltage: { min: 300, max: 500 },\n    current: { min: -100, max: 100 },\n    temperature: { min: -10, max: 60 },\n    cycle_count: { min: 0, max: 10000 },\n    power_output: { min: -50, max: 50 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nconst expectedPower = (data.data.voltage * data.data.current * 0.95) / 1000;\nif (Math.abs(data.data.power_output - expectedPower) > Math.abs(expectedPower) * 0.2) {\n    errors.push('Power output inconsistent with voltage and current');\n}\n\nif (data.data.state_of_charge > 95 && data.data.current > 0) {\n    errors.push('Charging with high state of charge');\n}\n\nif (data.data.state_of_charge < 5 && data.data.current < 0) {\n    errors.push('Discharging with low state of charge');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "es-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "es-error-handling",
+    "type": "switch",
+    "z": "energy-storage-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "es-influxdb"
+      ],
+      [
+        "es-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "es-influxdb",
+    "type": "influxdb out",
+    "z": "energy-storage-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "energy_storage_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "es-error-log",
+    "type": "debug",
+    "z": "energy-storage-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "photovoltaic-simulation",
+    "type": "tab",
+    "label": "Photovoltaic Simulation",
+    "disabled": false,
+    "info": "Simulates photovoltaic panel data with realistic solar patterns"
+  },
+  {
+    "id": "wind-turbine-simulation",
+    "type": "tab",
+    "label": "Wind Turbine Simulation",
+    "disabled": false,
+    "info": "Simulates wind turbine data with realistic wind patterns"
+  },
+  {
+    "id": "biogas-plant-simulation",
+    "type": "tab",
+    "label": "Biogas Plant Simulation",
+    "disabled": false,
+    "info": "Simulates biogas plant data with realistic gas production patterns"
+  },
+  {
+    "id": "heat-boiler-simulation",
+    "type": "tab",
+    "label": "Heat Boiler Simulation",
+    "disabled": false,
+    "info": "Simulates heat boiler data with realistic thermal patterns"
+  },
+  {
+    "id": "energy-storage-simulation",
+    "type": "tab",
+    "label": "Energy Storage Simulation",
+    "disabled": false,
+    "info": "Simulates energy storage system data with realistic battery patterns"
+  },
+  {
+    "id": "data-validation",
+    "type": "tab",
+    "label": "Data Validation & Processing",
+    "disabled": false,
+    "info": "Validates and processes all device data before storage"
+  },
+  {
+    "id": "error-handling",
+    "type": "tab",
+    "label": "Error Handling & Monitoring",
+    "disabled": false,
+    "info": "Centralized error handling and system monitoring"
+  },
+  {
+    "id": "mqtt-broker",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "node-red-simulation",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "database": "iot_data",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "your-influxdb-token",
+    "organization": "renewable_energy",
+    "bucket": "iot_data"
+  }
+]

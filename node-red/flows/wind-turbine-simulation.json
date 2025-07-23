@@ -1,183 +1,196 @@
-{
-  "id": "wind-turbine-simulation",
-  "label": "Wind Turbine Simulation",
-  "nodes": [
-    {
-      "id": "wt-inject-30s",
-      "type": "inject",
-      "z": "wind-turbine-simulation",
-      "name": "30s Interval",
-      "props": [
-        {
-          "p": "payload"
-        }
+[
+  {
+    "id": "wt-inject-30s",
+    "type": "inject",
+    "z": "wind-turbine-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "wt-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "wt-simulation-function",
+    "type": "function",
+    "z": "wind-turbine-simulation",
+    "name": "Wind Turbine Data Generator",
+    "func": "// Wind Turbine Data Simulation\n// Realistic mathematical model with wind patterns and power curves\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Wind speed model (m/s)\nfunction calculateWindSpeed() {\n    // Seasonal variation (higher in winter)\n    const seasonalFactor = 0.7 + 0.3 * Math.sin(2 * Math.PI * (dayOfYear - 80) / 365);\n    \n    // Daily variation (higher during day)\n    const dailyFactor = 0.8 + 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    \n    // Base wind speed with realistic fluctuations\n    const baseWindSpeed = 8; // Average wind speed\n    const turbulence = (Math.random() - 0.5) * 4; // ±2 m/s turbulence\n    const gusts = Math.random() < 0.1 ? (Math.random() * 5) : 0; // 10% chance of gusts\n    \n    return Math.max(0, baseWindSpeed * seasonalFactor * dailyFactor + turbulence + gusts);\n}\n\n// Wind direction model (degrees)\nfunction calculateWindDirection() {\n    const baseDirection = 180; // Prevailing wind direction\n    const variation = (Math.random() - 0.5) * 60; // ±30° variation\n    return (baseDirection + variation + 360) % 360;\n}\n\n// Rotor speed model (RPM)\nfunction calculateRotorSpeed() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3; // Cut-in wind speed\n    const ratedSpeed = 12; // Rated wind speed\n    const maxSpeed = 25; // Cut-out wind speed\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0; // Turbine stopped\n    }\n    \n    // Power curve relationship\n    const tipSpeedRatio = 7; // Typical tip speed ratio\n    const rotorDiameter = 90; // meters\n    const rotorSpeed = (windSpeed * tipSpeedRatio * 60) / (Math.PI * rotorDiameter);\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 2; // ±1 RPM noise\n    \n    return Math.max(0, rotorSpeed + noise);\n}\n\n// Vibration model (mm/s)\nfunction calculateVibration() {\n    const rotorSpeed = calculateRotorSpeed();\n    const baseVibration = 2; // Base vibration level\n    const speedFactor = rotorSpeed / 15; // Normalized speed factor\n    const noise = (Math.random() - 0.5) * 1; // ±0.5 mm/s noise\n    \n    return Math.max(0, baseVibration * speedFactor + noise);\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3;\n    const ratedSpeed = 12;\n    const maxSpeed = 25;\n    const ratedPower = 2000; // kW\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0;\n    }\n    \n    let powerOutput;\n    if (windSpeed < ratedSpeed) {\n        // Power curve (cubic relationship)\n        const powerFactor = Math.pow((windSpeed - cutInSpeed) / (ratedSpeed - cutInSpeed), 3);\n        powerOutput = ratedPower * powerFactor;\n    } else {\n        // Rated power\n        powerOutput = ratedPower;\n    }\n    \n    // Efficiency factors\n    const availability = 0.95; // 95% availability\n    const efficiency = 0.85; // 85% efficiency\n    \n    return powerOutput * availability * efficiency;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const ambientTemp = 15 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const rotorSpeed = calculateRotorSpeed();\n    const tempRise = rotorSpeed * 0.1; // Temperature rise due to operation\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return ambientTemp + tempRise + noise;\n}\n\n// Generate data with fault scenarios\nfunction generateWindTurbineData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let windSpeed = calculateWindSpeed();\n    let windDirection = calculateWindDirection();\n    let rotorSpeed = calculateRotorSpeed();\n    let vibration = calculateVibration();\n    let powerOutput = calculatePowerOutput();\n    let temperature = calculateTemperature();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High vibration fault\n                vibration *= 3;\n                rotorSpeed *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 1: // Temperature fault\n                temperature += 20;\n                rotorSpeed *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Gearbox fault\n                rotorSpeed *= 0.5;\n                vibration *= 2;\n                powerOutput *= 0.3;\n                break;\n            case 3: // Generator fault\n                powerOutput *= 0.2;\n                temperature += 15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `wt_${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,\n        device_type: 'wind_turbine',\n        timestamp: now.toISOString(),\n        data: {\n            wind_speed: Math.round(windSpeed * 100) / 100,\n            wind_direction: Math.round(windDirection),\n            rotor_speed: Math.round(rotorSpeed * 100) / 100,\n            vibration: Math.round(vibration * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_b',\n        fault_type: isFault ? ['vibration', 'temperature', 'gearbox', 'generator'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst wtData = generateWindTurbineData();\nmsg.payload = wtData;\nmsg.topic = `devices/wind_turbine/${wtData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "wt-mqtt-output",
+        "wt-validation"
+      ]
+    ]
+  },
+  {
+    "id": "wt-mqtt-output",
+    "type": "mqtt out",
+    "z": "wind-turbine-simulation",
+    "name": "MQTT Output",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "wt-validation",
+    "type": "function",
+    "z": "wind-turbine-simulation",
+    "name": "Data Validation",
+    "func": "// Validate wind turbine data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    wind_speed: { min: 0, max: 50 },\n    wind_direction: { min: 0, max: 360 },\n    rotor_speed: { min: 0, max: 25 },\n    vibration: { min: 0, max: 20 },\n    power_output: { min: 0, max: 2500 },\n    temperature: { min: -20, max: 80 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > 0 && data.data.wind_speed < 3) {\n    errors.push('Power output with low wind speed');\n}\n\nif (data.data.vibration > 10 && data.data.rotor_speed > 0) {\n    errors.push('High vibration during operation');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 160,
+    "wires": [
+      [
+        "wt-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "wt-error-handling",
+    "type": "switch",
+    "z": "wind-turbine-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 160,
+    "wires": [
+      [
+        "wt-influxdb"
       ],
-      "repeat": "30",
-      "crontab": "",
-      "once": false,
-      "onceDelay": 0.1,
-      "topic": "",
-      "payload": "",
-      "payloadType": "date",
-      "x": 120,
-      "y": 80,
-      "wires": [["wt-simulation-function"]]
-    },
-    {
-      "id": "wt-simulation-function",
-      "type": "function",
-      "z": "wind-turbine-simulation",
-      "name": "Wind Turbine Data Generator",
-      "func": "// Wind Turbine Data Simulation\n// Realistic mathematical model with wind patterns and power curves\n\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Wind speed model (m/s)\nfunction calculateWindSpeed() {\n    // Seasonal variation (higher in winter)\n    const seasonalFactor = 0.7 + 0.3 * Math.sin(2 * Math.PI * (dayOfYear - 80) / 365);\n    \n    // Daily variation (higher during day)\n    const dailyFactor = 0.8 + 0.2 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    \n    // Base wind speed with realistic fluctuations\n    const baseWindSpeed = 8; // Average wind speed\n    const turbulence = (Math.random() - 0.5) * 4; // ±2 m/s turbulence\n    const gusts = Math.random() < 0.1 ? (Math.random() * 5) : 0; // 10% chance of gusts\n    \n    return Math.max(0, baseWindSpeed * seasonalFactor * dailyFactor + turbulence + gusts);\n}\n\n// Wind direction model (degrees)\nfunction calculateWindDirection() {\n    const baseDirection = 180; // Prevailing wind direction\n    const variation = (Math.random() - 0.5) * 60; // ±30° variation\n    return (baseDirection + variation + 360) % 360;\n}\n\n// Rotor speed model (RPM)\nfunction calculateRotorSpeed() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3; // Cut-in wind speed\n    const ratedSpeed = 12; // Rated wind speed\n    const maxSpeed = 25; // Cut-out wind speed\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0; // Turbine stopped\n    }\n    \n    // Power curve relationship\n    const tipSpeedRatio = 7; // Typical tip speed ratio\n    const rotorDiameter = 90; // meters\n    const rotorSpeed = (windSpeed * tipSpeedRatio * 60) / (Math.PI * rotorDiameter);\n    \n    // Add realistic variations\n    const noise = (Math.random() - 0.5) * 2; // ±1 RPM noise\n    \n    return Math.max(0, rotorSpeed + noise);\n}\n\n// Vibration model (mm/s)\nfunction calculateVibration() {\n    const rotorSpeed = calculateRotorSpeed();\n    const baseVibration = 2; // Base vibration level\n    const speedFactor = rotorSpeed / 15; // Normalized speed factor\n    const noise = (Math.random() - 0.5) * 1; // ±0.5 mm/s noise\n    \n    return Math.max(0, baseVibration * speedFactor + noise);\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput() {\n    const windSpeed = calculateWindSpeed();\n    const cutInSpeed = 3;\n    const ratedSpeed = 12;\n    const maxSpeed = 25;\n    const ratedPower = 2000; // kW\n    \n    if (windSpeed < cutInSpeed || windSpeed > maxSpeed) {\n        return 0;\n    }\n    \n    let powerOutput;\n    if (windSpeed < ratedSpeed) {\n        // Power curve (cubic relationship)\n        const powerFactor = Math.pow((windSpeed - cutInSpeed) / (ratedSpeed - cutInSpeed), 3);\n        powerOutput = ratedPower * powerFactor;\n    } else {\n        // Rated power\n        powerOutput = ratedPower;\n    }\n    \n    // Efficiency factors\n    const availability = 0.95; // 95% availability\n    const efficiency = 0.85; // 85% efficiency\n    \n    return powerOutput * availability * efficiency;\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const ambientTemp = 15 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const rotorSpeed = calculateRotorSpeed();\n    const tempRise = rotorSpeed * 0.1; // Temperature rise due to operation\n    const noise = (Math.random() - 0.5) * 3; // ±1.5°C noise\n    \n    return ambientTemp + tempRise + noise;\n}\n\n// Generate data with fault scenarios\nfunction generateWindTurbineData() {\n    const faultProbability = 0.002; // 0.2% chance of fault\n    const isFault = Math.random() < faultProbability;\n    \n    let windSpeed = calculateWindSpeed();\n    let windDirection = calculateWindDirection();\n    let rotorSpeed = calculateRotorSpeed();\n    let vibration = calculateVibration();\n    let powerOutput = calculatePowerOutput();\n    let temperature = calculateTemperature();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // High vibration fault\n                vibration *= 3;\n                rotorSpeed *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 1: // Temperature fault\n                temperature += 20;\n                rotorSpeed *= 0.6;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Gearbox fault\n                rotorSpeed *= 0.5;\n                vibration *= 2;\n                powerOutput *= 0.3;\n                break;\n            case 3: // Generator fault\n                powerOutput *= 0.2;\n                temperature += 15;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `wt_${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,\n        device_type: 'wind_turbine',\n        timestamp: now.toISOString(),\n        data: {\n            wind_speed: Math.round(windSpeed * 100) / 100,\n            wind_direction: Math.round(windDirection),\n            rotor_speed: Math.round(rotorSpeed * 100) / 100,\n            vibration: Math.round(vibration * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_b',\n        fault_type: isFault ? ['vibration', 'temperature', 'gearbox', 'generator'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst wtData = generateWindTurbineData();\nmsg.payload = wtData;\nmsg.topic = `devices/wind_turbine/${wtData.device_id}/telemetry`;\n\nreturn msg;",
-      "outputs": 1,
-      "noerr": 0,
-      "initialize": "",
-      "finalize": "",
-      "libs": [],
-      "x": 320,
-      "y": 80,
-      "wires": [["wt-mqtt-output", "wt-validation"]]
-    },
-    {
-      "id": "wt-mqtt-output",
-      "type": "mqtt out",
-      "z": "wind-turbine-simulation",
-      "name": "MQTT Output",
-      "topic": "",
-      "qos": "1",
-      "retain": false,
-      "respTopic": "",
-      "contentType": "",
-      "userProps": "",
-      "correl": "",
-      "expiry": "",
-      "broker": "mqtt-broker",
-      "x": 520,
-      "y": 80,
-      "wires": []
-    },
-    {
-      "id": "wt-validation",
-      "type": "function",
-      "z": "wind-turbine-simulation",
-      "name": "Data Validation",
-      "func": "// Validate wind turbine data\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    wind_speed: { min: 0, max: 50 },\n    wind_direction: { min: 0, max: 360 },\n    rotor_speed: { min: 0, max: 25 },\n    vibration: { min: 0, max: 20 },\n    power_output: { min: 0, max: 2500 },\n    temperature: { min: -20, max: 80 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > 0 && data.data.wind_speed < 3) {\n    errors.push('Power output with low wind speed');\n}\n\nif (data.data.vibration > 10 && data.data.rotor_speed > 0) {\n    errors.push('High vibration during operation');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
-      "outputs": 1,
-      "noerr": 0,
-      "initialize": "",
-      "finalize": "",
-      "libs": [],
-      "x": 320,
-      "y": 160,
-      "wires": [["wt-error-handling"]]
-    },
-    {
-      "id": "wt-error-handling",
-      "type": "switch",
-      "z": "wind-turbine-simulation",
-      "name": "Error Check",
-      "property": "status",
-      "propertyType": "msg",
-      "rules": [
-        {
-          "t": "eq",
-          "v": "valid",
-          "vt": "str"
-        },
-        {
-          "t": "eq",
-          "v": "invalid",
-          "vt": "str"
-        }
-      ],
-      "check": "all",
-      "repair": false,
-      "outputs": 2,
-      "x": 520,
-      "y": 160,
-      "wires": [["wt-influxdb"], ["wt-error-log"]]
-    },
-    {
-      "id": "wt-influxdb",
-      "type": "influxdb out",
-      "z": "wind-turbine-simulation",
-      "influxdb": "influxdb-config",
-      "name": "Store Data",
-      "measurement": "wind_turbine_data",
-      "precision": "ms",
-      "retentionPolicy": "",
-      "database": "",
-      "precisionV18FluxV20": "ms",
-      "retentionPolicyV18Flux": "",
-      "org": "renewable_energy",
-      "bucket": "iot_data",
-      "x": 720,
-      "y": 120,
-      "wires": []
-    },
-    {
-      "id": "wt-error-log",
-      "type": "debug",
-      "z": "wind-turbine-simulation",
-      "name": "Error Log",
-      "active": true,
-      "tosidebar": true,
-      "console": false,
-      "tostatus": false,
-      "complete": "payload",
-      "targetType": "msg",
-      "statusVal": "",
-      "statusType": "auto",
-      "x": 720,
-      "y": 160,
-      "wires": []
-    }
-  ],
-  "version": "3.1.0",
-  "configs": [
-    {
-      "id": "mqtt-broker",
-      "type": "mqtt-broker",
-      "name": "MQTT Broker",
-      "broker": "mosquitto",
-      "port": "1883",
-      "clientid": "node-red-simulation",
-      "autoConnect": true,
-      "usetls": false,
-      "protocolVersion": "4",
-      "keepalive": "60",
-      "cleansession": true,
-      "birthTopic": "",
-      "birthQos": "0",
-      "birthPayload": "",
-      "birthMsg": {},
-      "closeTopic": "",
-      "closeQos": "0",
-      "closePayload": "",
-      "closeMsg": {},
-      "willTopic": "",
-      "willQos": "0",
-      "willPayload": "",
-      "willMsg": {},
-      "userProps": "",
-      "sessionExpiry": ""
-    },
-    {
-      "id": "influxdb-config",
-      "type": "influxdb",
-      "hostname": "influxdb",
-      "port": "8086",
-      "protocol": "http",
-      "database": "iot_data",
-      "name": "InfluxDB",
-      "usetls": false,
-      "tls": "",
-      "influxdbVersion": "2.0",
-      "url": "http://influxdb:8086",
-      "rejectUnauthorized": false,
-      "token": "your-influxdb-token",
-      "organization": "renewable_energy",
-      "bucket": "iot_data"
-    }
-  ]
-} 
+      [
+        "wt-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "wt-influxdb",
+    "type": "influxdb out",
+    "z": "wind-turbine-simulation",
+    "influxdb": "influxdb-config",
+    "name": "Store Data",
+    "measurement": "wind_turbine_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy",
+    "bucket": "iot_data",
+    "x": 720,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "wt-error-log",
+    "type": "debug",
+    "z": "wind-turbine-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "node-red-simulation",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "database": "iot_data",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "your-influxdb-token",
+    "organization": "renewable_energy",
+    "bucket": "iot_data"
+  }
+]
