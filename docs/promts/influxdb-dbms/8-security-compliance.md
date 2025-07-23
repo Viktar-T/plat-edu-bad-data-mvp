@@ -71,7 +71,7 @@ Implement basic security features and compliance logging for InfluxDB 3.x manage
 5. Add security monitoring and alerts
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/security.js` - Security functions
-- `influxdb/web/js/audit-logger.js` - Audit logging system
+- `influxdb-web-interface/js/security.js` - Security functions
+- `influxdb-web-interface/js/audit-logger.js` - Audit logging system
 - `influxdb/logs/` - Directory for audit logs
 - `influxdb/config/security.json` - Security configuration 

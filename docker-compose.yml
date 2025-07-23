@@ -139,7 +139,7 @@ services:
     ports:
       - "5002:80"
     volumes:
-      - ./influxdb/web:/usr/share/nginx/html
+      - ./influxdb-web-interface:/usr/share/nginx/html
     restart: unless-stopped
     depends_on:
       influxdb:

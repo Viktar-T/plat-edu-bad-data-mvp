@@ -61,6 +61,6 @@ Implement essential database administration capabilities to transform the basic 
 5. Add progress indicators and notifications
 
 ## **Files to Modify/Create**
-- `influxdb/web/index.html` - Add database management section
-- `influxdb/web/js/database-admin.js` - Database operations
-- `influxdb/web/css/admin.css` - Styling for admin interface 
+- `influxdb-web-interface/index.html` - Add database management section
+- `influxdb-web-interface/js/database-admin.js` - Database operations
+- `influxdb-web-interface/css/admin.css` - Styling for admin interface 

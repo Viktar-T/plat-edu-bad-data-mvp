@@ -78,8 +78,8 @@ Develop basic analytics and reporting capabilities for creating simple reports a
 5. Set up automated report delivery
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/report-builder.js` - Report creation functionality
-- `influxdb/web/js/dashboard.js` - Dashboard and visualization
-- `influxdb/web/js/chart-builder.js` - Chart creation and management
-- `influxdb/web/reports.html` - Reports and analytics interface
+- `influxdb-web-interface/js/report-builder.js` - Report creation functionality
+- `influxdb-web-interface/js/dashboard.js` - Dashboard and visualization
+- `influxdb-web-interface/js/chart-builder.js` - Chart creation and management
+- `influxdb-web-interface/reports.html` - Reports and analytics interface
 - Include Chart.js or similar charting library 

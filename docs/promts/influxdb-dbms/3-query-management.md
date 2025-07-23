@@ -64,7 +64,7 @@ Develop basic query management tools for writing, executing, and managing SQL qu
 5. Implement basic export and sharing features
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/query-editor.js` - Query editor functionality
-- `influxdb/web/js/query-executor.js` - Query execution and results
-- `influxdb/web/js/query-history.js` - Query history management
+- `influxdb-web-interface/js/query-editor.js` - Query editor functionality
+- `influxdb-web-interface/js/query-executor.js` - Query execution and results
+- `influxdb-web-interface/js/query-history.js` - Query history management
 - Include CodeMirror or similar library for editor 

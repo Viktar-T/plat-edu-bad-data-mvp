@@ -72,7 +72,7 @@ Implement essential backup and recovery capabilities to protect data in InfluxDB
 5. Add monitoring and alerting
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/backup-manager.js` - Backup operations
-- `influxdb/web/js/scheduler.js` - Backup scheduling
-- `influxdb/web/backup.html` - Backup management interface
+- `influxdb-web-interface/js/backup-manager.js` - Backup operations
+- `influxdb-web-interface/js/scheduler.js` - Backup scheduling
+- `influxdb-web-interface/backup.html` - Backup management interface
 - `influxdb/backups/` - Directory for backup storage 

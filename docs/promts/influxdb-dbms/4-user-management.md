@@ -71,7 +71,7 @@ Implement basic user authentication and session management for the InfluxDB 3.x 
 5. Set up session management and security
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/auth.js` - Authentication functions
-- `influxdb/web/js/user-management.js` - User admin interface
-- `influxdb/web/login.html` - Login page
-- `influxdb/web/data/users.json` - User data storage 
+- `influxdb-web-interface/js/auth.js` - Authentication functions
+- `influxdb-web-interface/js/user-management.js` - User admin interface
+- `influxdb-web-interface/login.html` - Login page
+- `influxdb-web-interface/data/users.json` - User data storage 

@@ -73,7 +73,7 @@ Implement basic data browsing and management capabilities for viewing and workin
 5. Add progress tracking and error handling
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/data-browser.js` - Data browsing functionality
-- `influxdb/web/js/import-export.js` - File import/export handling
-- `influxdb/web/js/data-quality.js` - Basic data quality tools
-- `influxdb/web/data-browser.html` - Data browsing interface 
+- `influxdb-web-interface/js/data-browser.js` - Data browsing functionality
+- `influxdb-web-interface/js/import-export.js` - File import/export handling
+- `influxdb-web-interface/js/data-quality.js` - Basic data quality tools
+- `influxdb-web-interface/data-browser.html` - Data browsing interface 

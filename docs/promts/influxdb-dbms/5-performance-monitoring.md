@@ -71,7 +71,7 @@ Implement basic performance monitoring to track InfluxDB 3.x system health and q
 5. Set up connection health monitoring
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/performance-monitor.js` - Metrics collection and display
-- `influxdb/web/js/alerts.js` - Simple alerting system
-- `influxdb/web/performance.html` - Performance dashboard page
+- `influxdb-web-interface/js/performance-monitor.js` - Metrics collection and display
+- `influxdb-web-interface/js/alerts.js` - Simple alerting system
+- `influxdb-web-interface/performance.html` - Performance dashboard page
 - Include simple charting library (Chart.js or similar) 

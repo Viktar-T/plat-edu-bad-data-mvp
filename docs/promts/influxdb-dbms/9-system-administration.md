@@ -71,7 +71,7 @@ Develop basic system administration tools for managing InfluxDB 3.x configuratio
 5. Add basic alerting for system issues
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/config-manager.js` - Configuration management
-- `influxdb/web/js/log-viewer.js` - Log viewing functionality
-- `influxdb/web/js/service-manager.js` - Service control
-- `influxdb/web/admin.html` - System administration interface 
+- `influxdb-web-interface/js/config-manager.js` - Configuration management
+- `influxdb-web-interface/js/log-viewer.js` - Log viewing functionality
+- `influxdb-web-interface/js/service-manager.js` - Service control
+- `influxdb-web-interface/admin.html` - System administration interface 

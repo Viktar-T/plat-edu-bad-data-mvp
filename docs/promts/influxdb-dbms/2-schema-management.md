@@ -62,6 +62,6 @@ Develop basic schema management capabilities to view and understand database str
 5. Add search and filtering capabilities
 
 ## **Files to Modify/Create**
-- `influxdb/web/js/schema-browser.js` - Schema browsing functionality
-- `influxdb/web/js/schema-designer.js` - Basic schema creation
-- `influxdb/web/components/tree-view.js` - Reusable tree component 
+- `influxdb-web-interface/js/schema-browser.js` - Schema browsing functionality
+- `influxdb-web-interface/js/schema-designer.js` - Basic schema creation
+- `influxdb-web-interface/components/tree-view.js` - Reusable tree component 
