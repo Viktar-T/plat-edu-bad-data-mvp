@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Renewable Energy IoT - InfluxDB 3 Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
     <style>
         * {
             margin: 0;
@@ -311,6 +312,26 @@
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
         }
+
+        .database-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .database-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -325,6 +346,8 @@
                 <h3>Navigation</h3>
                 <button class="nav-button active" onclick="showSection('overview')">📊 Overview</button>
                 <button class="nav-button" onclick="showSection('databases')">🗃️ Databases</button>
+                <button class="nav-button" onclick="showSection('admin')">🔧 Database Admin</button>
+                <button class="nav-button" onclick="showSection('backup')">💾 Backup & Restore</button>
                 <button class="nav-button" onclick="showSection('query')">🔍 SQL Query</button>
                 <button class="nav-button" onclick="showSection('write')">✏️ Write Data</button>
                 <button class="nav-button" onclick="showSection('system')">⚙️ System Info</button>
@@ -361,17 +384,103 @@
                 <div id="databases" class="section">
                     <div class="card">
                         <h3>🗃️ Database Management</h3>
-                        <div class="form-group">
-                            <label for="new-db-name">Create New Database:</label>
-                            <input type="text" id="new-db-name" class="form-control" placeholder="renewable_energy">
-                            <button class="btn" style="margin-top: 10px;" onclick="createDatabase()">Create Database</button>
+                        <div class="form-group-inline">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="new-db-name">Create New Database:</label>
+                                <input type="text" id="new-db-name" class="form-control" placeholder="renewable_energy" onkeyup="validateDatabaseName(this)">
+                                <div id="db-name-validation" class="form-validation"></div>
+                            </div>
+                            <button class="btn" onclick="createDatabaseEnhanced()">Create Database</button>
                         </div>
                     </div>
 
                     <div class="card">
                         <h3>📋 Existing Databases</h3>
                         <div id="database-list" class="loading">Loading databases...</div>
-                        <button class="btn" onclick="loadDatabases()">🔄 Refresh</button>
+                        <button class="btn" onclick="loadDatabasesEnhanced()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Database Admin Section -->
+                <div id="admin" class="section">
+                    <div class="stats-dashboard">
+                        <h3>📊 Database Statistics Dashboard</h3>
+                        <div id="stats-dashboard">
+                            <div class="loading">Loading statistics...</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>💡 Database Information</h3>
+                        <div class="form-group">
+                            <label for="selected-database">Select Database:</label>
+                            <select id="selected-database" class="form-control" onchange="selectDatabase(this.value)">
+                                <option value="">Choose a database...</option>
+                            </select>
+                        </div>
+                        <div id="database-details" class="database-details">
+                            <p>Select a database to view detailed information.</p>
+                        </div>
+                    </div>
+
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h4 class="chart-title">Storage Growth</h4>
+                            <div class="chart-placeholder">
+                                Storage trend chart will appear here
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h4 class="chart-title">Record Count Trends</h4>
+                            <div class="chart-placeholder">
+                                Record count chart will appear here
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore Section -->
+                <div id="backup" class="section">
+                    <div class="backup-section">
+                        <h3>💾 Manual Backup Operations</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="backup-database">Database to Backup:</label>
+                                <select id="backup-database" class="form-control">
+                                    <option value="">Select database...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-success" onclick="createBackupManual()" style="margin-top: 26px;">
+                                    📦 Create Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="backup-section">
+                        <h3>📋 Available Backups</h3>
+                        <div id="backup-list" class="backup-list">
+                            <div class="loading">Loading backups...</div>
+                        </div>
+                        <button class="btn" onclick="refreshBackups()">🔄 Refresh Backups</button>
+                    </div>
+
+                    <div class="backup-section">
+                        <h3>🔄 Restore Operations</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="restore-backup">Select Backup:</label>
+                                <select id="restore-backup" class="form-control">
+                                    <option value="">Choose backup to restore...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-danger" onclick="restoreBackupManual()" style="margin-top: 26px;">
+                                    🔄 Restore Backup
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -464,7 +573,11 @@
 
             // Load section-specific data
             if (sectionId === 'databases') {
-                loadDatabases();
+                loadDatabasesEnhanced();
+            } else if (sectionId === 'admin') {
+                loadAdminSection();
+            } else if (sectionId === 'backup') {
+                loadBackupSection();
             } else if (sectionId === 'system') {
                 loadSystemInfo();
             }
@@ -719,11 +832,346 @@
             document.getElementById('query-results').innerHTML = '';
         }
 
+        // Enhanced Admin Functions
+        function validateDatabaseName(input) {
+            const value = input.value.trim();
+            const validation = document.getElementById('db-name-validation');
+            
+            if (!value) {
+                validation.innerHTML = '';
+                return;
+            }
+            
+            if (dbAdmin && dbAdmin.validateDatabaseName(value)) {
+                validation.innerHTML = '<span class="success">✓ Valid database name</span>';
+                validation.className = 'form-validation success';
+            } else {
+                validation.innerHTML = '<span class="error">✗ Invalid name. Use only letters, numbers, underscores, and hyphens</span>';
+                validation.className = 'form-validation error';
+            }
+        }
+
+        async function createDatabaseEnhanced() {
+            const dbName = document.getElementById('new-db-name').value.trim();
+            if (!dbName) {
+                alert('Please enter a database name');
+                return;
+            }
+
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.createDatabase(dbName);
+                    document.getElementById('new-db-name').value = '';
+                    document.getElementById('db-name-validation').innerHTML = '';
+                    loadDatabasesEnhanced();
+                    updateDatabaseSelectors();
+                } else {
+                    // Fallback to original function
+                    await createDatabase();
+                }
+            } catch (error) {
+                console.error('Failed to create database:', error);
+            }
+        }
+
+        async function loadDatabasesEnhanced() {
+            const listElement = document.getElementById('database-list');
+            listElement.innerHTML = '<div class="loading">Loading databases...</div>';
+
+            try {
+                if (dbAdmin) {
+                    const databases = await dbAdmin.loadDatabasesWithInfo();
+                    displayEnhancedDatabaseList(databases);
+                } else {
+                    // Fallback to original function
+                    loadDatabases();
+                }
+            } catch (error) {
+                listElement.innerHTML = `<div class="status error">Error loading databases: ${error.message}</div>`;
+            }
+        }
+
+        function displayEnhancedDatabaseList(databases) {
+            const listElement = document.getElementById('database-list');
+            
+            if (!databases || databases.length === 0) {
+                listElement.innerHTML = '<div class="status info">No databases found</div>';
+                return;
+            }
+
+            const html = `
+                <div class="database-list-enhanced">
+                    ${databases.map(db => `
+                        <div class="database-card" onclick="selectDatabaseCard('${db.name}')">
+                            <div class="database-header">
+                                <span class="database-name">${db.name}</span>
+                                <span class="database-status ${db.status || 'empty'}">${(db.status || 'empty').toUpperCase()}</span>
+                            </div>
+                            <div class="database-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${(db.recordCount || 0).toLocaleString()}</div>
+                                    <div class="stat-label">Records</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${db.sizeFormatted || '0 B'}</div>
+                                    <div class="stat-label">Size</div>
+                                </div>
+                            </div>
+                            <div class="database-actions">
+                                <button class="btn btn-small" onclick="event.stopPropagation(); selectDatabase('${db.name}')">Select</button>
+                                <button class="btn btn-small btn-success" onclick="event.stopPropagation(); backupDatabase('${db.name}')">Backup</button>
+                                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteDatabaseEnhanced('${db.name}')">Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            listElement.innerHTML = html;
+        }
+
+        async function deleteDatabaseEnhanced(dbName) {
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.deleteDatabase(dbName);
+                    loadDatabasesEnhanced();
+                    updateDatabaseSelectors();
+                }
+            } catch (error) {
+                console.error('Failed to delete database:', error);
+            }
+        }
+
+        function selectDatabaseCard(dbName) {
+            // Remove selection from all cards
+            document.querySelectorAll('.database-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked card
+            event.currentTarget.classList.add('selected');
+            
+            // Update database selectors
+            selectDatabase(dbName);
+        }
+
+        function selectDatabase(dbName) {
+            if (dbAdmin) {
+                dbAdmin.currentDatabase = dbName;
+            }
+            
+            // Update all database selectors
+            const selectors = ['selected-database', 'backup-database', 'query-database'];
+            selectors.forEach(selectorId => {
+                const selector = document.getElementById(selectorId);
+                if (selector) {
+                    selector.value = dbName;
+                }
+            });
+            
+            // Update database details
+            showDatabaseDetails(dbName);
+        }
+
+        async function showDatabaseDetails(dbName) {
+            const detailsElement = document.getElementById('database-details');
+            if (!dbName) {
+                detailsElement.innerHTML = '<p>Select a database to view detailed information.</p>';
+                return;
+            }
+
+            detailsElement.innerHTML = '<div class="loading">Loading database details...</div>';
+
+            try {
+                if (dbAdmin) {
+                    const stats = await dbAdmin.getDatabaseStats(dbName);
+                    const metadata = dbAdmin.getDatabaseMetadata(dbName);
+                    
+                    detailsElement.innerHTML = `
+                        <div class="database-details-grid">
+                            <div class="detail-item">
+                                <strong>Database Name:</strong> ${dbName}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Created:</strong> ${metadata.createdAt ? new Date(metadata.createdAt).toLocaleString() : 'Unknown'}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Total Records:</strong> ${(stats.recordCount || 0).toLocaleString()}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Storage Size:</strong> ${stats.sizeFormatted || '0 B'} ${stats.estimated ? '(estimated)' : ''}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Health Status:</strong> 
+                                <span class="health-indicator ${getHealthColor(stats.status)}">${(stats.status || 'unknown').toUpperCase()}</span>
+                            </div>
+                            <div class="detail-item">
+                                <strong>Last Updated:</strong> ${stats.lastUpdated ? new Date(stats.lastUpdated).toLocaleString() : 'Never'}
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                detailsElement.innerHTML = `<div class="status error">Error loading details: ${error.message}</div>`;
+            }
+        }
+
+        function getHealthColor(status) {
+            switch (status) {
+                case 'normal': return 'green';
+                case 'high': return 'green';
+                case 'low': return 'yellow';
+                case 'empty': return 'yellow';
+                default: return 'red';
+            }
+        }
+
+        async function loadAdminSection() {
+            updateDatabaseSelectors();
+            if (dbAdmin) {
+                await dbAdmin.updateDashboardStats();
+            }
+        }
+
+        async function loadBackupSection() {
+            updateDatabaseSelectors();
+            refreshBackups();
+        }
+
+        function updateDatabaseSelectors() {
+            // Populate database selectors
+            const selectors = ['selected-database', 'backup-database'];
+            
+            selectors.forEach(async (selectorId) => {
+                const selector = document.getElementById(selectorId);
+                if (selector && dbAdmin) {
+                    try {
+                        const databases = await dbAdmin.loadDatabasesWithInfo();
+                        selector.innerHTML = '<option value="">Choose a database...</option>' +
+                            databases.map(db => `<option value="${db.name}">${db.name}</option>`).join('');
+                    } catch (error) {
+                        console.error('Failed to update selector:', error);
+                    }
+                }
+            });
+        }
+
+        async function createBackupManual() {
+            const dbName = document.getElementById('backup-database').value;
+            if (!dbName) {
+                alert('Please select a database to backup');
+                return;
+            }
+
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.createBackup(dbName);
+                    refreshBackups();
+                }
+            } catch (error) {
+                console.error('Backup failed:', error);
+            }
+        }
+
+        async function restoreBackupManual() {
+            const backupId = document.getElementById('restore-backup').value;
+            if (!backupId) {
+                alert('Please select a backup to restore');
+                return;
+            }
+
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.restoreBackup(backupId);
+                    loadDatabasesEnhanced();
+                }
+            } catch (error) {
+                console.error('Restore failed:', error);
+            }
+        }
+
+        function refreshBackups() {
+            const backupListElement = document.getElementById('backup-list');
+            const restoreSelector = document.getElementById('restore-backup');
+            
+            if (dbAdmin) {
+                const backups = dbAdmin.loadBackupsMetadata();
+                
+                if (backups.length === 0) {
+                    backupListElement.innerHTML = '<div class="status info">No backups found</div>';
+                    restoreSelector.innerHTML = '<option value="">No backups available</option>';
+                    return;
+                }
+
+                // Update backup list
+                backupListElement.innerHTML = backups.map(backup => `
+                    <div class="backup-item">
+                        <div class="backup-info">
+                            <div class="backup-name">${backup.id}</div>
+                            <div class="backup-details">
+                                Database: ${backup.database} | 
+                                Created: ${new Date(backup.timestamp).toLocaleString()} | 
+                                Size: ${dbAdmin.formatBytes(backup.size)}
+                            </div>
+                        </div>
+                        <div class="backup-actions">
+                            <button class="btn btn-small" onclick="restoreSpecificBackup('${backup.id}')">Restore</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteBackup('${backup.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update restore selector
+                restoreSelector.innerHTML = '<option value="">Choose backup to restore...</option>' +
+                    backups.map(backup => `<option value="${backup.id}">${backup.id} (${backup.database})</option>`).join('');
+            }
+        }
+
+        async function restoreSpecificBackup(backupId) {
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.restoreBackup(backupId);
+                    loadDatabasesEnhanced();
+                }
+            } catch (error) {
+                console.error('Restore failed:', error);
+            }
+        }
+
+        function deleteBackup(backupId) {
+            if (confirm(`Are you sure you want to delete backup "${backupId}"?`)) {
+                // Remove from metadata and localStorage
+                const backups = dbAdmin.loadBackupsMetadata();
+                const filteredBackups = backups.filter(b => b.id !== backupId);
+                localStorage.setItem('backup_metadata', JSON.stringify(filteredBackups));
+                localStorage.removeItem(`backup_data_${backupId}`);
+                
+                dbAdmin.backups = filteredBackups;
+                refreshBackups();
+                
+                if (dbAdmin) {
+                    dbAdmin.showNotification(`Backup "${backupId}" deleted successfully`, 'success');
+                }
+            }
+        }
+
+        async function backupDatabase(dbName) {
+            try {
+                if (dbAdmin) {
+                    await dbAdmin.createBackup(dbName);
+                    refreshBackups();
+                }
+            } catch (error) {
+                console.error('Backup failed:', error);
+            }
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             checkConnection();
-            loadDatabases();
+            loadDatabasesEnhanced();
         });
     </script>
+    <script src="js/database-admin.js"></script>
 </body>
 </html> 
