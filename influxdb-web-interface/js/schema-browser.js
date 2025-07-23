@@ -48,7 +48,18 @@ class SchemaBrowser {
             }
 
             const data = await response.json();
-            const databases = data.databases || [];
+            
+            // Parse InfluxDB 3.x response format
+            let databases = [];
+            if (Array.isArray(data)) {
+                // Direct array response (through nginx proxy)
+                databases = data.map(item => item['iox::database']).filter(Boolean);
+            } else if (data.value && Array.isArray(data.value)) {
+                // Wrapped response (direct InfluxDB)
+                databases = data.value.map(item => item['iox::database']).filter(Boolean);
+            } else if (data.databases && Array.isArray(data.databases)) {
+                databases = data.databases;
+            }
             
             const treeData = databases.map(dbName => ({
                 id: `db_${dbName}`,

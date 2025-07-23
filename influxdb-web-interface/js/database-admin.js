@@ -104,8 +104,38 @@ class DatabaseAdmin {
 
             const data = await response.json();
             console.log('DatabaseAdmin: Raw response data:', data);
-            this.databases = data.databases || [];
+            
+            // Parse InfluxDB 3.x response format
+            if (Array.isArray(data)) {
+                // Direct array response (through nginx proxy)
+                this.databases = data.map(item => item['iox::database']).filter(Boolean);
+            } else if (data.value && Array.isArray(data.value)) {
+                // Wrapped response (direct InfluxDB)
+                this.databases = data.value.map(item => item['iox::database']).filter(Boolean);
+            } else if (data.databases && Array.isArray(data.databases)) {
+                // Fallback for different API versions
+                this.databases = data.databases;
+            } else {
+                this.databases = [];
+            }
+            
             console.log('DatabaseAdmin: Found databases:', this.databases);
+            
+            // Return basic databases immediately for display
+            const basicDatabases = this.databases.map(dbName => ({
+                name: dbName,
+                status: 'loading',
+                recordCount: 'Loading...',
+                size: 'Loading...',
+                lastUpdated: 'Loading...'
+            }));
+            
+            // Show basic databases first
+            setTimeout(() => {
+                if (window.displayEnhancedDatabaseList) {
+                    window.displayEnhancedDatabaseList(basicDatabases);
+                }
+            }, 100);
             
             // Enhance with metadata
             const enhancedDatabases = await Promise.all(
@@ -124,6 +154,11 @@ class DatabaseAdmin {
 
             console.log('DatabaseAdmin: Enhanced databases:', enhancedDatabases);
             this.hideProgressIndicator();
+            // Update display with enhanced data
+            if (window.displayEnhancedDatabaseList) {
+                window.displayEnhancedDatabaseList(enhancedDatabases);
+            }
+            
             return enhancedDatabases;
             
         } catch (error) {
@@ -147,8 +182,8 @@ class DatabaseAdmin {
 
             return {
                 recordCount: recordCount || 0,
-                size: sizeInfo.size || 0,
-                sizeFormatted: this.formatBytes(sizeInfo.size || 0),
+                size: sizeInfo || 0,
+                sizeFormatted: this.formatBytes(sizeInfo || 0),
                 lastUpdated: new Date().toISOString(),
                 status: this.getDatabaseHealthStatus(recordCount, sizeInfo)
             };
@@ -206,12 +241,9 @@ class DatabaseAdmin {
             const recordCount = await this.getRecordCount(dbName);
             const estimatedSize = recordCount * 100; // Rough estimate: 100 bytes per record
             
-            return {
-                size: estimatedSize,
-                estimated: true
-            };
+            return estimatedSize;
         } catch (error) {
-            return { size: 0, estimated: true };
+            return 0;
         }
     }
 

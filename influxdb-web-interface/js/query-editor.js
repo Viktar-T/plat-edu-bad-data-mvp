@@ -138,7 +138,20 @@ class QueryEditor {
             const dbResponse = await fetch(`${this.influxUrl}/api/v3/configure/database?format=json`);
             if (dbResponse.ok) {
                 const data = await dbResponse.json();
-                this.availableDatabases = data.databases || [];
+                
+                // Parse InfluxDB 3.x response format
+                if (Array.isArray(data)) {
+                    // Direct array response (through nginx proxy)
+                    this.availableDatabases = data.map(item => item['iox::database']).filter(Boolean);
+                } else if (data.value && Array.isArray(data.value)) {
+                    // Wrapped response (direct InfluxDB)
+                    this.availableDatabases = data.value.map(item => item['iox::database']).filter(Boolean);
+                } else if (data.databases && Array.isArray(data.databases)) {
+                    this.availableDatabases = data.databases;
+                } else {
+                    this.availableDatabases = [];
+                }
+                
                 console.log('Loaded databases for completion:', this.availableDatabases);
             }
         } catch (error) {

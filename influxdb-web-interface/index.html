@@ -494,6 +494,14 @@
 
                 <!-- Database Admin Section -->
                 <div id="admin" class="section">
+                    <!-- Add notification area for user guidance -->
+                    <div class="alert alert-info" style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #0c5460;">📊 Database Status Information</h4>
+                        <p style="margin: 5px 0; color: #0c5460;"><strong>Empty Databases:</strong> New or empty databases may show "Statistics unavailable" until data is written to them.</p>
+                        <p style="margin: 5px 0; color: #0c5460;"><strong>Measurements:</strong> In InfluxDB 3.x, measurements are equivalent to tables. Empty databases will show 0 measurements.</p>
+                        <p style="margin: 5px 0; color: #0c5460;"><strong>Getting Started:</strong> Use the SQL Query section to write your first data or check existing data.</p>
+                    </div>
+                    
                     <div class="stats-dashboard">
                         <h3>📊 Database Statistics Dashboard</h3>
                         <div id="stats-dashboard">
@@ -580,9 +588,9 @@
                     <div class="query-management-container">
                         <!-- Query Editor Panel -->
                         <div class="query-editor-panel">
-                            <div class="card">
+                    <div class="card">
                                 <div class="query-editor-header">
-                                    <h3>🔍 SQL Query Editor</h3>
+                        <h3>🔍 SQL Query Editor</h3>
                                     <div class="editor-controls">
                                         <select id="query-database-selector" class="form-control small" onchange="setQueryDatabase(this.value)">
                                             <option value="">Select Database...</option>
@@ -595,14 +603,14 @@
                                     <div class="tab-bar">
                                         <div class="tab active" data-tab="main" onclick="switchQueryTab('main')">
                                             📝 Main Query
-                                        </div>
+                            </div>
                                         <button class="btn btn-small" onclick="addQueryTab()">+ New Tab</button>
-                                    </div>
-                                </div>
+                            </div>
+                            </div>
 
                                 <div class="query-editor-container">
                                     <div id="advanced-sql-editor"></div>
-                                </div>
+                        </div>
 
                                 <div class="query-actions">
                                     <button class="btn btn-success" onclick="executeCurrentQuery()">▶️ Execute (Ctrl+Enter)</button>
@@ -621,7 +629,7 @@
                                     <button class="sidebar-tab active" data-tab="history" onclick="switchSidebarTab('history')">📜 History</button>
                                     <button class="sidebar-tab" data-tab="saved" onclick="switchSidebarTab('saved')">💾 Saved</button>
                                     <button class="sidebar-tab" data-tab="templates" onclick="switchSidebarTab('templates')">📋 Templates</button>
-                                </div>
+                        </div>
 
                                 <div class="sidebar-content">
                                     <!-- History Tab -->
@@ -636,7 +644,7 @@
                                         <div id="query-history-list" class="query-list">
                                             <p class="empty-state">No query history available</p>
                                         </div>
-                                    </div>
+                    </div>
 
                                     <!-- Saved Queries Tab -->
                                     <div id="saved-tab" class="sidebar-panel">
@@ -805,10 +813,22 @@
                     const data = await response.json();
                     console.log('Database response data:', data);
                     
-                    if (data.databases && data.databases.length > 0) {
-                        console.log('Found databases:', data.databases);
+                    // Parse InfluxDB 3.x response format
+                    let databases = [];
+                    if (Array.isArray(data)) {
+                        // Direct array response (through nginx proxy)
+                        databases = data.map(item => item['iox::database']).filter(Boolean);
+                    } else if (data.value && Array.isArray(data.value)) {
+                        // Wrapped response (direct InfluxDB)
+                        databases = data.value.map(item => item['iox::database']).filter(Boolean);
+                    } else if (data.databases && Array.isArray(data.databases)) {
+                        databases = data.databases;
+                    }
+                    
+                    if (databases && databases.length > 0) {
+                        console.log('Found databases:', databases);
                         listElement.innerHTML = '<ul class="database-list">' +
-                            data.databases.map(db => `
+                            databases.map(db => `
                                 <li class="database-item">
                                     <span class="database-name">${db}</span>
                                     <button class="btn btn-danger" onclick="deleteDatabase('${db}')">Delete</button>
@@ -1593,7 +1613,17 @@
             fetch('/api/v3/configure/database?format=json')
                 .then(response => response.json())
                 .then(data => {
-                    const databases = data.databases || [];
+                    // Parse InfluxDB 3.x response format
+                    let databases = [];
+                    if (Array.isArray(data)) {
+                        // Direct array response (through nginx proxy)
+                        databases = data.map(item => item['iox::database']).filter(Boolean);
+                    } else if (data.value && Array.isArray(data.value)) {
+                        // Wrapped response (direct InfluxDB)
+                        databases = data.value.map(item => item['iox::database']).filter(Boolean);
+                    } else if (data.databases && Array.isArray(data.databases)) {
+                        databases = data.databases;
+                    }
                     
                     selector.innerHTML = '<option value="">Select Database...</option>';
                     databases.forEach(db => {
