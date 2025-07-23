@@ -1,7 +1,7 @@
 # Renewable Energy IoT Monitoring System - Cursor Rules
 
 ## Project Overview
-This is an IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
+This is an **MVP (Minimum Viable Product)** IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
 
 ## Tech Stack & Architecture
 - **Data Flow**: MQTT → Node-RED → InfluxDB → Grafana
