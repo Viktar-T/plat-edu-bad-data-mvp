@@ -1,0 +1,531 @@
+{
+  "id": null,
+  "title": "Photovoltaic Panel Monitoring",
+  "tags": ["photovoltaic", "solar", "monitoring", "mvp"],
+  "style": "dark",
+  "timezone": "utc",
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "panel_id",
+        "type": "query",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"photovoltaic\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "datasource": "InfluxDB 3.x",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "location",
+        "type": "query",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"photovoltaic\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "datasource": "InfluxDB 3.x",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total PV Power Output",
+      "type": "stat",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 1000},
+              {"color": "red", "value": 2000}
+            ]
+          },
+          "unit": "watt"
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "System Efficiency",
+      "type": "gauge",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "red", "value": 60},
+              {"color": "yellow", "value": 80},
+              {"color": "green", "value": 100}
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Solar Irradiance",
+      "type": "stat",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"irradiance\")\n  |> mean()",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "red", "value": 400},
+              {"color": "yellow", "value": 800},
+              {"color": "green", "value": 1200}
+            ]
+          },
+          "unit": "wattm2"
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "id": 4,
+      "title": "Power Output vs Irradiance Correlation",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"irradiance\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "power_output"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "watt"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "irradiance"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "wattm2"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "visible",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+    },
+    {
+      "id": 5,
+      "title": "Panel Temperature Distribution",
+      "type": "heatmap",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> group(columns: [\"device_id\"])",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "blue", "value": null},
+              {"color": "blue", "value": 25},
+              {"color": "green", "value": 45},
+              {"color": "yellow", "value": 60},
+              {"color": "red", "value": 80}
+            ]
+          },
+          "unit": "celsius"
+        }
+      },
+      "options": {
+        "calculate": true,
+        "cellGap": 1,
+        "cellValues": {
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+    },
+    {
+      "id": 6,
+      "title": "Voltage and Current Trends",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"voltage\" or r._field == \"current\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "voltage"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "volt"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "current"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "amp"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "visible",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+    },
+    {
+      "id": 7,
+      "title": "Individual Panel Status",
+      "type": "table",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"efficiency\" or r._field == \"temperature\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 0}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Device ID"
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__value": true,
+              "__field": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "device_id": "Device ID",
+              "power_output": "Power Output (W)",
+              "efficiency": "Efficiency (%)",
+              "temperature": "Temperature (°C)",
+              "status": "Status"
+            }
+          }
+        }
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+    },
+    {
+      "id": 8,
+      "title": "Daily Energy Production",
+      "type": "barchart",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)\n  |> map(fn: (r) => ({r with _value: r._value * 0.001}))",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "unit": "kwh"
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "visible",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+    },
+    {
+      "id": 9,
+      "title": "Faulty Panels",
+      "type": "stat",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"photovoltaic\")\n  |> filter(fn: (r) => r._field == \"status\")\n  |> filter(fn: (r) => r._value == \"fault\")\n  |> group()\n  |> count()",
+          "datasource": "InfluxDB 3.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "green", "value": 0},
+              {"color": "red", "value": 1}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+    }
+  ]
+} 
