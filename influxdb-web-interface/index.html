@@ -346,6 +346,7 @@
                 <h3>Navigation</h3>
                 <button class="nav-button active" onclick="showSection('overview')">📊 Overview</button>
                 <button class="nav-button" onclick="showSection('databases')">🗃️ Databases</button>
+                <button class="nav-button" onclick="showSection('schema')">📋 Schema Management</button>
                 <button class="nav-button" onclick="showSection('admin')">🔧 Database Admin</button>
                 <button class="nav-button" onclick="showSection('backup')">💾 Backup & Restore</button>
                 <button class="nav-button" onclick="showSection('query')">🔍 SQL Query</button>
@@ -372,6 +373,8 @@
                         <button class="btn" onclick="createSampleDatabase()">Create Sample Database</button>
                         <button class="btn btn-success" onclick="insertSampleData()">Insert Sample Data</button>
                         <button class="btn" onclick="showSection('query')">Run Test Query</button>
+                        <button class="btn" onclick="testDatabaseAPI()">🔧 Test Database API</button>
+                        <button class="btn" onclick="loadDatabasesEnhanced()">🔄 Reload Databases</button>
                     </div>
 
                     <div id="connection-status" class="card">
@@ -386,7 +389,7 @@
                         <h3>🗃️ Database Management</h3>
                         <div class="form-group-inline">
                             <div class="form-group" style="flex: 1;">
-                                <label for="new-db-name">Create New Database:</label>
+                            <label for="new-db-name">Create New Database:</label>
                                 <input type="text" id="new-db-name" class="form-control" placeholder="renewable_energy" onkeyup="validateDatabaseName(this)">
                                 <div id="db-name-validation" class="form-validation"></div>
                             </div>
@@ -398,6 +401,94 @@
                         <h3>📋 Existing Databases</h3>
                         <div id="database-list" class="loading">Loading databases...</div>
                         <button class="btn" onclick="loadDatabasesEnhanced()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Schema Management Section -->
+                <div id="schema" class="section">
+                    <div class="card">
+                        <h3>📋 Schema Browser</h3>
+                        <div class="schema-controls">
+                            <div class="form-group-inline">
+                                <input type="text" id="schema-search" class="form-control" placeholder="Search measurements, fields, tags..." onkeyup="searchSchemaElements(this.value)">
+                                <button class="btn" onclick="refreshSchemaTree()">🔄 Refresh</button>
+                                <button class="btn" onclick="expandAllSchema()">📂 Expand All</button>
+                                <button class="btn" onclick="collapseAllSchema()">📁 Collapse All</button>
+                            </div>
+                        </div>
+                        
+                        <div class="schema-browser-container">
+                            <div class="schema-tree-panel">
+                                <div id="schema-loading" style="display: none;"></div>
+                                <div id="schema-error" style="display: none;"></div>
+                                <div id="schema-tree"></div>
+                            </div>
+                            <div class="schema-info-panel">
+                                <div id="schema-info">
+                                    <p>Select a database, measurement, field, or tag from the tree to view detailed information.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🛠️ Schema Designer</h3>
+                        <div id="schema-designer-status"></div>
+                        
+                        <div class="schema-designer-container">
+                            <div class="measurement-config">
+                                <h4>Measurement Configuration</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="measurement-name">Measurement Name:</label>
+                                        <input type="text" id="measurement-name" class="form-control" placeholder="e.g., temperature_readings">
+                                        <div id="measurement-name-validation" class="form-validation"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="measurement-database">Target Database:</label>
+                                        <select id="measurement-database" class="form-control">
+                                            <option value="">Select database...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="measurement-description">Description (optional):</label>
+                                    <input type="text" id="measurement-description" class="form-control" placeholder="Brief description of this measurement">
+                                </div>
+                            </div>
+
+                            <div class="fields-config">
+                                <div class="config-header">
+                                    <h4>Fields Configuration</h4>
+                                    <button id="add-field-btn" class="btn btn-success">+ Add Field</button>
+                                </div>
+                                <div id="fields-container" class="fields-container">
+                                    <p class="empty-state">No fields defined. Click "Add Field" to create your first field.</p>
+                                </div>
+                            </div>
+
+                            <div class="tags-config">
+                                <div class="config-header">
+                                    <h4>Tags Configuration</h4>
+                                    <button id="add-tag-btn" class="btn btn-success">+ Add Tag</button>
+                                </div>
+                                <div id="tags-container" class="tags-container">
+                                    <p class="empty-state">No tags defined. Click "Add Tag" to create your first tag.</p>
+                                </div>
+                            </div>
+
+                            <div class="schema-actions">
+                                <button id="preview-schema-btn" class="btn">👁️ Preview Schema</button>
+                                <button id="create-measurement-btn" class="btn btn-success">🚀 Create Measurement</button>
+                                <button id="reset-schema-btn" class="btn btn-danger">🔄 Reset Form</button>
+                            </div>
+
+                            <div class="schema-preview-container">
+                                <div id="schema-preview">
+                                    <p>Configure your measurement schema above to see a preview.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -486,37 +577,102 @@
 
                 <!-- Query Section -->
                 <div id="query" class="section">
-                    <div class="card">
-                        <h3>🔍 SQL Query Editor</h3>
-                        
-                        <div class="example-queries">
-                            <h4>📝 Example Queries (Click to use):</h4>
-                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SHOW DATABASES">
-                                <code>SHOW DATABASES</code> - List all databases
-                            </div>
-                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SELECT * FROM photovoltaic ORDER BY time DESC LIMIT 10">
-                                <code>SELECT * FROM photovoltaic ORDER BY time DESC LIMIT 10</code> - Recent solar data
-                            </div>
-                            <div class="example-query" onclick="setQuery(this.getAttribute('data-query'))" data-query="SELECT AVG(power) as avg_power FROM wind_turbine WHERE time >= now() - interval '1 hour'">
-                                <code>SELECT AVG(power) FROM wind_turbine WHERE time >= now() - interval '1 hour'</code> - Hourly wind average
+                    <div class="query-management-container">
+                        <!-- Query Editor Panel -->
+                        <div class="query-editor-panel">
+                            <div class="card">
+                                <div class="query-editor-header">
+                                    <h3>🔍 SQL Query Editor</h3>
+                                    <div class="editor-controls">
+                                        <select id="query-database-selector" class="form-control small" onchange="setQueryDatabase(this.value)">
+                                            <option value="">Select Database...</option>
+                                        </select>
+                                        <div id="editor-status" class="editor-status"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="query-tabs">
+                                    <div class="tab-bar">
+                                        <div class="tab active" data-tab="main" onclick="switchQueryTab('main')">
+                                            📝 Main Query
+                                        </div>
+                                        <button class="btn btn-small" onclick="addQueryTab()">+ New Tab</button>
+                                    </div>
+                                </div>
+
+                                <div class="query-editor-container">
+                                    <div id="advanced-sql-editor"></div>
+                                </div>
+
+                                <div class="query-actions">
+                                    <button class="btn btn-success" onclick="executeCurrentQuery()">▶️ Execute (Ctrl+Enter)</button>
+                                    <button class="btn" onclick="formatCurrentQuery()">🎨 Format</button>
+                                    <button class="btn" onclick="saveCurrentQuery()">💾 Save Query</button>
+                                    <button class="btn" onclick="clearCurrentQuery()">🧹 Clear</button>
+                                    <button class="btn btn-small" onclick="showQueryTemplates()">📋 Templates</button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="sql-query">SQL Query:</label>
-                            <textarea id="sql-query" class="form-control" placeholder="SELECT * FROM your_table LIMIT 10"></textarea>
-                        </div>
+                        <!-- Query History & Saved Queries Sidebar -->
+                        <div class="query-sidebar">
+                            <div class="card">
+                                <div class="sidebar-tabs">
+                                    <button class="sidebar-tab active" data-tab="history" onclick="switchSidebarTab('history')">📜 History</button>
+                                    <button class="sidebar-tab" data-tab="saved" onclick="switchSidebarTab('saved')">💾 Saved</button>
+                                    <button class="sidebar-tab" data-tab="templates" onclick="switchSidebarTab('templates')">📋 Templates</button>
+                                </div>
 
-                        <div class="form-group">
-                            <label for="query-database">Database:</label>
-                            <input type="text" id="query-database" class="form-control" value="renewable_energy" placeholder="Database name">
-                        </div>
+                                <div class="sidebar-content">
+                                    <!-- History Tab -->
+                                    <div id="history-tab" class="sidebar-panel active">
+                                        <div class="panel-header">
+                                            <h4>Recent Queries</h4>
+                                            <div class="panel-actions">
+                                                <button class="btn btn-small" onclick="clearQueryHistory()">🗑️ Clear</button>
+                                                <button class="btn btn-small" onclick="exportQueryHistory()">📤 Export</button>
+                                            </div>
+                                        </div>
+                                        <div id="query-history-list" class="query-list">
+                                            <p class="empty-state">No query history available</p>
+                                        </div>
+                                    </div>
 
-                        <button class="btn" onclick="executeQuery()">▶️ Execute Query</button>
-                        <button class="btn" onclick="clearResults()">🧹 Clear Results</button>
+                                    <!-- Saved Queries Tab -->
+                                    <div id="saved-tab" class="sidebar-panel">
+                                        <div class="panel-header">
+                                            <h4>Saved Queries</h4>
+                                            <div class="panel-actions">
+                                                <button class="btn btn-small" onclick="importQueries()">📥 Import</button>
+                                                <input type="file" id="import-queries-input" accept=".json" style="display: none" onchange="handleQueryImport(this)">
+                                            </div>
+                                        </div>
+                                        <div class="search-box">
+                                            <input type="text" id="saved-queries-search" class="form-control small" placeholder="Search saved queries..." onkeyup="searchSavedQueries(this.value)">
+                                        </div>
+                                        <div id="saved-queries-list" class="query-list">
+                                            <p class="empty-state">No saved queries available</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Templates Tab -->
+                                    <div id="templates-tab" class="sidebar-panel">
+                                        <div class="panel-header">
+                                            <h4>Query Templates</h4>
+                                        </div>
+                                        <div id="query-templates-list" class="query-list">
+                                            <!-- Templates will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="query-results" class="results"></div>
+                    <!-- Query Results Section -->
+                    <div id="query-results-container">
+                        <!-- Results will be populated by QueryExecutor -->
+                    </div>
                 </div>
 
                 <!-- Write Data Section -->
@@ -551,7 +707,8 @@
     </div>
 
     <script>
-        const INFLUXDB_URL = 'http://localhost:8086';
+        // Use relative URL to work with nginx proxy and avoid CORS
+        const INFLUXDB_URL = window.location.protocol + '//' + window.location.host;
 
         // Show/hide sections
         function showSection(sectionId) {
@@ -574,6 +731,8 @@
             // Load section-specific data
             if (sectionId === 'databases') {
                 loadDatabasesEnhanced();
+            } else if (sectionId === 'schema') {
+                loadSchemaSection();
             } else if (sectionId === 'admin') {
                 loadAdminSection();
             } else if (sectionId === 'backup') {
@@ -637,12 +796,17 @@
             listElement.innerHTML = '<div class="loading">Loading databases...</div>';
 
             try {
+                console.log('Fetching databases from:', `${INFLUXDB_URL}/api/v3/configure/database?format=json`);
                 const response = await fetch(`${INFLUXDB_URL}/api/v3/configure/database?format=json`);
+                
+                console.log('Response status:', response.status, response.statusText);
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Database response data:', data);
                     
                     if (data.databases && data.databases.length > 0) {
+                        console.log('Found databases:', data.databases);
                         listElement.innerHTML = '<ul class="database-list">' +
                             data.databases.map(db => `
                                 <li class="database-item">
@@ -651,12 +815,16 @@
                                 </li>
                             `).join('') + '</ul>';
                     } else {
+                        console.log('No databases found in response');
                         listElement.innerHTML = '<div class="status info">No databases found</div>';
                     }
                 } else {
-                    throw new Error('Failed to load databases');
+                    const errorText = await response.text();
+                    console.error('API response error:', response.status, errorText);
+                    throw new Error(`Failed to load databases: ${response.status} ${errorText}`);
                 }
             } catch (error) {
+                console.error('Error loading databases:', error);
                 listElement.innerHTML = `<div class="status error">Error loading databases: ${error.message}</div>`;
             }
         }
@@ -749,6 +917,32 @@
         async function createSampleDatabase() {
             document.getElementById('new-db-name').value = 'renewable_energy';
             await createDatabase();
+        }
+
+        // Test function to debug API endpoint
+        async function testDatabaseAPI() {
+            console.log('Testing database API endpoint...');
+            try {
+                const response = await fetch(`${INFLUXDB_URL}/api/v3/configure/database?format=json`);
+                console.log('Test API Response:', {
+                    ok: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                const text = await response.text();
+                console.log('Raw response text:', text);
+                
+                try {
+                    const json = JSON.parse(text);
+                    console.log('Parsed JSON:', json);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                }
+            } catch (error) {
+                console.error('Test API error:', error);
+            }
         }
 
         async function insertSampleData() {
@@ -879,15 +1073,26 @@
             listElement.innerHTML = '<div class="loading">Loading databases...</div>';
 
             try {
-                if (dbAdmin) {
-                    const databases = await dbAdmin.loadDatabasesWithInfo();
+                // Try enhanced loading first
+                if (window.dbAdmin && typeof window.dbAdmin.loadDatabasesWithInfo === 'function') {
+                    console.log('Using enhanced database loading...');
+                    const databases = await window.dbAdmin.loadDatabasesWithInfo();
                     displayEnhancedDatabaseList(databases);
                 } else {
+                    console.log('dbAdmin not available, using fallback...');
                     // Fallback to original function
-                    loadDatabases();
+                    await loadDatabases();
                 }
             } catch (error) {
-                listElement.innerHTML = `<div class="status error">Error loading databases: ${error.message}</div>`;
+                console.error('Error in loadDatabasesEnhanced:', error);
+                // If enhanced loading fails, try the original function
+                try {
+                    console.log('Enhanced loading failed, trying original...');
+                    await loadDatabases();
+                } catch (fallbackError) {
+                    console.error('Both loading methods failed:', fallbackError);
+                    listElement.innerHTML = `<div class="status error">Error loading databases: ${error.message}</div>`;
+                }
             }
         }
 
@@ -1166,12 +1371,432 @@
             }
         }
 
+        // Schema Management Functions
+        function loadSchemaSection() {
+            // Initialize schema browser if not already done
+            if (!window.schemaBrowser) {
+                window.schemaBrowser = new SchemaBrowser();
+            }
+            
+            // Initialize schema designer if not already done
+            if (!window.schemaDesigner) {
+                window.schemaDesigner = new SchemaDesigner();
+            }
+        }
+
+        function searchSchemaElements(searchTerm) {
+            if (window.schemaBrowser) {
+                window.schemaBrowser.searchSchema(searchTerm);
+            }
+        }
+
+        function refreshSchemaTree() {
+            if (window.schemaBrowser) {
+                window.schemaBrowser.refreshSchema();
+            }
+        }
+
+        function expandAllSchema() {
+            if (window.schemaBrowser && window.schemaBrowser.treeView) {
+                window.schemaBrowser.treeView.expandAll();
+            }
+        }
+
+        function collapseAllSchema() {
+            if (window.schemaBrowser && window.schemaBrowser.treeView) {
+                window.schemaBrowser.treeView.collapseAll();
+            }
+        }
+
+        // Query Management Functions
+        function executeCurrentQuery() {
+            if (window.queryEditor) {
+                window.queryEditor.executeQuery();
+            }
+        }
+
+        function formatCurrentQuery() {
+            if (window.queryEditor) {
+                window.queryEditor.formatQuery();
+            }
+        }
+
+        function saveCurrentQuery() {
+            if (window.queryEditor) {
+                window.queryEditor.saveQuery();
+            }
+        }
+
+        function clearCurrentQuery() {
+            if (window.queryEditor) {
+                window.queryEditor.clear();
+            }
+        }
+
+        function setQueryDatabase(database) {
+            if (window.queryEditor) {
+                window.queryEditor.setDatabase(database);
+            }
+        }
+
+        function switchQueryTab(tabName) {
+            // Tab switching functionality for multiple query tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        }
+
+        function addQueryTab() {
+            // Functionality to add new query tabs
+            alert('Multiple tabs feature coming soon!');
+        }
+
+        function switchSidebarTab(tabName) {
+            // Switch between sidebar tabs (history, saved, templates)
+            const tabs = document.querySelectorAll('.sidebar-tab');
+            const panels = document.querySelectorAll('.sidebar-panel');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            panels.forEach(panel => panel.classList.remove('active'));
+            
+            const activeTab = document.querySelector(`.sidebar-tab[data-tab="${tabName}"]`);
+            const activePanel = document.getElementById(`${tabName}-tab`);
+            
+            if (activeTab) activeTab.classList.add('active');
+            if (activePanel) activePanel.classList.add('active');
+        }
+
+        function clearQueryHistory() {
+            if (window.queryHistory && confirm('Are you sure you want to clear all query history?')) {
+                window.queryHistory.resetHistory();
+                showNotification('Query history cleared', 'success');
+            }
+        }
+
+        function exportQueryHistory() {
+            if (window.queryHistory) {
+                try {
+                    window.queryHistory.exportHistory('json');
+                    showNotification('Query history exported successfully', 'success');
+                } catch (error) {
+                    showNotification('Failed to export query history: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function importQueries() {
+            const input = document.getElementById('import-queries-input');
+            if (input) {
+                input.click();
+            }
+        }
+
+        function handleQueryImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (window.queryHistory) {
+                window.queryHistory.importHistory(file)
+                    .then(() => {
+                        showNotification('Queries imported successfully', 'success');
+                        input.value = ''; // Reset file input
+                    })
+                    .catch(error => {
+                        showNotification('Failed to import queries: ' + error.message, 'error');
+                        input.value = ''; // Reset file input
+                    });
+            }
+        }
+
+        function searchSavedQueries(searchTerm) {
+            if (window.queryHistory) {
+                const results = window.queryHistory.searchQueries(searchTerm, 'saved');
+                // Update display with search results
+                // This could be enhanced to show filtered results
+            }
+        }
+
+        function showQueryTemplates() {
+            switchSidebarTab('templates');
+        }
+
+        function initializeQueryTemplates() {
+            const templatesContainer = document.getElementById('query-templates-list');
+            if (!templatesContainer) return;
+
+            const templates = [
+                {
+                    name: 'Show Databases',
+                    query: 'SHOW DATABASES',
+                    description: 'List all available databases'
+                },
+                {
+                    name: 'Show Measurements',
+                    query: 'SHOW MEASUREMENTS',
+                    description: 'List all measurements in current database'
+                },
+                {
+                    name: 'Recent Photovoltaic Data',
+                    query: 'SELECT * FROM photovoltaic_data ORDER BY time DESC LIMIT 10',
+                    description: 'Get the 10 most recent solar panel readings'
+                },
+                {
+                    name: 'Wind Turbine Hourly Average',
+                    query: 'SELECT AVG(power) as avg_power FROM wind_turbine_data WHERE time >= now() - interval \'1 hour\' GROUP BY time(10m)',
+                    description: 'Average wind power in 10-minute intervals for the last hour'
+                },
+                {
+                    name: 'Energy Storage Status',
+                    query: 'SELECT device_id, state_of_charge, temperature FROM energy_storage_data WHERE time >= now() - interval \'5 minutes\' ORDER BY time DESC',
+                    description: 'Recent battery status for all energy storage devices'
+                },
+                {
+                    name: 'Biogas Plant Production',
+                    query: 'SELECT device_id, gas_flow_rate, methane_concentration FROM biogas_plant_data WHERE time >= now() - interval \'1 day\' ORDER BY time DESC',
+                    description: 'Daily biogas production metrics'
+                },
+                {
+                    name: 'Heat Boiler Efficiency',
+                    query: 'SELECT device_id, efficiency, temperature_in, temperature_out FROM heat_boiler_data WHERE time >= now() - interval \'2 hours\' ORDER BY time DESC',
+                    description: 'Heat boiler efficiency over the last 2 hours'
+                }
+            ];
+
+            const html = templates.map(template => `
+                <div class="template-item" onclick="loadTemplate('${template.query.replace(/'/g, "\\'")}')">
+                    <h5 class="template-name">${template.name}</h5>
+                    <p class="template-description">${template.description}</p>
+                    <code class="template-preview">${template.query}</code>
+                </div>
+            `).join('');
+
+            templatesContainer.innerHTML = html;
+        }
+
+        function loadTemplate(query) {
+            if (window.queryEditor) {
+                window.queryEditor.setValue(query);
+                window.queryEditor.focus();
+                showNotification('Template loaded into editor', 'success');
+            }
+        }
+
+        function loadDatabaseSelector() {
+            const selector = document.getElementById('query-database-selector');
+            if (!selector) return;
+
+            // Load available databases into the selector
+            fetch('/api/v3/configure/database?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    const databases = data.databases || [];
+                    
+                    selector.innerHTML = '<option value="">Select Database...</option>';
+                    databases.forEach(db => {
+                        const option = document.createElement('option');
+                        option.value = db;
+                        option.textContent = db;
+                        selector.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading databases for selector:', error);
+                });
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 5px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+
+            // Set background color based on type
+            switch (type) {
+                case 'success':
+                    notification.style.backgroundColor = '#28a745';
+                    break;
+                case 'error':
+                    notification.style.backgroundColor = '#dc3545';
+                    break;
+                case 'warning':
+                    notification.style.backgroundColor = '#ffc107';
+                    notification.style.color = '#212529';
+                    break;
+                default:
+                    notification.style.backgroundColor = '#17a2b8';
+            }
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // Add animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .template-item {
+                background: #f8f9fa;
+                border: 1px solid #e9ecef;
+                border-radius: 5px;
+                padding: 12px;
+                margin-bottom: 10px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .template-item:hover {
+                background: #e9ecef;
+                border-color: #667eea;
+            }
+            .template-name {
+                margin: 0 0 5px 0;
+                font-size: 14px;
+                color: #2c3e50;
+                font-weight: 600;
+            }
+            .template-description {
+                margin: 0 0 8px 0;
+                font-size: 12px;
+                color: #6c757d;
+                line-height: 1.3;
+            }
+            .template-preview {
+                display: block;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 11px;
+                color: #2c3e50;
+                background: white;
+                border: 1px solid #e9ecef;
+                border-radius: 3px;
+                padding: 6px;
+                line-height: 1.3;
+            }
+        `;
+        document.head.appendChild(style);
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing application...');
+            
+            // Initialize database admin
+            try {
+                if (typeof DatabaseAdmin !== 'undefined') {
+                    window.dbAdmin = new DatabaseAdmin();
+                    console.log('DatabaseAdmin initialized successfully');
+                } else {
+                    console.warn('DatabaseAdmin class not available');
+                }
+            } catch (error) {
+                console.error('Error initializing DatabaseAdmin:', error);
+            }
+            
+            // Initialize query management
+            try {
+                // Initialize query editor
+                if (typeof QueryEditor !== 'undefined') {
+                    window.queryEditor = new QueryEditor('advanced-sql-editor');
+                    console.log('QueryEditor initialized successfully');
+                } else {
+                    console.warn('QueryEditor class not available');
+                }
+                
+                // Initialize query executor
+                if (typeof QueryExecutor !== 'undefined') {
+                    window.queryExecutor = new QueryExecutor();
+                    console.log('QueryExecutor initialized successfully');
+                } else {
+                    console.warn('QueryExecutor class not available');
+                }
+                
+                // Initialize query history
+                if (typeof QueryHistory !== 'undefined') {
+                    window.queryHistory = new QueryHistory();
+                    console.log('QueryHistory initialized successfully');
+                } else {
+                    console.warn('QueryHistory class not available');
+                }
+                
+                // Load query templates
+                initializeQueryTemplates();
+                
+                // Setup database selector
+                loadDatabaseSelector();
+                
+            } catch (error) {
+                console.error('Error initializing query management:', error);
+            }
+            
             checkConnection();
             loadDatabasesEnhanced();
         });
     </script>
+    
+    <!-- CodeMirror for SQL Editor -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/lib/codemirror.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/theme/default.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/addon/hint/show-hint.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/mode/sql/sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/addon/hint/sql-hint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/addon/edit/closebrackets.min.js"></script>
+    
+    <!-- Query Management Modules -->
+    <script src="js/query-editor.js"></script>
+    <script src="js/query-executor.js"></script>
+    <script src="js/query-history.js"></script>
+    
+    <!-- Existing Modules -->
+    <script src="components/tree-view.js"></script>
     <script src="js/database-admin.js"></script>
+    <script src="js/schema-browser.js"></script>
+    <script src="js/schema-designer.js"></script>
 </body>
 </html> 

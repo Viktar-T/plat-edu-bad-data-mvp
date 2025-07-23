@@ -5,7 +5,8 @@
 
 class DatabaseAdmin {
     constructor() {
-        this.influxUrl = 'http://localhost:8086';
+        // Use relative URL to work with nginx proxy and avoid CORS
+        this.influxUrl = window.location.protocol + '//' + window.location.host;
         this.currentDatabase = null;
         this.databases = [];
         this.backups = [];
@@ -89,20 +90,27 @@ class DatabaseAdmin {
      */
     async loadDatabasesWithInfo() {
         try {
+            console.log('DatabaseAdmin: Loading databases...');
             this.showProgressIndicator('Loading databases...');
             
             const response = await fetch(`${this.influxUrl}/api/v3/configure/database?format=json`);
+            console.log('DatabaseAdmin: API response:', response.status, response.statusText);
             
             if (!response.ok) {
-                throw new Error('Failed to load databases');
+                const errorText = await response.text();
+                console.error('DatabaseAdmin: API error:', errorText);
+                throw new Error(`Failed to load databases: ${response.status} ${errorText}`);
             }
 
             const data = await response.json();
+            console.log('DatabaseAdmin: Raw response data:', data);
             this.databases = data.databases || [];
+            console.log('DatabaseAdmin: Found databases:', this.databases);
             
             // Enhance with metadata
             const enhancedDatabases = await Promise.all(
                 this.databases.map(async (dbName) => {
+                    console.log(`DatabaseAdmin: Enhancing database ${dbName}...`);
                     const metadata = this.getDatabaseMetadata(dbName);
                     const stats = await this.getDatabaseStats(dbName);
                     
@@ -114,10 +122,12 @@ class DatabaseAdmin {
                 })
             );
 
+            console.log('DatabaseAdmin: Enhanced databases:', enhancedDatabases);
             this.hideProgressIndicator();
             return enhancedDatabases;
             
         } catch (error) {
+            console.error('DatabaseAdmin: Error loading databases:', error);
             this.hideProgressIndicator();
             this.showNotification(`Error loading databases: ${error.message}`, 'error');
             throw error;
