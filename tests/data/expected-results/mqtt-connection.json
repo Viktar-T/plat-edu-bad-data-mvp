@@ -1,0 +1,91 @@
+{
+  "mqttConnection": {
+    "testCases": [
+      {
+        "name": "valid_connection",
+        "expected": {
+          "connected": true,
+          "error": null,
+          "responseTime": "< 5000ms"
+        }
+      },
+      {
+        "name": "invalid_credentials",
+        "expected": {
+          "connected": false,
+          "error": "Connection refused: Bad username or password",
+          "responseTime": "< 3000ms"
+        }
+      },
+      {
+        "name": "invalid_host",
+        "expected": {
+          "connected": false,
+          "error": "Connection refused",
+          "responseTime": "< 10000ms"
+        }
+      }
+    ],
+    "validation": {
+      "requiredFields": ["connected", "error", "responseTime"],
+      "responseTimeThreshold": 10000
+    }
+  },
+  "mqttMessaging": {
+    "testCases": [
+      {
+        "name": "publish_message",
+        "expected": {
+          "published": true,
+          "messageId": "number",
+          "qos": 1,
+          "responseTime": "< 1000ms"
+        }
+      },
+      {
+        "name": "subscribe_topic",
+        "expected": {
+          "subscribed": true,
+          "topics": ["devices/+/+/data"],
+          "qos": 1,
+          "responseTime": "< 1000ms"
+        }
+      },
+      {
+        "name": "receive_message",
+        "expected": {
+          "received": true,
+          "topic": "string",
+          "payload": "object",
+          "qos": 1,
+          "retain": false
+        }
+      }
+    ]
+  },
+  "mqttAuthentication": {
+    "testCases": [
+      {
+        "name": "valid_username_password",
+        "expected": {
+          "authenticated": true,
+          "error": null
+        }
+      },
+      {
+        "name": "invalid_username",
+        "expected": {
+          "authenticated": false,
+          "error": "Bad username or password"
+        }
+      },
+      {
+        "name": "invalid_password",
+        "expected": {
+          "authenticated": false,
+          "error": "Bad username or password"
+        }
+      }
+    ]
+  }
+} 

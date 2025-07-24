@@ -1,0 +1,60 @@
+{
+  "name": "renewable-energy-iot-tests",
+  "version": "1.0.0",
+  "description": "Test suite for renewable energy IoT monitoring system",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --verbose --json --outputFile=reports/javascript-results.json",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:mqtt": "jest mqtt/",
+    "test:nodered": "jest node-red/",
+    "test:grafana": "jest grafana/",
+    "test:influxdb": "jest influxdb/",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "keywords": [
+    "iot",
+    "mqtt",
+    "influxdb",
+    "grafana",
+    "node-red",
+    "renewable-energy",
+    "testing"
+  ],
+  "author": "Renewable Energy IoT Team",
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^5.3.5",
+    "axios": "^1.6.0",
+    "influx": "^5.9.0",
+    "ws": "^8.14.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.54.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "collectCoverageFrom": [
+      "javascript/**/*.js",
+      "!javascript/**/*.test.js",
+      "!javascript/utils/mocks.js"
+    ],
+    "coverageDirectory": "reports/coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "testTimeout": 30000,
+    "verbose": true
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+} 

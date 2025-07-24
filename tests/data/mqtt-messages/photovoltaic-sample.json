@@ -1,0 +1,62 @@
+[
+  {
+    "topic": "devices/photovoltaic/pv001/data",
+    "payload": {
+      "timestamp": "2024-01-01T06:00:00Z",
+      "device_id": "pv001",
+      "device_type": "photovoltaic",
+      "power_output": 0.0,
+      "voltage": 0.0,
+      "current": 0.0,
+      "temperature": 15.2,
+      "efficiency": 0.0,
+      "irradiance": 0.0,
+      "status": "idle"
+    }
+  },
+  {
+    "topic": "devices/photovoltaic/pv001/data",
+    "payload": {
+      "timestamp": "2024-01-01T12:00:00Z",
+      "device_id": "pv001",
+      "device_type": "photovoltaic",
+      "power_output": 2500.5,
+      "voltage": 48.2,
+      "current": 51.9,
+      "temperature": 45.3,
+      "efficiency": 18.5,
+      "irradiance": 850.2,
+      "status": "generating"
+    }
+  },
+  {
+    "topic": "devices/photovoltaic/pv001/data",
+    "payload": {
+      "timestamp": "2024-01-01T18:00:00Z",
+      "device_id": "pv001",
+      "device_type": "photovoltaic",
+      "power_output": 1200.8,
+      "voltage": 46.8,
+      "current": 25.7,
+      "temperature": 38.1,
+      "efficiency": 16.2,
+      "irradiance": 420.5,
+      "status": "generating"
+    }
+  },
+  {
+    "topic": "devices/photovoltaic/pv002/data",
+    "payload": {
+      "timestamp": "2024-01-01T12:00:00Z",
+      "device_id": "pv002",
+      "device_type": "photovoltaic",
+      "power_output": 2800.3,
+      "voltage": 49.1,
+      "current": 57.0,
+      "temperature": 47.8,
+      "efficiency": 19.2,
+      "irradiance": 920.1,
+      "status": "generating"
+    }
+  }
+] 

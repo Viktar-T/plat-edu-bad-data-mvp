@@ -1,7 +1,7 @@
 # Test Directory Structure Setup for MVP
 
 ## Objective
-Create a Docker-based, incremental test directory structure for the renewable energy IoT monitoring system MVP, starting with JavaScript tests and gradually adding Python, SQL, and Shell tests. **Focus on testing the actual programs running in your main containers (Node-RED flows, real MQTT communication, InfluxDB operations, Grafana dashboards).**
+Create a Docker-based, incremental test directory structure for the renewable energy IoT monitoring system MVP, starting with JavaScript tests and gradually adding Python, SQL, and Shell tests. **Focus on testing the actual programs running in main containers (Node-RED flows, real MQTT communication, InfluxDB operations, Grafana dashboards).**. Don't write tests. create only placeholder files as outlined in the document.
 
 ## Context
 This is Phase 1 of our incremental testing approach. We're using JavaScript/Node.js with Docker containerization. **The main docker-compose.yml should be carefully analyzed to understand the actual services, ports, volumes, and configurations that need to be tested.**
@@ -231,6 +231,7 @@ echo "✅ All tests completed successfully!"
 - **Ensure tests connect to actual running services from main docker-compose.yml**
 
 ## Implementation Notes
+- Don't write tests.
 - Create directories incrementally as you add test types
 - Use consistent naming conventions across all languages
 - Implement unified reporting format (JSON) for all test types
@@ -239,4 +240,4 @@ echo "✅ All tests completed successfully!"
 - Use Docker health checks for service dependencies
 - Implement basic logging for debugging and monitoring
 - **Carefully analyze main docker-compose.yml for service configurations, ports, and network settings**
-- **Test against actual Node-RED flows, MQTT communication, InfluxDB operations, and Grafana dashboards** 
+- Don't write tests. placeholder files as outlined in the document.

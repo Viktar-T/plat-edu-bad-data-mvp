@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: iot-test-runner
+    environment:
+      # Test environment
+      - NODE_ENV=test
+      - PYTHONPATH=/app
+      
+      # Service connections (from main docker-compose.yml)
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_ADMIN_USER:-admin}
+      - MQTT_PASSWORD=${MQTT_ADMIN_PASSWORD:-admin_password_456}
+      
+      - NODE_RED_HOST=node-red
+      - NODE_RED_PORT=1880
+      - NODE_RED_USERNAME=admin
+      - NODE_RED_PASSWORD=adminpassword
+      
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-renewable-energy}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-iot-data}
+      
+      - GRAFANA_HOST=grafana
+      - GRAFANA_PORT=3000
+      - GRAFANA_USERNAME=${GRAFANA_ADMIN_USER:-admin}
+      - GRAFANA_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      
+      # Test configuration
+      - TEST_TIMEOUT=30000
+      - TEST_RETRIES=3
+      - TEST_DELAY=1000
+      
+    volumes:
+      - ./tests:/app/tests
+      - ./reports:/app/reports
+      - ./data:/app/data
+      
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      node-red:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+        
+    networks:
+      - iot-network
+      
+    restart: "no"
+    
+    # Health check for test runner
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'console.log(\"Test runner ready\")'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  iot-network:
+    external: true
+    name: plat-edu-bad-data-mvp_iot-network 
