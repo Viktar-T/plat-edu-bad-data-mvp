@@ -1,23 +1,25 @@
 # Test Directory Structure Setup for MVP
 
 ## Objective
-Create a Docker-based, incremental test directory structure for the renewable energy IoT monitoring system MVP, starting with JavaScript tests and gradually adding Python, SQL, and Shell tests.
+Create a Docker-based, incremental test directory structure for the renewable energy IoT monitoring system MVP, starting with JavaScript tests and gradually adding Python, SQL, and Shell tests. **Focus on testing the actual programs running in your main containers (Node-RED flows, real MQTT communication, InfluxDB operations, Grafana dashboards).**
 
 ## Context
-This is an MVP project using Docker containerization for consistent environments. We're following an incremental approach: JavaScript → Python → SQL → Shell, with sequential test execution.
+This is Phase 1 of our incremental testing approach. We're using JavaScript/Node.js with Docker containerization. **The main docker-compose.yml should be carefully analyzed to understand the actual services, ports, volumes, and configurations that need to be tested.**
 
 ## Scope
-- Docker-based test environment setup
+- Docker-based test environment setup that integrates with main containers
 - Incremental test directory organization (JavaScript first, then Python, SQL, Shell)
 - Test configuration management with environment variables
 - Sequential test execution orchestration
 - Basic reporting and error handling for MVP
+- **Integration with actual running services from main docker-compose.yml**
 
 ## Approach
 **Primary Language**: JavaScript/Node.js (Phase 1)
 **Secondary Languages**: Python, SQL, Shell (Phases 2-4)
 **Containerization**: Docker with multi-stage builds
 **Execution**: Sequential with unified reporting
+**Integration**: **Test against actual running services from main docker-compose.yml**
 
 ## Success Criteria
 - Docker container runs all test types consistently
@@ -26,6 +28,7 @@ This is an MVP project using Docker containerization for consistent environments
 - Single command runs entire test suite
 - Clear test results and error reporting
 - MVP-appropriate complexity and scope
+- **Tests successfully connect to and validate actual running services**
 
 ## Implementation Strategy
 
@@ -34,7 +37,7 @@ This is an MVP project using Docker containerization for consistent environments
 tests/
 ├── README.md                           # Test strategy overview
 ├── package.json                        # JavaScript dependencies
-├── docker-compose.test.yml            # Test environment
+├── docker-compose.test.yml            # Test environment setup
 ├── run-tests.sh                       # Sequential test runner
 ├── config/
 │   ├── test-env.json                  # Environment variables
@@ -149,12 +152,25 @@ services:
     environment:
       - NODE_ENV=test
       - PYTHONPATH=/app
+      # Connect to actual services from main docker-compose.yml
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - NODE_RED_HOST=node-red
+      - NODE_RED_PORT=1880
+      - INFLUXDB_HOST=influxdb
+      - INFLUXDB_PORT=8086
+      - GRAFANA_HOST=grafana
+      - GRAFANA_PORT=3000
     volumes:
       - ./tests:/app/tests
       - ./reports:/app/reports
     depends_on:
-      - influxdb-test
-      - mosquitto-test
+      - mosquitto
+      - node-red
+      - influxdb
+      - grafana
+    networks:
+      - iot-network
 ```
 
 ## Test Execution Script
@@ -212,6 +228,7 @@ echo "✅ All tests completed successfully!"
 - Implement basic but effective reporting
 - Use environment variables for configuration
 - Keep error handling simple but functional
+- **Ensure tests connect to actual running services from main docker-compose.yml**
 
 ## Implementation Notes
 - Create directories incrementally as you add test types
@@ -220,4 +237,6 @@ echo "✅ All tests completed successfully!"
 - Keep test data realistic but manageable for MVP
 - Focus on critical path testing rather than comprehensive coverage
 - Use Docker health checks for service dependencies
-- Implement basic logging for debugging and monitoring 
+- Implement basic logging for debugging and monitoring
+- **Carefully analyze main docker-compose.yml for service configurations, ports, and network settings**
+- **Test against actual Node-RED flows, MQTT communication, InfluxDB operations, and Grafana dashboards** 

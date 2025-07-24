@@ -1,7 +1,0 @@
-{
-  "MQTT_BROKER_URL": "mqtt://mosquitto-test:1883",
-  "INFLUXDB_URL": "http://influxdb-test:8086",
-  "INFLUXDB_TOKEN": "testtoken",
-  "INFLUXDB_ORG": "testorg",
-  "INFLUXDB_BUCKET": "testbucket"
-} 

@@ -1,2 +1,0 @@
-# Placeholder for Python test dependencies
-# e.g., pytest, pytest-json-report 

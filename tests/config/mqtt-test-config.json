@@ -1,7 +1,0 @@
-{
-  "broker": "mqtt://mosquitto-test:1883",
-  "topic": "devices/test/#",
-  "qos": 1,
-  "retain": false,
-  "testMessages": 10
-} 
