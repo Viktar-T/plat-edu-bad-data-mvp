@@ -1,17 +1,12 @@
-version: '3.8'
-
-services:
+﻿services:
   test-runner:
-    build:
-      context: .
-      dockerfile: Dockerfile.test
+    image: node:18-alpine
     container_name: iot-test-runner
     environment:
       # Test environment
       - NODE_ENV=test
-      - PYTHONPATH=/app
       
-      # Service connections (from main docker-compose.yml)
+      # Service connections
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
       - MQTT_USERNAME=${MQTT_ADMIN_USER:-admin}
@@ -39,34 +34,23 @@ services:
       - TEST_DELAY=1000
       
     volumes:
-      - ./tests:/app/tests
-      - ./reports:/app/reports
-      - ./data:/app/data
+      - ./javascript:/app/javascript
+      - ./config:/app/config
+      - ./test-results:/app/test-results
+      - ./package.json:/app/package.json
+      - ./jest.setup.js:/app/jest.setup.js
       
-    depends_on:
-      mosquitto:
-        condition: service_healthy
-      node-red:
-        condition: service_healthy
-      influxdb:
-        condition: service_healthy
-      grafana:
-        condition: service_healthy
-        
+    working_dir: /app
+      
     networks:
       - iot-network
       
     restart: "no"
     
-    # Health check for test runner
-    healthcheck:
-      test: ["CMD-SHELL", "node -e 'console.log(\"Test runner ready\")'"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
+    # Simple: install and run all tests
+    command: sh -c "npm install && npm test"
 
 networks:
   iot-network:
     external: true
-    name: plat-edu-bad-data-mvp_iot-network 
+    name: plat-edu-bad-data-mvp_iot-network

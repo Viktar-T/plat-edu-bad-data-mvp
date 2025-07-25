@@ -1,92 +1,41 @@
 {
-  "testEnvironment": {
-    "timeout": 30000,
-    "retries": 3,
-    "delay": 1000,
-    "logLevel": "info"
-  },
   "services": {
     "mqtt": {
       "host": "mosquitto",
       "port": 1883,
       "username": "admin",
       "password": "admin_password_456",
-      "topics": {
-        "photovoltaic": "devices/photovoltaic/+/data",
-        "windTurbine": "devices/wind_turbine/+/data",
-        "biogasPlant": "devices/biogas_plant/+/data",
-        "heatBoiler": "devices/heat_boiler/+/data",
-        "energyStorage": "devices/energy_storage/+/data",
-        "system": "system/+/status"
-      }
+      "websocketPort": 9001
+    },
+    "influxdb": {
+      "host": "influxdb",
+      "port": 8086,
+      "database": "iot_data",
+      "username": "admin",
+      "password": "admin_password_456"
     },
     "nodeRed": {
       "host": "node-red",
       "port": 1880,
       "username": "admin",
-      "password": "adminpassword",
-      "endpoints": {
-        "health": "/health",
-        "flows": "/flows",
-        "nodes": "/nodes"
-      }
-    },
-    "influxdb": {
-      "host": "influxdb",
-      "port": 8086,
-      "token": "",
-      "org": "renewable-energy",
-      "bucket": "iot-data",
-      "measurements": {
-        "photovoltaic": "photovoltaic_data",
-        "windTurbine": "wind_turbine_data",
-        "biogasPlant": "biogas_plant_data",
-        "heatBoiler": "heat_boiler_data",
-        "energyStorage": "energy_storage_data"
-      }
+      "password": "admin_password_456"
     },
     "grafana": {
       "host": "grafana",
       "port": 3000,
       "username": "admin",
-      "password": "admin",
-      "endpoints": {
-        "health": "/api/health",
-        "dashboards": "/api/dashboards",
-        "datasources": "/api/datasources"
-      }
+      "password": "admin_password_456"
     }
   },
-  "testData": {
-    "deviceTypes": [
-      "photovoltaic",
-      "wind_turbine",
-      "biogas_plant",
-      "heat_boiler",
-      "energy_storage"
-    ],
-    "sampleSize": 10,
-    "timeRange": {
-      "start": "2024-01-01T00:00:00Z",
-      "end": "2024-01-02T00:00:00Z"
-    }
+  "healthChecks": {
+    "timeout": 10000,
+    "retries": 3,
+    "interval": 2000,
+    "maxResponseTime": 5000
   },
-  "validation": {
-    "dataQuality": {
-      "requiredFields": ["timestamp", "device_id", "device_type"],
-      "numericRanges": {
-        "temperature": [-50, 100],
-        "power": [0, 10000],
-        "voltage": [0, 1000],
-        "current": [0, 100],
-        "efficiency": [0, 100]
-      }
-    },
-    "businessRules": {
-      "maxPowerOutput": 10000,
-      "minEfficiency": 0,
-      "maxTemperature": 100,
-      "dataFreshness": 300
-    }
+  "testEnvironment": {
+    "network": "plat-edu-bad-data-mvp_iot-network",
+    "containerPrefix": "test-",
+    "logLevel": "info"
   }
 } 

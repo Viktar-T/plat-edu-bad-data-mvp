@@ -12,6 +12,10 @@ reports/*.html
 reports/test-logs/
 reports/coverage/
 
+# MQTT test results (exclude all except sample)
+tests/javascript/mqtt/test-results/*.md
+!tests/javascript/mqtt/test-results/SAMPLE_LOG.md
+
 # Python
 __pycache__/
 *.py[cod]

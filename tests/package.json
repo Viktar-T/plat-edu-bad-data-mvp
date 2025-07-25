@@ -7,6 +7,7 @@
     "test": "jest --verbose --json --outputFile=reports/javascript-results.json",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:health": "jest health/",
     "test:mqtt": "jest mqtt/",
     "test:nodered": "jest node-red/",
     "test:grafana": "jest grafana/",
@@ -43,6 +44,8 @@
   "jest": {
     "testEnvironment": "node",
     "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "maxWorkers": 1,
+    "runInBand": true,
     "collectCoverageFrom": [
       "javascript/**/*.js",
       "!javascript/**/*.test.js",
