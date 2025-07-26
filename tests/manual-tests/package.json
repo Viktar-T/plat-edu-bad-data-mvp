@@ -1,0 +1,28 @@
+{
+  "name": "iot-manual-tests",
+  "version": "1.0.0",
+  "description": "Manual testing utilities for IoT Renewable Energy Monitoring System",
+  "main": "index.js",
+  "scripts": {
+    "test-mqtt": "node test-mqtt.js",
+    "simulate": "node simulate-devices.js"
+  },
+  "keywords": [
+    "iot",
+    "mqtt",
+    "testing",
+    "renewable-energy",
+    "manual-tests"
+  ],
+  "author": "Renewable Energy IoT Team",
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^5.3.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

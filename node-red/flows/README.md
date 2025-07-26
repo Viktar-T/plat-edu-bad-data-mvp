@@ -11,6 +11,7 @@ These files use a custom format and should NOT be imported directly into Node-RE
 - `heat-boiler-simulation.json` - Heat boiler simulation
 - `biogas-plant-simulation.json` - Biogas plant simulation
 - `wind-turbine-simulation.json` - Wind turbine simulation
+- `pv-simulation.json` - Photovoltaic panel simulation
 
 ### Converted Files (Proper Node-RED Format)
 These files are properly formatted for Node-RED import:
@@ -19,6 +20,7 @@ These files are properly formatted for Node-RED import:
 - `heat-boiler-simulation-converted.json` - Heat boiler simulation (9 nodes)
 - `biogas-plant-simulation-converted.json` - Biogas plant simulation (9 nodes)
 - `wind-turbine-simulation-converted.json` - Wind turbine simulation (9 nodes)
+- `pv-simulation-converted.json` - Photovoltaic simulation (9 nodes)
 - `renewable-energy-simulation-fixed.json` - Alternative complete simulation (341 lines)
 
 ## Import Instructions
@@ -43,6 +45,13 @@ Each individual simulation contains:
 - **Nodes**: 9 total
 - **Components**: Inject node, data generator function, MQTT output, validation, error handling, InfluxDB storage
 - **Use Case**: Testing specific device types or development
+
+**Available Individual Simulations:**
+- **Photovoltaic (`pv-simulation.json`)**: Solar panel data with irradiance, temperature, voltage, current, power output, and efficiency calculations
+- **Wind Turbine (`wind-turbine-simulation.json`)**: Wind turbine data with wind speed, direction, rotor speed, vibration, and power output
+- **Biogas Plant (`biogas-plant-simulation.json`)**: Biogas plant data with gas flow, methane concentration, temperature, and power output
+- **Heat Boiler (`heat-boiler-simulation.json`)**: Heat boiler data with temperature, pressure, flow rate, and efficiency
+- **Energy Storage (`energy-storage-simulation.json`)**: Battery storage data with state of charge, voltage, current, and temperature
 
 ### Node Types Summary:
 - **inject**: Timer nodes (30-second intervals)

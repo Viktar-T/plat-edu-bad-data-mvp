@@ -57,7 +57,7 @@
     "userProps": "",
     "correl": "",
     "expiry": "",
-    "broker": "mqtt-broker",
+    "broker": "mqtt-broker-config",
     "x": 520,
     "y": 80,
     "wires": []
@@ -127,7 +127,7 @@
     "precisionV18FluxV20": "ms",
     "retentionPolicyV18Flux": "",
     "org": "renewable_energy",
-    "bucket": "iot_data",
+    "bucket": "renewable_energy",
     "x": 720,
     "y": 120,
     "wires": []
@@ -150,7 +150,7 @@
     "wires": []
   },
   {
-    "id": "mqtt-broker",
+    "id": "mqtt-broker-config",
     "type": "mqtt-broker",
     "name": "MQTT Broker",
     "broker": "mosquitto",
@@ -182,15 +182,15 @@
     "hostname": "influxdb",
     "port": "8086",
     "protocol": "http",
-    "database": "iot_data",
+    "database": "renewable_energy",
     "name": "InfluxDB",
     "usetls": false,
     "tls": "",
     "influxdbVersion": "2.0",
     "url": "http://influxdb:8086",
     "rejectUnauthorized": false,
-    "token": "your-influxdb-token",
+    "token": "",
     "organization": "renewable_energy",
-    "bucket": "iot_data"
+    "bucket": "renewable_energy"
   }
 ]

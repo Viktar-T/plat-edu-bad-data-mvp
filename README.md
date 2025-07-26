@@ -62,7 +62,13 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
    - MQTT: localhost:1883 -- Not browsable (MQTT protocol only)
 
 6. **Test MQTT connectivity**
-   ```bash
+   ```powershell
+   # For Windows PowerShell
+   cd tests\manual-tests
+   npm install
+   .\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
+   
+   # For Linux/macOS
    ./scripts/mqtt-test.sh
    ```
 
@@ -85,10 +91,15 @@ plat-edu-bad-data-mvp/
 ├── node-red/                   # Node-RED configuration
 ├── influxdb/                   # InfluxDB configuration
 ├── grafana/                    # Grafana configuration
-└── scripts/                    # Utility scripts
-    ├── setup-mqtt.sh          # MQTT setup script
-    ├── mqtt-test.sh           # MQTT connectivity testing
-    └── simulate-devices.sh    # Device simulation
+├── scripts/                    # Utility scripts
+│   ├── setup-mqtt.sh          # MQTT setup script
+│   ├── mqtt-test.sh           # MQTT connectivity testing (Linux/macOS)
+│   └── simulate-devices.sh    # Device simulation (Linux/macOS)
+└── tests/                     # Testing framework
+    └── manual-tests/          # Manual testing procedures
+        ├── test-mqtt.ps1      # MQTT testing (Windows PowerShell)
+        ├── simulate-devices.ps1 # Device simulation (Windows PowerShell)
+        └── package.json       # Node.js dependencies for testing
 ```
 
 ## 🔐 MQTT Configuration
@@ -138,6 +149,17 @@ system/alerts/critical
 
 ### MQTT Connectivity Testing
 
+#### Windows PowerShell Testing
+The `tests/manual-tests/` directory contains PowerShell scripts for Windows:
+
+```powershell
+cd tests\manual-tests
+npm install
+.\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
+.\simulate-devices.ps1 -AllDevices -Duration 60
+```
+
+#### Linux/macOS Testing
 The `scripts/mqtt-test.sh` script provides comprehensive testing:
 
 ```bash
