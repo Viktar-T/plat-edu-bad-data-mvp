@@ -30,6 +30,30 @@ npm install
 - MQTT package installed successfully
 - No error messages
 
+#### 0.1 MQTT Broker Health Check
+**Command:**
+```powershell
+# Using PowerShell MQTT test script
+.\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
+```
+
+#### 0.2 example of Manual MQTT Communication
+**Explanation**
+
+**Command:**
+```powershell
+# Publish a message
+.\test-mqtt.ps1 -PublishTest -MqttHost "localhost" -Topic "test/hello" -Message "Hello World!"
+
+# Subscribe to a topic
+.\test-mqtt.ps1 -Subscribe -MqttHost "localhost" -Topic "test/hello"
+```
+
+**Expected Result:**
+Terminal 1 (Publisher): You published messages to the test/hello topic
+Terminal 2 (Subscriber): You subscribed to the same topic and received all published messages
+MQTT Broker: Your Mosquitto broker (running on localhost:1883) acted as the central message router
+
 #### 0.2 Test PowerShell Scripts
 **Command:**
 ```powershell

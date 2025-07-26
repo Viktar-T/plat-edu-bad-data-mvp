@@ -42,8 +42,6 @@ iot-grafana         "/run.sh"                grafana             Up (healthy)   
 **Command:**
 ```powershell
 # Using PowerShell MQTT test script
-cd tests\manual-tests
-npm install
 .\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
 ```
 
