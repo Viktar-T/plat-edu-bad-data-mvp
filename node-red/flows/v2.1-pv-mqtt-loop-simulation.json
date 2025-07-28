@@ -1,0 +1,274 @@
+[
+    {
+        "id": "58be868fa28ddd6f",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "pv-inject-30s",
+        "type": "inject",
+        "z": "58be868fa28ddd6f",
+        "name": "30s Interval",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 410,
+        "y": 280,
+        "wires": [
+            [
+                "pv-simulation-function"
+            ]
+        ]
+    },
+    {
+        "id": "pv-simulation-function",
+        "type": "function",
+        "z": "58be868fa28ddd6f",
+        "name": "PV Data Generator",
+        "func": "// Photovoltaic Panel Data Simulation\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Solar irradiance model (W/m²)\nfunction calculateIrradiance() {\n    const seasonalFactor = 0.5 + 0.5 * Math.cos(2 * Math.PI * (dayOfYear - 172) / 365);\n    const solarNoon = 12;\n    const dailyFactor = Math.max(0, Math.cos(Math.PI * (hour - solarNoon) / 12));\n    const baseIrradiance = 1000;\n    const noise = (Math.random() - 0.5) * 50;\n    return Math.max(0, baseIrradiance * seasonalFactor * dailyFactor + noise);\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 25;\n    const irradiance = calculateIrradiance();\n    const tempRise = irradiance * 0.03;\n    const ambientTemp = 20 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const noise = (Math.random() - 0.5) * 5;\n    return baseTemp + tempRise + ambientTemp + noise;\n}\n\n// Voltage model (V)\nfunction calculateVoltage() {\n    const baseVoltage = 48;\n    const temp = calculateTemperature();\n    const tempCoeff = -0.003;\n    const voltageVariation = baseVoltage * tempCoeff * (temp - 25) / 100;\n    const noise = (Math.random() - 0.5) * 2;\n    return Math.max(0, baseVoltage + voltageVariation + noise);\n}\n\n// Current model (A)\nfunction calculateCurrent() {\n    const irradiance = calculateIrradiance();\n    const baseCurrent = 12;\n    const currentVariation = baseCurrent * (irradiance / 1000);\n    const noise = (Math.random() - 0.5) * 0.5;\n    return Math.max(0, currentVariation + noise);\n}\n\n// Power output model (W)\nfunction calculatePowerOutput() {\n    const voltage = calculateVoltage();\n    const current = calculateCurrent();\n    const temp = calculateTemperature();\n    const tempEfficiency = 1 - 0.004 * (temp - 25);\n    const agingFactor = 0.98;\n    return Math.max(0, voltage * current * tempEfficiency * agingFactor);\n}\n\n// Generate data with fault scenarios\nfunction generatePVData() {\n    const faultProbability = 0.001;\n    const isFault = Math.random() < faultProbability;\n    \n    let irradiance = calculateIrradiance();\n    let temperature = calculateTemperature();\n    let voltage = calculateVoltage();\n    let current = calculateCurrent();\n    let powerOutput = calculatePowerOutput();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 3);\n        switch (faultType) {\n            case 0: // Shading fault\n                irradiance *= 0.3;\n                current *= 0.3;\n                powerOutput *= 0.3;\n                break;\n            case 1: // Temperature fault\n                temperature += 30;\n                voltage *= 0.8;\n                powerOutput *= 0.7;\n                break;\n            case 2: // Connection fault\n                voltage *= 0.5;\n                current *= 0.5;\n                powerOutput *= 0.25;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `pv_${String(Math.floor(Math.random() * 10) + 1).padStart(3, '0')}`,\n        device_type: 'photovoltaic',\n        timestamp: now.toISOString(),\n        data: {\n            irradiance: Math.round(irradiance * 100) / 100,\n            temperature: Math.round(temperature * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_a',\n        fault_type: isFault ? ['shading', 'temperature', 'connection'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst pvData = generatePVData();\nmsg.payload = pvData;\nmsg.topic = `devices/photovoltaic/${pvData.device_id}/telemetry`;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 280,
+        "wires": [
+            [
+                "pv-mqtt-output",
+                "3e0c33a4b367169c"
+            ]
+        ]
+    },
+    {
+        "id": "pv-mqtt-output",
+        "type": "mqtt out",
+        "z": "58be868fa28ddd6f",
+        "name": "MQTT Output (Publish)",
+        "topic": "",
+        "qos": "1",
+        "retain": false,
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt-broker-config",
+        "x": 930,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "pv-mqtt-input",
+        "type": "mqtt in",
+        "z": "58be868fa28ddd6f",
+        "name": "MQTT Input (Subscribe)",
+        "topic": "devices/photovoltaic/+/telemetry",
+        "qos": "1",
+        "datatype": "json",
+        "broker": "mqtt-broker-config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 320,
+        "y": 560,
+        "wires": [
+            [
+                "pv-validation",
+                "f0276369ace128ae"
+            ]
+        ]
+    },
+    {
+        "id": "pv-validation",
+        "type": "function",
+        "z": "58be868fa28ddd6f",
+        "name": "Data Validation",
+        "func": "// Validate photovoltaic data received from MQTT\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    irradiance: { min: 0, max: 1200 },\n    temperature: { min: -40, max: 100 },\n    voltage: { min: 0, max: 100 },\n    current: { min: 0, max: 20 },\n    power_output: { min: 0, max: 1000 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.power_output > data.data.voltage * data.data.current * 1.1) {\n    errors.push('Power output exceeds voltage * current');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 570,
+        "y": 560,
+        "wires": [
+            [
+                "pv-error-handling"
+            ]
+        ]
+    },
+    {
+        "id": "pv-error-handling",
+        "type": "switch",
+        "z": "58be868fa28ddd6f",
+        "name": "Error Check",
+        "property": "status",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "valid",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "invalid",
+                "vt": "str"
+            }
+        ],
+        "repair": false,
+        "outputs": 2,
+        "x": 770,
+        "y": 560,
+        "wires": [
+            [
+                "pv-influxdb",
+                "e626b07cd63a58cb"
+            ],
+            [
+                "pv-error-log"
+            ]
+        ]
+    },
+    {
+        "id": "pv-influxdb",
+        "type": "influxdb out",
+        "z": "58be868fa28ddd6f",
+        "influxdb": "influxdb-config",
+        "name": "Store Data",
+        "measurement": "photovoltaic_data",
+        "precision": "ms",
+        "retentionPolicy": "",
+        "database": "",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "renewable_energy",
+        "bucket": "renewable_energy",
+        "x": 1110,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "pv-error-log",
+        "type": "debug",
+        "z": "58be868fa28ddd6f",
+        "name": "Error Log",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 680,
+        "wires": []
+    },
+    {
+        "id": "3e0c33a4b367169c",
+        "type": "debug",
+        "z": "58be868fa28ddd6f",
+        "name": "deb pv1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "f0276369ace128ae",
+        "type": "debug",
+        "z": "58be868fa28ddd6f",
+        "name": "deb pv2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 360,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "e626b07cd63a58cb",
+        "type": "debug",
+        "z": "58be868fa28ddd6f",
+        "name": "deb pv3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "mqtt-broker-config",
+        "type": "mqtt-broker",
+        "name": "MQTT Broker",
+        "broker": "mosquitto",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "influxdb-config",
+        "type": "influxdb",
+        "hostname": "influxdb",
+        "port": "8086",
+        "protocol": "http",
+        "database": "renewable_energy",
+        "name": "InfluxDB",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "rejectUnauthorized": false
+    }
+]
