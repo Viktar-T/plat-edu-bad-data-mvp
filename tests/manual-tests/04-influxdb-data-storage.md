@@ -1,16 +1,65 @@
 # Manual Test 04: InfluxDB Data Storage
 
 ## Overview
-This test verifies that InfluxDB is properly receiving, storing, and managing time-series data from the renewable energy monitoring system.
+This test verifies that InfluxDB 3.x is properly receiving, storing, and managing time-series data from the renewable energy monitoring system.
 
 ## Test Objective
-Ensure InfluxDB is correctly storing device data, maintaining data integrity, and providing proper query capabilities.
+Ensure InfluxDB 3.x is correctly storing device data, maintaining data integrity, and providing proper query capabilities.
 
 ## Prerequisites
 - Manual Test 01, 02, and 03 completed successfully
-- InfluxDB accessible at http://localhost:8086
+- InfluxDB 3.x accessible at http://localhost:8086
 - Node-RED flows sending data to InfluxDB
 - PowerShell available for API testing
+- InfluxDB CLI installed or access to InfluxDB container
+
+## InfluxDB 3.x Setup and Configuration
+
+### Note: Authentication Disabled
+Your InfluxDB 3.x instance is configured with `--without-auth`, which means authentication is disabled. This simplifies the testing process.
+
+### Verify InfluxDB 3.x Setup
+```powershell
+# Check InfluxDB health
+Invoke-WebRequest -Uri "http://localhost:8086/health" -Method GET -UseBasicParsing
+
+# Check InfluxDB version and status
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers @{"Content-Type"="application/json"} -Body '{"query":"buckets()","org":"renewable_energy_org"}' -UseBasicParsing
+```
+
+### Create Organization and Bucket (if needed)
+Since authentication is disabled, you can create resources directly via API:
+
+```powershell
+# Create organization (if needed)
+$orgData = @{
+    name = "renewable_energy_org"
+    description = "Renewable Energy Monitoring Organization"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers @{"Content-Type"="application/json"} -Body $orgData -UseBasicParsing
+
+# Create bucket (if needed)
+$bucketData = @{
+    name = "renewable_energy"
+    orgID = "renewable_energy_org"
+    retentionRules = @(
+        @{
+            type = "expire"
+            everySeconds = 2592000  # 30 days
+        }
+    )
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers @{"Content-Type"="application/json"} -Body $bucketData -UseBasicParsing
+```
+
+### Set Environment Variables
+```powershell
+# Since authentication is disabled, we don't need tokens
+$env:INFLUXDB_ORG = "renewable_energy_org"
+$env:INFLUXDB_BUCKET = "renewable_energy"
+```
 
 ## Test Steps
 
@@ -19,7 +68,7 @@ Ensure InfluxDB is correctly storing device data, maintaining data integrity, an
 #### 1.1 Check InfluxDB Health
 **Command:**
 ```powershell
-curl -f http://localhost:8086/health
+Invoke-WebRequest -Uri "http://localhost:8086/health" -Method GET -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -40,15 +89,27 @@ docker-compose ps influxdb
 
 ### Step 2: Test Database Schema and Buckets
 
-#### 2.1 Check Available Measurements
+#### 2.1 Check Available Buckets (InfluxDB 3.x)
 **Command:**
 ```powershell
-# List all measurements in the database (InfluxQL syntax for InfluxDB 3.x)
-$params = @{
-    db = "renewable_energy"
-    q = "SHOW MEASUREMENTS"
+# For InfluxDB 3.x, we need to use the InfluxDB CLI or API with proper authentication
+# Option 1: Using API to list buckets
+$headers = @{"Content-Type"="application/json"}
+$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Option 2: Using InfluxDB 3.x API (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# List buckets using InfluxDB 3.x API
+$body = @{
+    query = "buckets()"
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -56,33 +117,42 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - Should include buckets for different device types
 - No error messages
 
-#### 2.2 Verify Schema Structure
+#### 2.2 Verify Schema Structure (InfluxDB 3.x)
 **Command:**
 ```powershell
-# Check photovoltaic data schema (InfluxQL syntax for InfluxDB 3.x)
-$params = @{
-    db = "renewable_energy"
-    q = "SHOW MEASUREMENTS"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+# For InfluxDB 3.x, we need to use Flux query language
+# Option 1: Using API with Flux
+$headers = @{"Content-Type"="application/json"}
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> keys()"
+$body = @{query=$fluxQuery; org=$env:INFLUXDB_ORG} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
-# Check field keys for photovoltaic data
-$params = @{
-    db = "renewable_energy"
-    q = "SHOW FIELD KEYS FROM photovoltaic_data"
+# Option 2: Using API with Flux (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
 
-# Check tag keys for photovoltaic data
-$params = @{
-    db = "renewable_energy"
-    q = "SHOW TAG KEYS FROM photovoltaic_data"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+# Query to get measurement names (using Flux)
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> keys()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Query to get field keys for photovoltaic data
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> keys()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
-- Measurements list includes device types
+- Buckets list includes device types
 - Field keys match expected schema
 - Tag keys include device_id, location, status, etc.
 
@@ -107,17 +177,27 @@ $testData = @{
     location = "site_a"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $testData
+# Option 1: Using Docker exec to run mosquitto_pub inside the container
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $testData
+
+# Option 2: Using Node.js script if available
+# node scripts/send-mqtt-message.js devices/photovoltaic/pv_001/data $testData
 
 # Wait for processing
 Start-Sleep -Seconds 5
 
-# Query the data to verify it was stored
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE device_id='pv_001' ORDER BY time DESC LIMIT 1"
+# Query the data to verify it was stored (InfluxDB 3.x with Flux)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `pv_001`) |> last()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -143,7 +223,7 @@ $wtData = @{
     location = "site_b"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u wt_001 -P device_password_123 -t devices/wind_turbine/wt_001/data -m $wtData
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u wt_001 -P device_password_123 -t devices/wind_turbine/wt_001/data -m $wtData
 
 # Send biogas plant data
 $bgData = @{
@@ -160,23 +240,33 @@ $bgData = @{
     location = "site_c"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u bg_001 -P device_password_123 -t devices/biogas_plant/bg_001/data -m $bgData
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u bg_001 -P device_password_123 -t devices/biogas_plant/bg_001/data -m $bgData
 
 # Wait for processing
 Start-Sleep -Seconds 5
 
-# Query all device types
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM wind_turbine_data WHERE device_id='wt_001' ORDER BY time DESC LIMIT 1"
+# Query all device types (InfluxDB 3.x with Flux)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
 
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM biogas_plant_data WHERE device_id='bg_001' ORDER BY time DESC LIMIT 1"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+# Query wind turbine data
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `wt_001`) |> last()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Query biogas plant data
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `bg_001`) |> last()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -186,29 +276,40 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 
 ### Step 4: Test Data Querying
 
-#### 4.1 Test Basic Queries
+#### 4.1 Test Basic Queries (InfluxDB 3.x with Flux)
 **Command:**
 ```powershell
-# Query recent photovoltaic data
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data ORDER BY time DESC LIMIT 10"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Query recent photovoltaic data
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> limit(n: 10)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Query data for specific device
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE device_id='pv_001' ORDER BY time DESC LIMIT 5"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r.device_id == `pv_001`) |> limit(n: 5)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Query data for specific time range
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE time > now() - 1h ORDER BY time DESC"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -216,29 +317,40 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - Data is returned in correct format
 - Time filtering works properly
 
-#### 4.2 Test Aggregation Queries
+#### 4.2 Test Aggregation Queries (InfluxDB 3.x with Flux)
 **Command:**
 ```powershell
-# Calculate average power output
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT MEAN(power_output) FROM photovoltaic_data WHERE time > now() - 1h"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Calculate average power output
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> mean()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Calculate maximum temperature
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT MAX(temperature) FROM photovoltaic_data WHERE time > now() - 1h"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `temperature`) |> max()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Count total records
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT COUNT(*) FROM photovoltaic_data WHERE time > now() - 1h"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> count()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -246,22 +358,31 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - Results are mathematically accurate
 - No calculation errors
 
-#### 4.3 Test Group By Queries
+#### 4.3 Test Group By Queries (InfluxDB 3.x with Flux)
 **Command:**
 ```powershell
-# Group by device_id
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT MEAN(power_output) FROM photovoltaic_data WHERE time > now() - 1h GROUP BY device_id"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Group by device_id
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> group(columns: [`device_id`]) |> mean()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Group by location
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT MEAN(power_output) FROM photovoltaic_data WHERE time > now() - 1h GROUP BY location"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> group(columns: [`location`]) |> mean()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -271,22 +392,31 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 
 ### Step 5: Test Data Retention and Performance
 
-#### 5.1 Test Data Retention Policies
+#### 5.1 Test Data Retention Policies (InfluxDB 3.x)
 **Command:**
 ```powershell
-# Check data age (InfluxQL syntax for InfluxDB 3.x)
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT MIN(time), MAX(time) FROM photovoltaic_data"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
 
-# Check measurements information
-$params = @{
-    db = "renewable_energy"
-    q = "SHOW MEASUREMENTS"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+# Check data age using Flux
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -30d) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> first() |> yield(name: `first`) |> from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -30d) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> last() |> yield(name: `last`)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Check bucket information using API
+$bucketQuery = "buckets()"
+$body = @{
+    query = $bucketQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -294,16 +424,23 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - Data age is within expected range
 - No retention policy errors
 
-#### 5.2 Test Query Performance
+#### 5.2 Test Query Performance (InfluxDB 3.x)
 **Command:**
 ```powershell
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
+}
+
 # Test query execution time
 $startTime = Get-Date
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE time > now() - 1h ORDER BY time DESC"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing | Out-Null
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing | Out-Null
 $endTime = Get-Date
 $duration = $endTime - $startTime
 Write-Host "Query execution time: $($duration.TotalMilliseconds) ms"
@@ -337,19 +474,25 @@ for ($i = 1; $i -le 10; $i++) {
         test_id = $i
     } | ConvertTo-Json -Depth 3
 
-    mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $data
+    docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $data
     Start-Sleep -Milliseconds 100
 }
 
 # Wait for processing
 Start-Sleep -Seconds 5
 
-# Verify all data points were stored
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT COUNT(*) FROM photovoltaic_data WHERE device_id='pv_001' AND time > now() - 5m"
+# Verify all data points were stored (InfluxDB 3.x with Flux)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `pv_001`) |> count()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -357,22 +500,31 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - No data loss
 - Count matches expected number
 
-#### 6.2 Test Data Validation
+#### 6.2 Test Data Validation (InfluxDB 3.x)
 **Command:**
 ```powershell
-# Check for data type consistency
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE power_output < 0 OR temperature < -50 OR temperature > 100"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Check for data type consistency
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output` and r._value < 0 or r._field == `temperature` and (r._value < -50 or r._value > 100))"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Check for missing required fields
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE device_id = '' OR location = ''"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r.device_id == `` or r.location == ``)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -382,22 +534,31 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 
 ### Step 7: Test Error Handling
 
-#### 7.1 Test Invalid Query Handling
+#### 7.1 Test Invalid Query Handling (InfluxDB 3.x)
 **Command:**
 ```powershell
-# Test invalid SQL syntax
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM invalid_table"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Test invalid Flux syntax
+$fluxQuery = "from(bucket: `invalid_bucket`) |> range(start: -1h)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Test invalid field names
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT invalid_field FROM photovoltaic_data LIMIT 1"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._field == `invalid_field`)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -405,16 +566,23 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 - No system crashes
 - Error handling works correctly
 
-#### 7.2 Test Connection Resilience
+#### 7.2 Test Connection Resilience (InfluxDB 3.x)
 **Command:**
 ```powershell
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
+}
+
 # Test connection under load
 for ($i = 1; $i -le 50; $i++) {
-    $params = @{
-        db = "renewable_energy"
-        q = "SELECT COUNT(*) FROM photovoltaic_data"
-    }
-    Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing | Out-Null
+    $fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> count()"
+    $body = @{
+        query = $fluxQuery
+        org = $env:INFLUXDB_ORG
+    } | ConvertTo-Json
+
+    Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing | Out-Null
     Start-Sleep -Milliseconds 50
 }
 ```
@@ -426,16 +594,33 @@ for ($i = 1; $i -le 50; $i++) {
 
 ### Step 8: Test Backup and Recovery
 
-#### 8.1 Test Data Export
+#### 8.1 Test Data Export (InfluxDB 3.x)
 **Command:**
 ```powershell
-# Export recent data
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE time > now() - 1h"
+# Set up headers for InfluxDB 3.x (no authentication required)
+$headers = @{
+    "Content-Type" = "application/json"
 }
-$response = Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+# Export recent data using Flux
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+$response = Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 $response.Content | Out-File -FilePath "backup_data.json" -Encoding UTF8
+
+# Alternative: Use API for CSV export
+$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> toCSV()"
+$body = @{
+    query = $fluxQuery
+    org = $env:INFLUXDB_ORG
+} | ConvertTo-Json
+
+$response = Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+$response.Content | Out-File -FilePath "backup_data.csv" -Encoding UTF8
 ```
 
 **Expected Result:**
@@ -443,11 +628,18 @@ $response.Content | Out-File -FilePath "backup_data.json" -Encoding UTF8
 - Export file is created
 - Data format is correct
 
-#### 8.2 Test Data Import (if needed)
+#### 8.2 Test Data Import (InfluxDB 3.x)
 **Command:**
 ```powershell
-# This would be used for testing data import functionality
-# curl -X POST "http://localhost:8086/write?db=renewable_energy" --data-binary @backup_data.json
+# For InfluxDB 3.x, data import is typically done through the write API
+# Example: Write data points using the InfluxDB 3.x write API
+$writeData = "photovoltaic_data,device_id=pv_001,location=site_a power_output=584.43,temperature=45.2,irradiance=850.5 $(Get-Date -UFormat %s)000000000"
+
+$headers = @{
+    "Content-Type" = "text/plain; charset=utf-8"
+}
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=$env:INFLUXDB_BUCKET&org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $writeData
 ```
 
 **Expected Result:**
@@ -481,8 +673,8 @@ $response.Content | Out-File -FilePath "backup_data.json" -Encoding UTF8
 
 ### Common Issues
 
-#### 1. InfluxDB Not Accessible
-**Problem:** Cannot connect to InfluxDB on port 8086
+#### 1. InfluxDB 3.x Not Accessible
+**Problem:** Cannot connect to InfluxDB 3.x on port 8086
 **Solution:**
 ```powershell
 # Check container status
@@ -493,41 +685,92 @@ docker-compose logs influxdb
 
 # Restart service
 docker-compose restart influxdb
+
+# Verify InfluxDB 3.x is running
+docker exec -it iot-influxdb3 influx ping
 ```
 
-#### 2. Database Schema Issues
-**Problem:** Missing tables or incorrect schema
+#### 2. Organization/Bucket Issues
+**Problem:** Organization or bucket not found
 **Solution:**
 ```powershell
-# Check database initialization
-docker-compose logs influxdb
+# List organizations using API
+$headers = @{"Content-Type"="application/json"}
+$body = @{query="organizations()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
-# Verify schema files
-Get-Content influxdb/config/schemas/*.json
+# Create organization if missing
+$orgData = @{
+    name = "renewable_energy_org"
+    description = "Renewable Energy Monitoring Organization"
+} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers $headers -Body $orgData -UseBasicParsing
 
-# Reinitialize database if needed
-docker-compose down
-docker-compose up -d
+# List buckets using API
+$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Create bucket if missing
+$bucketData = @{
+    name = "renewable_energy"
+    orgID = "renewable_energy_org"
+    retentionRules = @(
+        @{
+            type = "expire"
+            everySeconds = 2592000  # 30 days
+        }
+    )
+} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers $headers -Body $bucketData -UseBasicParsing
 ```
 
 #### 3. Data Writing Failures
-**Problem:** Data not being written to InfluxDB
+**Problem:** Data not being written to InfluxDB 3.x
 **Solution:**
 ```powershell
-# Check Node-RED connection to InfluxDB
+# Check Node-RED connection to InfluxDB 3.x
 # Verify InfluxDB write permissions
 # Check network connectivity between containers
+
+# Test write API directly
+$writeData = "test_measurement,device_id=test value=123 $(Get-Date -UFormat %s)000000000"
+$headers = @{
+    "Content-Type" = "text/plain; charset=utf-8"
+}
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=$env:INFLUXDB_BUCKET&org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $writeData
 ```
 
 #### 4. Query Performance Issues
-**Problem:** Slow query execution
+**Problem:** Slow Flux query execution
 **Solution:**
 ```powershell
 # Check InfluxDB resource usage
 docker stats influxdb
 
-# Optimize queries
-# Check for proper indexing
+# Optimize Flux queries
+# Check for proper time range filters
+# Use appropriate aggregation functions
+
+# Test query performance
+$startTime = Get-Date
+# Run your query here
+$endTime = Get-Date
+$duration = $endTime - $startTime
+Write-Host "Query execution time: $($duration.TotalMilliseconds) ms"
+```
+
+#### 5. Flux Query Syntax Issues
+**Problem:** Flux queries return errors
+**Solution:**
+```powershell
+# Test simple Flux query first
+$headers = @{"Content-Type"="application/json"}
+$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Check Flux syntax documentation
+# Use InfluxDB UI for query testing
+# Verify bucket and measurement names
 ```
 
 ## Next Steps
