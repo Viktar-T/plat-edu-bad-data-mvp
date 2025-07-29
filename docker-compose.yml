@@ -29,31 +29,12 @@ services:
     networks:
       - iot-network
 
-  # Time-Series Database - InfluxDB 3.x
+  # Time-Series Database - InfluxDB 2.x
   influxdb:
-    image: influxdb:3-core
-    container_name: iot-influxdb3
-    user: "0:0"
+    image: 
+    container_name: iot-influxdb2
+    user: 
     ports:
-      - "8086:8086"
-    volumes:
-      - ./influxdb/data:/var/lib/influxdb3
-      - ./influxdb/config:/etc/influxdb3/config
-      - ./influxdb/scripts:/docker-entrypoint-initdb.d
-      - ./influxdb/backups:/var/lib/influxdb3/backups
-    command: >
-      --object-store file
-      --data-dir /var/lib/influxdb3
-      --node-id renewable-energy
-      --http-bind 0.0.0.0:8086
-      --without-auth
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8086/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     networks:
       - iot-network
 
@@ -129,28 +110,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    networks:
-      - iot-network
-
-  # InfluxDB 3 Web Interface - Simple Admin Panel
-  influxdb-admin:
-    image: nginx:alpine
-    container_name: iot-influxdb-admin
-    ports:
-      - "5002:80"
-    volumes:
-      - ./influxdb-web-interface:/usr/share/nginx/html
-      - ./influxdb-web-interface/nginx.conf:/etc/nginx/conf.d/default.conf
-    restart: unless-stopped
-    depends_on:
-      influxdb:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     networks:
       - iot-network
 
