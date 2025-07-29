@@ -1,9 +1,0 @@
-# Python test dependencies (Phase 2)
-# This file will contain Python package requirements when Python tests are implemented
-
-# Example dependencies (commented out until Phase 2):
-# pytest==7.4.3
-# pytest-json-report==1.5.0
-# requests==2.31.0
-# influxdb-client==1.38.0
-# paho-mqtt==1.6.1 
