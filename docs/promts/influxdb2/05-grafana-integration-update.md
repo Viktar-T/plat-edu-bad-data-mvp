@@ -1,133 +1,215 @@
 # Grafana Integration Update for InfluxDB 2.x
 
-## Prompt for Cursor IDE
+## Cursor IDE Agent Instructions
 
-Update my Grafana configuration to work with InfluxDB 2.x.
+You are tasked with updating the Grafana integration to work with InfluxDB 2.x. This is a critical component of a renewable energy IoT monitoring system where Node-RED has already been migrated to use Flux queries and InfluxDB 2.x.
 
-## Requirements
+## Current System State
 
-1. **Update data source configuration**
-2. **Modify query syntax** in dashboards
-3. **Update connection settings**
-4. **Fix any broken panels**
-5. **Update environment variables** for InfluxDB connection
+### ✅ Working Components
+- **Node-RED**: Successfully migrated to InfluxDB 2.x with Flux queries
+- **Node-RED Token**: Using `"renewable_energy_admin_token_123"`
+- **Node-RED Organization**: Using `"renewable_energy_org"`
+- **InfluxDB 2.x**: Running on port 8086 with proper configuration
+- **Grafana Dashboards**: 6 comprehensive dashboards with Flux queries
+- **Docker Compose**: All services properly configured
 
-## Current Setup
+### 🔧 Current Grafana Configuration Issues
+- **Data Source Name**: `"InfluxDB 3.x"` (incorrect - should be `"InfluxDB 2.x"`)
+- **Organization**: `"renewable_energy"` (incorrect - should be `"renewable_energy_org"`)
+- **Token**: `${INFLUXDB_TOKEN:-}` (environment variable - should be static token)
+- **Dashboard References**: 67 total datasource references need updating
 
-The dashboards should display renewable energy data from:
-- Photovoltaic systems
-- Wind turbines
-- Biogas plants
-- Heat boilers
-- Energy storage systems
+## Required Changes
 
-## Grafana Configuration Updates
+### 1. Update Data Source Configuration
+**File**: `grafana/provisioning/datasources/influxdb.yaml`
 
-### Data Source Configuration
-- **Type**: InfluxDB
-- **Version**: Flux (InfluxDB 2.x)
-- **URL**: `http://influxdb:8086`
-- **Database**: `renewable_energy`
-- **Organization**: `renewable_energy_org`
-- **Authentication**: Admin token or username/password
+**Current Configuration**:
+```yaml
+apiVersion: 1
 
-### Dashboard Updates Required
+datasources:
+  - name: InfluxDB 3.x
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    editable: true
+    jsonData:
+      version: Flux
+      organization: renewable_energy
+      defaultBucket: renewable_energy
+      tlsSkipVerify: true
+    secureJsonData:
+      token: ${INFLUXDB_TOKEN:-}
+```
 
-#### 1. Data Source Settings
-- **Connection**: Update to InfluxDB 2.x data source
-- **Authentication**: Configure admin credentials or token
-- **Database**: Set to `renewable_energy`
-- **Organization**: Set to `renewable_energy_org`
+**Required Configuration**:
+```yaml
+apiVersion: 1
 
-#### 2. Query Updates
-- **Query language**: Convert from InfluxQL to Flux
-- **Measurement names**: Update to match InfluxDB 2.x structure
-- **Field names**: Update to match new data structure
-- **Tag names**: Update device_id, location, status tags
+datasources:
+  - name: InfluxDB 2.x
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    editable: true
+    jsonData:
+      version: Flux
+      organization: renewable_energy_org
+      defaultBucket: renewable_energy
+      tlsSkipVerify: true
+    secureJsonData:
+      token: renewable_energy_admin_token_123
+```
 
-#### 3. Panel Configuration
-- **Time series panels**: Update for InfluxDB 2.x data format
-- **Stat panels**: Update for new field structure
-- **Table panels**: Update column mappings
-- **Graph panels**: Update series and legend configuration
+### 2. Update Dashboard Datasource References
+**Files to Update**:
+1. `grafana/dashboards/renewable-energy-overview.json` (8 references)
+2. `grafana/dashboards/photovoltaic-monitoring.json` (11 references)
+3. `grafana/dashboards/wind-turbine-analytics.json` (12 references)
+4. `grafana/dashboards/biogas-plant-metrics.json` (12 references)
+5. `grafana/dashboards/heat-boiler-monitoring.json` (12 references)
+6. `grafana/dashboards/energy-storage-monitoring.json` (12 references)
 
-### Environment Variables
+**Change Required**:
+- **From**: `"datasource": "InfluxDB 3.x"`
+- **To**: `"datasource": "InfluxDB 2.x"`
 
-Update Grafana environment variables:
-- **GF_INSTALL_PLUGINS**: Ensure InfluxDB plugin is installed
-- **GF_SECURITY_ADMIN_USER**: Grafana admin user
-- **GF_SECURITY_ADMIN_PASSWORD**: Grafana admin password
-- **INFLUXDB_URL**: `http://influxdb:8086`
-- **INFLUXDB_DB**: `renewable_energy`
-- **INFLUXDB_ORG**: `renewable_energy_org`
-- **INFLUXDB_TOKEN**: Admin token
+## Implementation Steps
 
-## Dashboard-Specific Updates
+### Step 1: Update Data Source Configuration
+1. Open `grafana/provisioning/datasources/influxdb.yaml`
+2. Change `name: InfluxDB 3.x` to `name: InfluxDB 2.x`
+3. Change `organization: renewable_energy` to `organization: renewable_energy_org`
+4. Change `token: ${INFLUXDB_TOKEN:-}` to `token: renewable_energy_admin_token_123`
+5. Save the file
 
-### 1. Renewable Energy Overview Dashboard
-- **Total power output**: Sum across all device types
-- **Device status**: Count of operational vs. offline devices
-- **Energy production**: Daily/weekly/monthly totals
-- **System efficiency**: Average efficiency across all devices
+### Step 2: Update Dashboard Files
+For each dashboard file, perform a search and replace:
+- **Search for**: `"datasource": "InfluxDB 3.x"`
+- **Replace with**: `"datasource": "InfluxDB 2.x"`
 
-### 2. Photovoltaic Monitoring Dashboard
-- **Power output**: Real-time and historical power generation
-- **Temperature**: Panel temperature monitoring
-- **Efficiency**: Conversion efficiency over time
-- **Irradiance**: Solar irradiance correlation
+**Files to process**:
+```
+grafana/dashboards/renewable-energy-overview.json
+grafana/dashboards/photovoltaic-monitoring.json
+grafana/dashboards/wind-turbine-analytics.json
+grafana/dashboards/biogas-plant-metrics.json
+grafana/dashboards/heat-boiler-monitoring.json
+grafana/dashboards/energy-storage-monitoring.json
+```
 
-### 3. Wind Turbine Analytics Dashboard
-- **Power curve**: Power output vs. wind speed
-- **Rotor speed**: RPM monitoring and trends
-- **Direction**: Wind direction analysis
-- **Vibration**: Vibration monitoring for maintenance
+### Step 3: Verify Changes
+1. **Count total replacements**: Should be exactly 67 datasource references updated
+2. **Validate JSON syntax**: Ensure all dashboard files remain valid JSON
+3. **Check data source configuration**: Verify the YAML syntax is correct
 
-### 4. Biogas Plant Metrics Dashboard
-- **Gas flow**: Methane production rates
-- **Concentration**: Methane concentration monitoring
-- **Temperature**: Process temperature control
-- **Pressure**: System pressure monitoring
+## Expected Results
 
-### 5. Heat Boiler Monitoring Dashboard
-- **Temperature**: Boiler temperature monitoring
-- **Efficiency**: Thermal efficiency calculations
-- **Fuel consumption**: Fuel usage tracking
-- **Pressure**: System pressure monitoring
+### After Implementation
+- **Data Source**: Grafana will connect to InfluxDB 2.x using the correct organization and token
+- **Dashboards**: All 6 dashboards will reference the updated data source
+- **Authentication**: Unified token authentication across Node-RED and Grafana
+- **Data Flow**: Complete end-to-end data flow from Node-RED → InfluxDB 2.x → Grafana
 
-### 6. Energy Storage Monitoring Dashboard
-- **State of charge**: Battery charge level
-- **Voltage/Current**: Electrical parameters
-- **Temperature**: Battery temperature monitoring
-- **Cycle count**: Charge/discharge cycles
+### Verification Checklist
+- [ ] Data source configuration updated in `influxdb.yaml`
+- [ ] All 6 dashboard files updated
+- [ ] Exactly 67 datasource references changed
+- [ ] All JSON files remain valid
+- [ ] YAML configuration syntax is correct
+- [ ] Token matches Node-RED configuration (`renewable_energy_admin_token_123`)
+- [ ] Organization matches Node-RED configuration (`renewable_energy_org`)
 
-## Query Examples
+## Technical Context
 
-### Flux Query Examples
-Provide updated Flux queries for:
-1. **Device power output**: `from(bucket: "renewable_energy") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "device_data" and r.device_type == "photovoltaic")`
-2. **System efficiency**: `from(bucket: "renewable_energy") |> range(start: -24h) |> filter(fn: (r) => r._field == "efficiency") |> mean()`
-3. **Device status**: `from(bucket: "renewable_energy") |> range(start: -5m) |> filter(fn: (r) => r._field == "status") |> group(columns: ["device_type"]) |> count()`
+### System Architecture
+```
+Node-RED → InfluxDB 2.x → Grafana
+   ↓           ↓           ↓
+Flux Queries  Flux Queries  Flux Queries
+   ↓           ↓           ↓
+renewable_energy_admin_token_123
+   ↓           ↓           ↓
+renewable_energy_org organization
+```
 
-## Expected Output
+### Data Flow
+1. **Node-RED** writes renewable energy data using Flux queries
+2. **InfluxDB 2.x** stores data in `renewable_energy` bucket
+3. **Grafana** reads and visualizes data using Flux queries
+4. **Unified authentication** ensures consistent access across all components
 
-### Updated Grafana Configuration
-1. **Data source configuration** - Updated InfluxDB 2.x data source
-2. **Dashboard JSON exports** - Updated dashboard configurations
-3. **Provisioning files** - Data source and dashboard provisioning
-4. **Environment variables** - Updated environment configuration
+### Renewable Energy Data Types
+- **Photovoltaic**: Power output, temperature, voltage, current, irradiance, efficiency
+- **Wind Turbines**: Power output, wind speed, direction, rotor speed, vibration, efficiency
+- **Biogas Plants**: Gas flow, methane concentration, temperature, pressure, efficiency
+- **Heat Boilers**: Temperature, pressure, efficiency, fuel consumption, flow rate, output power
+- **Energy Storage**: State of charge, voltage, current, temperature, cycle count, health status
 
-### Documentation
-1. **Migration guide** - Step-by-step migration instructions
-2. **Query reference** - Flux query examples and syntax
-3. **Dashboard configuration** - Panel and query configuration
-4. **Troubleshooting guide** - Common issues and solutions
+## Important Notes
 
-## Context
+### Do Not Change
+- **Flux query syntax** - already correct for InfluxDB 2.x
+- **Dashboard layouts** - preserve existing visualizations
+- **Panel configurations** - keep existing styling and functionality
+- **Data structure** - maintain current field names and measurements
 
-This is for a renewable energy monitoring system that requires:
-- **Real-time monitoring**: Live data display
-- **Historical analysis**: Trend analysis and reporting
-- **Alerting**: Threshold-based alerts
-- **Performance optimization**: Efficient queries for large datasets
+### Critical Dependencies
+- **Node-RED must be running** with InfluxDB 2.x configuration
+- **InfluxDB 2.x must be accessible** on port 8086
+- **Docker Compose services** must be properly started
+- **Token authentication** must be consistent across all components
 
-The Grafana dashboards should provide comprehensive visualization of all renewable energy systems with proper InfluxDB 2.x integration. 
+### Error Prevention
+- **Backup files** before making changes
+- **Validate JSON syntax** after each file update
+- **Test data source connectivity** after configuration changes
+- **Verify dashboard functionality** after all updates
+
+## Success Criteria
+
+### Primary Goals
+1. **Grafana connects** to InfluxDB 2.x successfully
+2. **All dashboards display** data correctly
+3. **Authentication works** with static token
+4. **Data flow is complete** from Node-RED to Grafana
+
+### Secondary Goals
+1. **Consistent naming** across all components
+2. **Proper organization** structure in InfluxDB 2.x
+3. **Unified authentication** method
+4. **Future-proof configuration** for scalability
+
+## Next Steps After Implementation
+
+1. **Test data source connectivity** in Grafana UI
+2. **Verify dashboard panels** display data
+3. **Check query execution** in Grafana
+4. **Validate data consistency** between Node-RED and Grafana
+5. **Document configuration** for future reference
+
+## Troubleshooting
+
+### Common Issues
+- **Connection refused**: Check if InfluxDB 2.x is running on port 8086
+- **Authentication failed**: Verify token matches Node-RED configuration
+- **No data displayed**: Check if Node-RED is writing data to InfluxDB 2.x
+- **JSON syntax errors**: Validate dashboard files after updates
+
+### Verification Commands
+```bash
+# Check InfluxDB 2.x connectivity
+curl -f http://localhost:8086/health
+
+# Check Grafana connectivity
+curl -f http://localhost:3000/api/health
+
+# Verify data source in Grafana
+curl -f http://localhost:3000/api/datasources
+```
+
+This prompt provides clear, actionable instructions for updating Grafana integration to work with InfluxDB 2.x while maintaining system consistency and functionality. 

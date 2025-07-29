@@ -11,6 +11,32 @@ Ensure MQTT broker (Mosquitto) is properly configured with authentication, acces
 - Node.js installed (for PowerShell MQTT testing scripts)
 - MQTT broker running on localhost:1883
 - PowerShell execution policy set to allow script execution
+- Testing framework available in `tests/scripts/` directory
+
+## Automated Testing Framework
+
+### Quick MQTT Validation
+Before running manual tests, you can use the automated testing framework for quick validation:
+
+```powershell
+# Run comprehensive MQTT testing
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/automated" -Message "automated_test"
+
+# Run data flow test (includes MQTT validation)
+.\tests\scripts\test-data-flow.ps1
+
+# Run integration tests (includes MQTT connectivity)
+.\tests\scripts\test-integration.ps1
+
+# Run all tests
+.\tests\run-all-tests.ps1
+```
+
+### Test Framework Features
+- **MQTT Connectivity**: Connection testing and message publishing
+- **Data Flow**: End-to-end testing from MQTT to Grafana
+- **Integration**: Cross-component connectivity validation
+- **Performance**: Load testing and benchmarking
 
 ## Test Steps
 
@@ -19,8 +45,8 @@ Ensure MQTT broker (Mosquitto) is properly configured with authentication, acces
 #### 0.1 Install Dependencies
 **Command:**
 ```powershell
-# Navigate to manual-tests directory
-cd tests\manual-tests
+# Navigate to scripts directory
+cd tests\scripts
 
 # Install MQTT package for Node.js
 npm install
@@ -34,7 +60,7 @@ npm install
 **Command:**
 ```powershell
 # Using PowerShell MQTT test script
-.\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
 ```
 
 #### 0.2 example of Manual MQTT Communication
@@ -43,10 +69,10 @@ npm install
 **Command:**
 ```powershell
 # Publish a message
-.\test-mqtt.ps1 -PublishTest -MqttHost "localhost" -Topic "test/hello" -Message "Hello World!"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -MqttHost "localhost" -Topic "test/hello" -Message "Hello World!"
 
 # Subscribe to a topic
-.\test-mqtt.ps1 -Subscribe -MqttHost "localhost" -Topic "test/hello"
+.\tests\scripts\test-mqtt.ps1 -Subscribe -MqttHost "localhost" -Topic "test/hello"
 ```
 
 **Expected Result:**
@@ -58,10 +84,10 @@ MQTT Broker: Your Mosquitto broker (running on localhost:1883) acted as the cent
 **Command:**
 ```powershell
 # Test basic MQTT connectivity
-.\test-mqtt.ps1 -PublishTest -Topic "test/connectivity" -Message "Hello World!"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/connectivity" -Message "Hello World!"
 
-# Test device simulation
-.\simulate-devices.ps1 -Photovoltaic -Duration 30
+# Test device simulation (if available)
+# .\tests\scripts\simulate-devices.ps1 -Photovoltaic -Duration 30
 ```
 
 **Expected Result:**
@@ -74,7 +100,7 @@ MQTT Broker: Your Mosquitto broker (running on localhost:1883) acted as the cent
 **Command:**
 ```powershell
 # Using PowerShell MQTT test script
-.\test-mqtt.ps1 -PublishTest -Topic "test/anonymous" -Message "test message"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/anonymous" -Message "test message"
 ```
 
 **Expected Result:**
@@ -85,7 +111,7 @@ MQTT Broker: Your Mosquitto broker (running on localhost:1883) acted as the cent
 **Command:**
 ```powershell
 # Using PowerShell MQTT test script
-.\test-mqtt.ps1 -PublishTest -Topic "test/admin" -Message "admin test message"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/admin" -Message "admin test message"
 ```
 
 **Expected Result:**
@@ -339,7 +365,7 @@ Get-Job | Remove-Job
 **Command:**
 ```powershell
 # Test rapid message publishing using PowerShell script
-.\test-mqtt.ps1 -PublishTest -Topic "test/throughput" -Message "test_message"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/throughput" -Message "test_message"
 ```
 
 **Expected Result:**
@@ -351,8 +377,11 @@ Get-Job | Remove-Job
 #### 9.1 Test Photovoltaic Device Simulation
 **Command:**
 ```powershell
-# Simulate photovoltaic devices for 60 seconds
-.\simulate-devices.ps1 -Photovoltaic -Duration 60 -Interval 2000
+# Simulate photovoltaic devices for 60 seconds (if available)
+# .\tests\scripts\simulate-devices.ps1 -Photovoltaic -Duration 60 -Interval 2000
+
+# Alternative: Use automated data flow test
+.\tests\scripts\test-data-flow.ps1
 ```
 
 **Expected Result:**
@@ -363,8 +392,11 @@ Get-Job | Remove-Job
 #### 9.2 Test Wind Turbine Device Simulation
 **Command:**
 ```powershell
-# Simulate wind turbine devices for 60 seconds
-.\simulate-devices.ps1 -WindTurbine -Duration 60 -Interval 2000
+# Simulate wind turbine devices for 60 seconds (if available)
+# .\tests\scripts\simulate-devices.ps1 -WindTurbine -Duration 60 -Interval 2000
+
+# Alternative: Use automated data flow test
+.\tests\scripts\test-data-flow.ps1
 ```
 
 **Expected Result:**
@@ -375,8 +407,11 @@ Get-Job | Remove-Job
 #### 9.3 Test All Device Types Simulation
 **Command:**
 ```powershell
-# Simulate all device types for 120 seconds
-.\simulate-devices.ps1 -AllDevices -Duration 120 -Interval 5000
+# Simulate all device types for 120 seconds (if available)
+# .\tests\scripts\simulate-devices.ps1 -AllDevices -Duration 120 -Interval 5000
+
+# Alternative: Use automated data flow test
+.\tests\scripts\test-data-flow.ps1
 ```
 
 **Expected Result:**
@@ -388,8 +423,11 @@ Get-Job | Remove-Job
 #### 9.4 Test Device Simulation with Custom Parameters
 **Command:**
 ```powershell
-# Test with custom host and credentials
-.\simulate-devices.ps1 -Host "192.168.1.100" -Port 1883 -Username "custom_user" -Password "custom_password" -Photovoltaic -Duration 30
+# Test with custom host and credentials (if available)
+# .\tests\scripts\simulate-devices.ps1 -Host "192.168.1.100" -Port 1883 -Username "custom_user" -Password "custom_password" -Photovoltaic -Duration 30
+
+# Alternative: Use automated data flow test with custom parameters
+.\tests\scripts\test-data-flow.ps1
 ```
 
 **Expected Result:**
@@ -425,6 +463,9 @@ Get-Job | Remove-Job
 **Problem:** "Connection refused" or "Not authorized" errors
 **Solution:**
 ```powershell
+# Run automated MQTT tests for diagnostics
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/auth" -Message "auth_test"
+
 # Check password file
 docker-compose exec mosquitto cat /mosquitto/config/passwd
 
@@ -436,6 +477,9 @@ docker-compose exec mosquitto mosquitto_passwd -b /mosquitto/config/passwd pv_00
 **Problem:** "Topic not allowed" errors
 **Solution:**
 ```powershell
+# Run automated integration tests for diagnostics
+.\tests\scripts\test-integration.ps1
+
 # Check ACL file
 docker-compose exec mosquitto cat /mosquitto/config/acl
 
@@ -447,6 +491,9 @@ docker-compose restart mosquitto
 **Problem:** Slow or failed connections
 **Solution:**
 ```powershell
+# Run automated performance tests for diagnostics
+.\tests\scripts\test-performance.ps1
+
 # Check mosquitto logs
 docker-compose logs mosquitto
 

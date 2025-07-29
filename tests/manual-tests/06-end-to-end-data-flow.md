@@ -10,6 +10,32 @@ Ensure the entire data pipeline works seamlessly from device data input to dashb
 - All previous manual tests (01-05) completed successfully
 - All services running and healthy
 - Test environment prepared with sample data
+- Testing framework available in `tests/scripts/` directory
+
+## Automated Testing Framework
+
+### Quick End-to-End Test
+Before running manual tests, you can use the automated testing framework for quick validation:
+
+```powershell
+# Run comprehensive end-to-end data flow test
+.\tests\scripts\test-data-flow.ps1
+
+# Run integration tests
+.\tests\scripts\test-integration.ps1
+
+# Run performance tests
+.\tests\scripts\test-performance.ps1
+
+# Run all tests
+.\tests\run-all-tests.ps1
+```
+
+### Test Framework Features
+- **Data Flow**: Complete end-to-end testing from MQTT to Grafana
+- **Integration**: Cross-component authentication and data consistency
+- **Performance**: Load testing and benchmarking
+- **Error Recovery**: Service interruption and recovery testing
 
 ## Test Steps
 
@@ -32,24 +58,38 @@ docker-compose ps | Select-String "healthy"
 #### 1.2 Clear Previous Test Data (Optional)
 **Command:**
 ```powershell
-# Clear previous test data from InfluxDB (if needed)
-$params = @{
-    db = "renewable_energy"
-    q = "DELETE FROM photovoltaic_data WHERE time > now() - 1h"
+# Clear previous test data from InfluxDB 2.x (if needed)
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
 
-$params = @{
-    db = "renewable_energy"
-    q = "DELETE FROM wind_turbine_data WHERE time > now() - 1h"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+# Delete photovoltaic data
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -1h) |> filter(fn: (r) => r._measurement == `"photovoltaic_data`") |> drop()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
 
-$params = @{
-    db = "renewable_energy"
-    q = "DELETE FROM biogas_plant_data WHERE time > now() - 1h"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Delete wind turbine data
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -1h) |> filter(fn: (r) => r._measurement == `"wind_turbine_data`") |> drop()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
+
+# Delete biogas plant data
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -1h) |> filter(fn: (r) => r._measurement == `"biogas_plant_data`") |> drop()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -61,7 +101,12 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 #### 2.1 Send Photovoltaic Test Data
 **Command:**
 ```powershell
-# Create comprehensive photovoltaic test data
+# Option 1: Using the automated MQTT test script
+Write-Host "Sending photovoltaic test data..." -ForegroundColor Yellow
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/photovoltaic/pv_001/data" -Message '{"device_id":"pv_001","device_type":"photovoltaic","timestamp":"2024-01-15T10:30:00Z","data":{"irradiance":850.5,"temperature":45.2,"voltage":48.3,"current":12.1,"power_output":584.43},"status":"operational","location":"site_a","test_id":"e2e_test_001"}'
+Write-Host "✓ Photovoltaic data sent via MQTT" -ForegroundColor Green
+
+# Option 2: Using Docker exec to run mosquitto_pub inside the container
 $pvTestData = @{
     device_id = "pv_001"
     device_type = "photovoltaic"
@@ -78,9 +123,7 @@ $pvTestData = @{
     test_id = "e2e_test_001"
 } | ConvertTo-Json -Depth 3
 
-Write-Host "Sending photovoltaic test data..." -ForegroundColor Yellow
-mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $pvTestData
-Write-Host "✓ Photovoltaic data sent via MQTT" -ForegroundColor Green
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $pvTestData
 ```
 
 **Expected Result:**
@@ -107,13 +150,20 @@ Write-Host "✓ Photovoltaic data sent via MQTT" -ForegroundColor Green
 # Wait for processing
 Start-Sleep -Seconds 3
 
-# Query InfluxDB for the test data
+# Query InfluxDB 2.x for the test data
 Write-Host "Checking InfluxDB storage..." -ForegroundColor Yellow
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT * FROM photovoltaic_data WHERE device_id='pv_001' ORDER BY time DESC LIMIT 1"
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
 }
-$influxResult = Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -5m) |> filter(fn: (r) => r.device_id == `"pv_001`") |> last()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
+
+$influxResult = Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 if ($influxResult.Content -match "e2e_test_001") {
     Write-Host "✓ Data stored in InfluxDB" -ForegroundColor Green
@@ -639,12 +689,22 @@ if ($finalResult.Content -match "final_validation") {
 **Problem:** Data sent via MQTT doesn't appear in dashboards
 **Solution:**
 ```powershell
-# Check if data reached InfluxDB
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT COUNT(*) FROM photovoltaic_data WHERE time > now() - 5m"
+# Run automated data flow tests for diagnostics
+.\tests\scripts\test-data-flow.ps1
+
+# Check if data reached InfluxDB 2.x
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -5m) |> filter(fn: (r) => r._measurement == `"photovoltaic_data`") |> count()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Check Node-RED flows
 # Verify Grafana data source configuration
@@ -654,6 +714,9 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 **Problem:** Slow data processing or dashboard loading
 **Solution:**
 ```powershell
+# Run automated performance tests
+.\tests\scripts\test-performance.ps1
+
 # Check system resources
 docker stats
 

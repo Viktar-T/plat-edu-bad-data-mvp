@@ -18,7 +18,7 @@
         "name": "device_type",
         "type": "query",
         "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"device_type\"]) |> distinct(column: \"device_type\")",
-        "datasource": "InfluxDB 3.x",
+        "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
@@ -27,7 +27,7 @@
         "name": "location",
         "type": "query",
         "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
-        "datasource": "InfluxDB 3.x",
+        "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
@@ -46,7 +46,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -74,7 +74,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"status\")\n  |> filter(fn: (r) => r._value == \"operational\")\n  |> group()\n  |> count()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -102,7 +102,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -133,7 +133,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> group(columns: [\"device_type\"])\n  |> sum()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "options": {
@@ -158,7 +158,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> group(columns: [\"device_type\"])",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -217,7 +217,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"status\" or r._field == \"power_output\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\", \"device_type\"])\n  |> last()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {

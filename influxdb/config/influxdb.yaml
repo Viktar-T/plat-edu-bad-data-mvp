@@ -1,0 +1,110 @@
+# InfluxDB 2.x YAML Configuration
+# Renewable Energy Monitoring System
+
+# Server configuration
+server:
+  # HTTP server settings
+  http:
+    enabled: true
+    bind-address: ":8086"
+    auth-enabled: false
+    log-enabled: true
+    access-log-path: "/var/log/influxdb/access.log"
+    access-log-format: "auto"
+    max-body-size: 25000000
+    max-concurrent-write-limit: 0
+    max-enqueued-write-limit: 0
+    enqueued-write-timeout: 30000000000
+    pprof-enabled: false
+    pprof-bind-address: ":6060"
+    debug-pprof-enabled: false
+    debug-pprof-bind-address: ":6060"
+    ping-auth-enabled: false
+    prom-read-auth-enabled: false
+
+# Data storage configuration
+storage:
+  # Data directory
+  data-dir: "/var/lib/influxdb2/data"
+  # Write-ahead log directory
+  wal-dir: "/var/lib/influxdb2/wal"
+  # Meta directory
+  meta-dir: "/var/lib/influxdb2/meta"
+  
+  # Performance settings
+  series-id-set-cache-size: 100
+  series-file-max-concurrent-snapshot-compactions: 0
+  max-concurrent-compactions: 0
+  max-index-log-file-size: "1m"
+  max-series-per-database: 1000000
+  max-values-per-tag: 100000
+  
+  # Query settings
+  max-memory-per-query: 0
+  max-concurrent-queries: 0
+  query-timeout: 0
+  log-queries-after: 0
+  max-select-point: 0
+  max-select-series: 0
+  max-select-buckets: 0
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "auto"
+  suppress-logo: false
+
+# Monitoring configuration
+monitoring:
+  enabled: false
+  write-interval: "10s"
+
+# Reporting configuration
+reporting:
+  enabled: false
+  url: "https://usage.influxdb.com"
+  token: ""
+  org: ""
+  bucket: ""
+  interval: "12h"
+
+# Subscriber configuration
+subscriber:
+  enabled: true
+  http-timeout: "30s"
+  insecure-skip-verify: false
+  ca-certs: ""
+  write-concurrency: 40
+  write-buffer-size: 1000
+
+# Continuous queries configuration
+continuous_queries:
+  enabled: true
+  log-enabled: true
+  run-interval: "1s"
+  max-processes: 0
+
+# TLS configuration (disabled for development)
+tls:
+  enabled: false
+  cert: ""
+  key: ""
+  min-version: ""
+  max-version: ""
+  ciphers: []
+  prefer-server-ciphers: false
+  curve-preferences: []
+  hsts: false
+  hsts-max-age: 0
+
+# UDP configuration (disabled for this setup)
+udp:
+  enabled: false
+  bind-address: ":8089"
+  database: ""
+  retention-policy: ""
+  batch-size: 5000
+  batch-pending: 10
+  batch-timeout: "1s"
+  read-buffer: 0
+  precision: "" 

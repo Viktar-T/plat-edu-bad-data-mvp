@@ -1,113 +1,284 @@
-# Node-RED Integration Update for InfluxDB 2.x
+# Node-RED Flow Updates for InfluxDB 2.x
 
 ## Prompt for Cursor IDE
 
-Update my Node-RED configuration to work with InfluxDB 2.x instead of 3.x.
+Update the existing Node-RED flow files to work with InfluxDB 2.x configuration, focusing only on the InfluxDB node configurations within the flows.
+
+## Current State Analysis
+
+### ✅ What's Already Working
+- **Node-RED flows are already configured for InfluxDB 2.x** (not 3.x as initially assumed)
+- **InfluxDB 2.x configuration exists** in all flow files with proper settings
+- **Docker Compose integration** is already set up with InfluxDB 2.x service
+- **MQTT to InfluxDB data flow** is established in all device simulations
+
+### 🔧 Current Configuration Status
+- **InfluxDB nodes**: Already using `influxdbVersion: "2.0"` and `url: "http://influxdb:8086"`
+- **Authentication**: Currently using empty token (needs simple static token for MVP)
+- **Organization**: Set to `"renewable_energy"` (needs update to `"renewable_energy_org"`)
+- **Bucket**: Set to `"renewable_energy"` (correct)
+- **Database**: Set to `"renewable_energy"` (correct for InfluxDB 2.x)
+
+### 📁 Existing Flow Files
+1. **`v2.0-pv-mqtt-loop-simulation.json`** - PV simulation v2.0 (9.1KB, 216 lines)
+2. **`v2.1-pv-mqtt-loop-simulation.json`** - PV simulation v2.1 (11KB, 274 lines)
 
 ## Requirements
 
-1. **Update InfluxDB node configurations**
-2. **Modify connection settings** (URL, database, authentication)
-3. **Update query syntax** from Flux to InfluxQL
-4. **Fix any broken flows**
-5. **Update environment variables** for InfluxDB connection
+1. **Update InfluxDB node configurations** to use simple static token authentication
+2. **Fix organization name** from `"renewable_energy"` to `"renewable_energy_org"`
+3. **Add simple static token** for MVP simplicity
+4. **Migrate from InfluxQL to Flux** for future-proof standardization
+5. **Keep changes minimal** - focus only on InfluxDB node configurations
 
-## Current Setup
+## Node-RED Flow Updates Needed
 
-The current setup uses MQTT to receive data and should write to InfluxDB 2.x. Data flows from:
-- **MQTT Broker** → **Node-RED** → **InfluxDB 2.x**
+### 1. Simple Static Token Authentication
+For MVP simplicity, use a simple static token instead of complex environment variables:
 
-## Node-RED Configuration Updates
+**Simple Token Approach:**
+```json
+{
+  "token": "renewable_energy_admin_token_123"
+}
+```
 
-### InfluxDB Node Settings
-- **Server URL**: `http://influxdb:8086` (Docker service name)
-- **Database**: `renewable_energy`
-- **Organization**: `renewable_energy_org`
-- **Authentication**: Admin token or username/password
-- **Measurement**: Device-specific measurements
+### 2. InfluxDB Node Configuration Updates
+Update all InfluxDB configuration nodes in flow files:
 
-### Flow Updates Required
+**Current Configuration:**
+```json
+{
+  "id": "influxdb-config",
+  "type": "influxdb",
+  "hostname": "influxdb",
+  "port": "8086",
+  "protocol": "http",
+  "database": "renewable_energy",
+  "name": "InfluxDB",
+  "usetls": false,
+  "tls": "",
+  "influxdbVersion": "2.0",
+  "url": "http://influxdb:8086",
+  "rejectUnauthorized": false,
+  "token": "", // NEEDS UPDATE - Add simple static token
+  "organization": "renewable_energy", // NEEDS UPDATE - Change to "renewable_energy_org"
+  "bucket": "renewable_energy"
+}
+```
 
-#### 1. InfluxDB Out Nodes
-- **Connection settings**: Update to InfluxDB 2.x format
-- **Authentication**: Use admin credentials or token
-- **Measurement mapping**: Map device data to measurements
-- **Tag configuration**: Set device_id, location, status as tags
-- **Field configuration**: Set sensor values as fields
+**Required Updates:**
+- **Token**: Add simple static token `"renewable_energy_admin_token_123"`
+- **Organization**: Change from `"renewable_energy"` to `"renewable_energy_org"`
+- **Query Language**: Update to use Flux instead of InfluxQL
+- **Keep everything else unchanged** for MVP simplicity
 
-#### 2. InfluxDB In Nodes (if any)
-- **Query syntax**: Convert from Flux to InfluxQL
-- **Connection settings**: Update to InfluxDB 2.x format
-- **Authentication**: Use admin credentials or token
+### 3. Flux Query Language Migration
+Update Node-RED InfluxDB nodes to use Flux queries:
 
-#### 3. Function Nodes
-- **Data transformation**: Update for InfluxDB 2.x data format
-- **Error handling**: Add proper error handling for InfluxDB 2.x
-- **Data validation**: Validate data before writing
+**Current InfluxQL Approach:**
+```javascript
+// Node-RED currently uses InfluxQL (deprecated in InfluxDB 2.x)
+// Example: SELECT * FROM photovoltaic_data WHERE time > now() - 1h
+```
 
-### Environment Variables
+**New Flux Approach:**
+```javascript
+// Node-RED should use Flux (native to InfluxDB 2.x)
+// Example: from(bucket: "renewable_energy") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+```
 
-Update Node-RED environment variables:
-- **INFLUXDB_URL**: `http://influxdb:8086`
-- **INFLUXDB_DB**: `renewable_energy`
-- **INFLUXDB_ORG**: `renewable_energy_org`
-- **INFLUXDB_TOKEN**: Admin token
-- **INFLUXDB_USERNAME**: Admin username
-- **INFLUXDB_PASSWORD**: Admin password
+**Flux Query Examples for Node-RED:**
+```javascript
+// Write data with Flux
+const fluxQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r.device_type == "photovoltaic")
+    |> filter(fn: (r) => r._field == "power_output")
+    |> sum()
+`;
 
-## Data Structure Mapping
+// Read data with Flux
+const readQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -5m)
+    |> filter(fn: (r) => r.device_type == "photovoltaic")
+    |> filter(fn: (r) => r._field == "power_output" or r._field == "efficiency")
+    |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+`;
+```
 
-### Device Data Structure
-Map incoming MQTT data to InfluxDB 2.x format:
+### 4. Flow-Specific Updates Required
+
+#### Update All Flow Files:
+1. **`v2.0-pv-mqtt-loop-simulation.json`** - 1 InfluxDB node
+2. **`v2.1-pv-mqtt-loop-simulation.json`** - 1 InfluxDB node
+
+### 5. Data Structure Validation
+Current data structure is already correct for InfluxDB 2.x (no changes needed):
 
 ```json
 {
-  "device_id": "pv_001",
-  "device_type": "photovoltaic",
+  "device_id": "wt_001",
+  "device_type": "wind_turbine",
   "location": "site_a",
   "status": "operational",
   "data": {
-    "power_output": 584.43,
-    "temperature": 45.2,
-    "voltage": 48.3,
-    "current": 12.1,
-    "irradiance": 850.5
+    "power_output": 1250.5,
+    "wind_speed": 12.3,
+    "wind_direction": 180,
+    "rotor_speed": 15.2,
+    "vibration": 0.05,
+    "efficiency": 85.2
   }
 }
 ```
 
-### InfluxDB 2.x Format
-Convert to InfluxDB 2.x line protocol or JSON format for the InfluxDB node.
-
 ## Expected Output
 
-### Updated Node-RED Flows
-Provide updated flow configurations for:
-1. **Photovoltaic data processing**
-2. **Wind turbine data processing**
-3. **Biogas plant data processing**
-4. **Heat boiler data processing**
-5. **Energy storage data processing**
+### 1. Updated Flow Files
+- **All flow JSON files** - Updated InfluxDB configurations with simple static token
 
-### Configuration Files
-1. **settings.js updates** - Environment variables
-2. **Flow JSON exports** - Updated flow configurations
-3. **Function node code** - Updated JavaScript functions
-4. **Error handling** - Proper error handling for InfluxDB 2.x
+### 2. Simple Static Token Configuration
+For each flow file, update the InfluxDB configuration node:
+```json
+{
+  "id": "influxdb-config",
+  "type": "influxdb",
+  "hostname": "influxdb",
+  "port": "8086",
+  "protocol": "http",
+  "database": "renewable_energy",
+  "name": "InfluxDB",
+  "usetls": false,
+  "tls": "",
+  "influxdbVersion": "2.0",
+  "url": "http://influxdb:8086",
+  "rejectUnauthorized": false,
+  "token": "renewable_energy_admin_token_123",
+  "organization": "renewable_energy_org",
+  "bucket": "renewable_energy"
+}
+```
 
-### Documentation
-1. **Migration guide** - Step-by-step migration instructions
-2. **Configuration reference** - All settings and options
-3. **Troubleshooting guide** - Common issues and solutions
-4. **Testing procedures** - How to verify the integration
+### 3. Flux Query Configuration
+Update Node-RED function nodes to use Flux queries for data operations:
+
+**Example Flux Query for Data Writing:**
+```javascript
+// In Node-RED function node
+const fluxWriteQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r.device_type == "photovoltaic")
+    |> filter(fn: (r) => r._field == "power_output")
+    |> sum()
+`;
+
+// Send to InfluxDB node
+msg.payload = {
+  query: fluxWriteQuery,
+  params: {
+    bucket: "renewable_energy",
+    org: "renewable_energy_org"
+  }
+};
+```
+
+**Example Flux Query for Data Reading:**
+```javascript
+// In Node-RED function node
+const fluxReadQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -5m)
+    |> filter(fn: (r) => r.device_type == "photovoltaic")
+    |> filter(fn: (r) => r._field == "power_output" or r._field == "efficiency")
+    |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+`;
+
+// Send to InfluxDB query node
+msg.payload = {
+  query: fluxReadQuery,
+  params: {
+    bucket: "renewable_energy",
+    org: "renewable_energy_org"
+  }
+};
+```
+
+## Implementation Strategy
+
+### Phase 1: Preparation
+1. **Test current configuration** to establish baseline
+
+### Phase 2: Simple Configuration Updates
+1. **Update InfluxDB configuration nodes** in all flow files
+2. **Add simple static token** `"renewable_energy_admin_token_123"`
+3. **Fix organization names** from "renewable_energy" to "renewable_energy_org"
+
+### Phase 3: Flux Migration
+1. **Update Node-RED function nodes** to use Flux queries
+2. **Replace InfluxQL queries** with Flux syntax
+3. **Test Flux query execution** in Node-RED flows
+
+### Phase 4: Testing and Validation
+1. **Test each device simulation** individually
+2. **Verify data writing** to InfluxDB 2.x using Flux
+3. **Validate token authentication** is working
+4. **Test Flux query execution** in Node-RED
+5. **Verify data consistency** between Node-RED and Grafana
 
 ## Context
 
 This is for a renewable energy monitoring system that processes data from:
-- **Photovoltaic panels**: Power output, temperature, voltage, current, irradiance
-- **Wind turbines**: Power output, wind speed, direction, rotor speed
-- **Biogas plants**: Gas flow, methane concentration, temperature, pressure
-- **Heat boilers**: Temperature, pressure, efficiency, fuel consumption
-- **Energy storage**: State of charge, voltage, current, temperature
+- **Photovoltaic panels**: Power output, temperature, voltage, current, irradiance, efficiency
+- **Wind turbines**: Power output, wind speed, direction, rotor speed, vibration, efficiency
+- **Biogas plants**: Gas flow, methane concentration, temperature, pressure, efficiency
+- **Heat boilers**: Temperature, pressure, efficiency, fuel consumption, flow rate, output power
+- **Energy storage**: State of charge, voltage, current, temperature, cycle count, health status
 
-The Node-RED flows should handle data validation, transformation, and reliable writing to InfluxDB 2.x. 
+The Node-RED flows already have sophisticated mathematical models and data validation. The main updates needed are:
+1. **Authentication configuration** (currently using empty tokens)
+2. **Organization name correction** (currently "renewable_energy" should be "renewable_energy_org")
+3. **Query language migration** (currently using InfluxQL, should use Flux)
+
+## MVP Approach
+
+### Simple Static Token Strategy
+- **Use simple static token** `"renewable_energy_admin_token_123"` for all flows
+- **No complex environment variables** - keep it simple for MVP
+- **Single authentication method** across all device simulations
+- **Easy to configure** and maintain
+
+### Minimal Changes Philosophy
+- **Only change what's necessary** for functionality
+- **Keep existing sophisticated logic** unchanged
+- **Focus on MVP simplicity** over production complexity
+- **Preserve working data structures** and flow logic
+
+## Migration Notes
+
+### Key Differences from Initial Assumption
+- **Not migrating from InfluxDB 3.x to 2.x** - already using 2.x
+- **Flows are already configured** for InfluxDB 2.x
+- **Data structure is correct** for InfluxDB 2.x
+- **Main issue is authentication** and organization naming
+
+### Minimal Changes Required
+- Update organization name in all InfluxDB config nodes
+- Add simple static token authentication
+- Migrate from InfluxQL to Flux queries
+
+### No Changes Needed
+- Data structure and format (already correct)
+- Flow logic and mathematical models (already sophisticated)
+- MQTT integration (already working)
+- Device simulation logic (already comprehensive)
+- Environment variables (keep simple for MVP)
+- Docker Compose configuration (covered by prompt 01)
+- InfluxDB configuration files (covered by prompt 02)
+- Environment variables setup (covered by prompt 03)
+- Grafana integration (covered by prompt 05)
+- Testing scripts (covered by prompt 06)
+- Documentation creation (covered by prompt 07) 

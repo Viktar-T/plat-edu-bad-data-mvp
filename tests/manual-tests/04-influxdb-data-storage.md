@@ -8,36 +8,46 @@ Ensure InfluxDB 3.x is correctly storing device data, maintaining data integrity
 
 ## Prerequisites
 - Manual Test 01, 02, and 03 completed successfully
-- InfluxDB 3.x accessible at http://localhost:8086
+- InfluxDB 2.x accessible at http://localhost:8086
 - Node-RED flows sending data to InfluxDB
 - PowerShell available for API testing
-- InfluxDB CLI installed or access to InfluxDB container
+- Docker containers running and healthy
+- Testing framework available in `tests/scripts/` directory
 
-## InfluxDB 3.x Setup and Configuration
+## InfluxDB 2.x Setup and Configuration
 
-### Note: Authentication Disabled
-Your InfluxDB 3.x instance is configured with `--without-auth`, which means authentication is disabled. This simplifies the testing process.
+### Note: Token-Based Authentication
+Your InfluxDB 2.x instance is configured with token-based authentication using the static token `renewable_energy_admin_token_123` for the organization `renewable_energy_org`.
 
-### Verify InfluxDB 3.x Setup
+### Verify InfluxDB 2.x Setup
 ```powershell
 # Check InfluxDB health
 Invoke-WebRequest -Uri "http://localhost:8086/health" -Method GET -UseBasicParsing
 
-# Check InfluxDB version and status
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers @{"Content-Type"="application/json"} -Body '{"query":"buckets()","org":"renewable_energy_org"}' -UseBasicParsing
+# Check InfluxDB version and status with authentication
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
+}
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method GET -Headers $headers -UseBasicParsing
 ```
 
 ### Create Organization and Bucket (if needed)
-Since authentication is disabled, you can create resources directly via API:
+Since authentication is enabled, you can create resources via API with proper authentication:
 
 ```powershell
 # Create organization (if needed)
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
+}
+
 $orgData = @{
     name = "renewable_energy_org"
     description = "Renewable Energy Monitoring Organization"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers @{"Content-Type"="application/json"} -Body $orgData -UseBasicParsing
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers $headers -Body $orgData -UseBasicParsing
 
 # Create bucket (if needed)
 $bucketData = @{
@@ -51,15 +61,42 @@ $bucketData = @{
     )
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers @{"Content-Type"="application/json"} -Body $bucketData -UseBasicParsing
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers $headers -Body $bucketData -UseBasicParsing
 ```
 
 ### Set Environment Variables
 ```powershell
-# Since authentication is disabled, we don't need tokens
+# Set environment variables for InfluxDB 2.x
 $env:INFLUXDB_ORG = "renewable_energy_org"
 $env:INFLUXDB_BUCKET = "renewable_energy"
+$env:INFLUXDB_TOKEN = "renewable_energy_admin_token_123"
 ```
+
+## Automated Testing Framework
+
+### Quick Health Check
+Before running manual tests, you can use the automated testing framework for quick validation:
+
+```powershell
+# Run comprehensive health check
+.\tests\scripts\test-influxdb-health.ps1
+
+# Run data flow test
+.\tests\scripts\test-data-flow.ps1
+
+# Run Flux query tests
+.\tests\scripts\test-flux-queries.ps1
+
+# Run all tests
+.\tests\run-all-tests.ps1
+```
+
+### Test Framework Features
+- **Health Check**: Service status, connectivity, authentication, organization/bucket access
+- **Data Flow**: End-to-end testing from MQTT to Grafana
+- **Flux Queries**: Query testing with performance validation
+- **Integration**: Cross-component authentication and data consistency
+- **Performance**: Load testing and benchmarking
 
 ## Test Steps
 
@@ -161,7 +198,10 @@ Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Header
 #### 3.1 Send Test Data via MQTT and Verify Storage
 **Command:**
 ```powershell
-# Send test photovoltaic data
+# Option 1: Using the automated MQTT test script
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/photovoltaic/pv_001/data" -Message '{"device_id":"pv_001","device_type":"photovoltaic","timestamp":"2024-01-15T10:30:00Z","data":{"irradiance":850.5,"temperature":45.2,"voltage":48.3,"current":12.1,"power_output":584.43},"status":"operational","location":"site_a"}'
+
+# Option 2: Using Docker exec to run mosquitto_pub inside the container
 $testData = @{
     device_id = "pv_001"
     device_type = "photovoltaic"
@@ -177,27 +217,24 @@ $testData = @{
     location = "site_a"
 } | ConvertTo-Json -Depth 3
 
-# Option 1: Using Docker exec to run mosquitto_pub inside the container
 docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $testData
-
-# Option 2: Using Node.js script if available
-# node scripts/send-mqtt-message.js devices/photovoltaic/pv_001/data $testData
 
 # Wait for processing
 Start-Sleep -Seconds 5
 
-# Query the data to verify it was stored (InfluxDB 3.x with Flux)
+# Query the data to verify it was stored (InfluxDB 2.x with Flux)
 $headers = @{
+    "Authorization" = "Token $env:INFLUXDB_TOKEN"
     "Content-Type" = "application/json"
 }
 
 $fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `pv_001`) |> last()"
 $body = @{
     query = $fluxQuery
-    org = $env:INFLUXDB_ORG
+    type = "flux"
 } | ConvertTo-Json
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $body -UseBasicParsing
 ```
 
 **Expected Result:**
@@ -673,10 +710,13 @@ Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=$env:INFLUXDB_
 
 ### Common Issues
 
-#### 1. InfluxDB 3.x Not Accessible
-**Problem:** Cannot connect to InfluxDB 3.x on port 8086
+#### 1. InfluxDB 2.x Not Accessible
+**Problem:** Cannot connect to InfluxDB 2.x on port 8086
 **Solution:**
 ```powershell
+# Run automated health check
+.\tests\scripts\test-influxdb-health.ps1
+
 # Check container status
 docker-compose ps influxdb
 
@@ -686,18 +726,23 @@ docker-compose logs influxdb
 # Restart service
 docker-compose restart influxdb
 
-# Verify InfluxDB 3.x is running
-docker exec -it iot-influxdb3 influx ping
+# Verify InfluxDB 2.x is running
+docker exec -it iot-influxdb2 influx ping
 ```
 
 #### 2. Organization/Bucket Issues
 **Problem:** Organization or bucket not found
 **Solution:**
 ```powershell
+# Run automated health check for detailed diagnostics
+.\tests\scripts\test-influxdb-health.ps1
+
 # List organizations using API
-$headers = @{"Content-Type"="application/json"}
-$body = @{query="organizations()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
+}
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method GET -Headers $headers -UseBasicParsing
 
 # Create organization if missing
 $orgData = @{
@@ -707,8 +752,7 @@ $orgData = @{
 Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers $headers -Body $orgData -UseBasicParsing
 
 # List buckets using API
-$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets?org=renewable_energy_org" -Method GET -Headers $headers -UseBasicParsing
 
 # Create bucket if missing
 $bucketData = @{
@@ -725,25 +769,32 @@ Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Head
 ```
 
 #### 3. Data Writing Failures
-**Problem:** Data not being written to InfluxDB 3.x
+**Problem:** Data not being written to InfluxDB 2.x
 **Solution:**
 ```powershell
-# Check Node-RED connection to InfluxDB 3.x
+# Run automated data flow test for diagnostics
+.\tests\scripts\test-data-flow.ps1
+
+# Check Node-RED connection to InfluxDB 2.x
 # Verify InfluxDB write permissions
 # Check network connectivity between containers
 
 # Test write API directly
 $writeData = "test_measurement,device_id=test value=123 $(Get-Date -UFormat %s)000000000"
 $headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
     "Content-Type" = "text/plain; charset=utf-8"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=$env:INFLUXDB_BUCKET&org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $writeData
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=renewable_energy&org=renewable_energy_org" -Method POST -Headers $headers -Body $writeData
 ```
 
 #### 4. Query Performance Issues
 **Problem:** Slow Flux query execution
 **Solution:**
 ```powershell
+# Run automated performance tests
+.\tests\scripts\test-performance.ps1
+
 # Check InfluxDB resource usage
 docker stats influxdb
 
@@ -763,10 +814,19 @@ Write-Host "Query execution time: $($duration.TotalMilliseconds) ms"
 **Problem:** Flux queries return errors
 **Solution:**
 ```powershell
+# Run automated Flux query tests
+.\tests\scripts\test-flux-queries.ps1
+
 # Test simple Flux query first
-$headers = @{"Content-Type"="application/json"}
-$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
+}
+$body = @{
+    query = "buckets()"
+    type = "flux"
+} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Check Flux syntax documentation
 # Use InfluxDB UI for query testing

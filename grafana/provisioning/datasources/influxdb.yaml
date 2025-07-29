@@ -1,7 +1,7 @@
 apiVersion: 1
 
 datasources:
-  - name: InfluxDB 3.x
+  - name: InfluxDB 2.x
     type: influxdb
     access: proxy
     url: http://influxdb:8086
@@ -9,8 +9,8 @@ datasources:
     editable: true
     jsonData:
       version: Flux
-      organization: renewable_energy
+      organization: renewable_energy_org
       defaultBucket: renewable_energy
       tlsSkipVerify: true
     secureJsonData:
-      token: ${INFLUXDB_TOKEN:-} 
+      token: renewable_energy_admin_token_123 

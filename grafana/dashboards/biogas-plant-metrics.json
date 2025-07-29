@@ -18,7 +18,7 @@
         "name": "plant_id",
         "type": "query",
         "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"biogas_plant\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
-        "datasource": "InfluxDB 3.x",
+        "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
@@ -44,7 +44,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> sum()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -74,7 +74,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -106,7 +106,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -137,7 +137,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\" or r._field == \"methane_concentration\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -229,7 +229,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"temperature\" or r._field == \"pressure\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -321,7 +321,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -353,7 +353,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -412,7 +412,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> histogram(bins: 20)",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -471,7 +471,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\" or r._field == \"methane_concentration\" or r._field == \"temperature\" or r._field == \"efficiency\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -529,7 +529,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()\n  |> map(fn: (r) => ({r with _value: if r._value >= 70 then 100 else if r._value >= 50 then 70 else 30}))",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -559,7 +559,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> mean()\n  |> map(fn: (r) => ({r with _value: r._value / 150.0 * 100}))",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {

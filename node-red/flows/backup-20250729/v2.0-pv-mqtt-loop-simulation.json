@@ -127,32 +127,12 @@
     "y": 200,
     "wires": [
       [
-        "pv-flux-converter"
+        "pv-influxdb"
       ],
       [
         "pv-error-log"
       ]
     ]
-  },
-  {
-    "id": "pv-flux-converter",
-    "type": "function",
-    "z": "photovoltaic-simulation",
-    "name": "Flux Data Converter",
-    "func": "// Convert data to Flux format for InfluxDB 2.x\nconst data = msg.payload;\n\n// Create Flux-compatible data structure\nconst fluxData = {\n  measurement: \"photovoltaic_data\",\n  tags: {\n    device_id: data.device_id,\n    device_type: data.device_type,\n    location: data.location,\n    status: data.status\n  },\n  fields: {\n    ...data.data,\n    timestamp: new Date(data.timestamp).getTime()\n  },\n  timestamp: new Date(data.timestamp).getTime()\n};\n\n// Set the payload for InfluxDB node\nmsg.payload = fluxData;\n\n// Add Flux query metadata\nmsg.fluxQuery = `\n  from(bucket: \"renewable_energy\")\n    |> range(start: -1h)\n    |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n    |> filter(fn: (r) => r.device_type == \"${data.device_type}\")\n    |> filter(fn: (r) => r.device_id == \"${data.device_id}\")\n`;\n\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 620,
-    "y": 160,
-            "wires": [
-          [
-            "pv-influxdb",
-            "pv-flux-debug"
-          ]
-        ]
   },
   {
     "id": "pv-influxdb",
@@ -166,27 +146,10 @@
     "database": "",
     "precisionV18FluxV20": "ms",
     "retentionPolicyV18Flux": "",
-    "org": "renewable_energy_org",
+    "org": "renewable_energy",
     "bucket": "renewable_energy",
     "x": 720,
     "y": 160,
-    "wires": []
-  },
-  {
-    "id": "pv-flux-debug",
-    "type": "debug",
-    "z": "photovoltaic-simulation",
-    "name": "Flux Query Debug",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "fluxQuery",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 720,
-    "y": 120,
     "wires": []
   },
   {
@@ -246,8 +209,8 @@
     "influxdbVersion": "2.0",
     "url": "http://influxdb:8086",
     "rejectUnauthorized": false,
-    "token": "renewable_energy_admin_token_123",
-    "organization": "renewable_energy_org",
+    "token": "",
+    "organization": "renewable_energy",
     "bucket": "renewable_energy"
   }
 ] 

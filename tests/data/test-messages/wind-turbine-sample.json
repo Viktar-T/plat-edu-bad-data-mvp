@@ -1,0 +1,15 @@
+{
+  "device_id": "test_wt_001",
+  "device_type": "wind_turbine",
+  "location": "test_site",
+  "status": "operational",
+  "data": {
+    "power_output": 1800.0,
+    "wind_speed": 12.5,
+    "wind_direction": 180,
+    "rotor_speed": 15.2,
+    "vibration": 0.05,
+    "efficiency": 0.35
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+} 

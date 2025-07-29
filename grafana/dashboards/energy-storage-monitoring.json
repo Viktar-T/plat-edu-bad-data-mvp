@@ -18,7 +18,7 @@
         "name": "battery_id",
         "type": "query",
         "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"energy_storage\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
-        "datasource": "InfluxDB 3.x",
+        "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
@@ -44,7 +44,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"stored_energy\")\n  |> sum()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -74,7 +74,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -108,7 +108,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -139,7 +139,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> group(columns: [\"device_id\"])",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -200,7 +200,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"voltage\" or r._field == \"current\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -292,7 +292,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"health\")\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -324,7 +324,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_cycles\" or r._field == \"discharge_cycles\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -383,7 +383,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_power\" or r._field == \"discharge_power\")\n  |> group(columns: [\"_field\"])\n  |> sum()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -427,7 +427,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\" or r._field == \"voltage\" or r._field == \"temperature\" or r._field == \"health\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -485,7 +485,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_power\" or r._field == \"discharge_power\")\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with _value: r.charge_power + r.discharge_power}))",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
@@ -544,7 +544,7 @@
         {
           "refId": "A",
           "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_cycles\" or r._field == \"discharge_cycles\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with _value: r.charge_cycles + r.discharge_cycles}))\n  |> mean()",
-          "datasource": "InfluxDB 3.x"
+          "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {

@@ -12,6 +12,32 @@ Ensure all Docker containers are healthy and all services are accessible on thei
 - Project cloned and environment variables configured
 - All services started with `docker-compose up -d`
 - PowerShell execution policy set to allow script execution
+- Testing framework available in `tests/scripts/` directory
+
+## Automated Testing Framework
+
+### Quick System Validation
+Before running manual tests, you can use the automated testing framework for quick validation:
+
+```powershell
+# Run comprehensive health checks
+.\tests\scripts\test-influxdb-health.ps1
+
+# Run data flow test (includes all component validation)
+.\tests\scripts\test-data-flow.ps1
+
+# Run integration tests (includes connectivity validation)
+.\tests\scripts\test-integration.ps1
+
+# Run all tests
+.\tests\run-all-tests.ps1
+```
+
+### Test Framework Features
+- **Health Checks**: Service status, connectivity, authentication
+- **Data Flow**: End-to-end testing from MQTT to Grafana
+- **Integration**: Cross-component connectivity validation
+- **Performance**: Load testing and benchmarking
 
 ## Test Steps
 
@@ -26,7 +52,7 @@ docker-compose ps
 ```
 NAME                COMMAND                  SERVICE             STATUS              PORTS
 iot-mosquitto       "/docker-entrypoint.…"   mosquitto           Up (healthy)        0.0.0.0:1883->1883/tcp, 0.0.0.0:9001->9001/tcp
-iot-influxdb3       "/entrypoint.sh --ob…"   influxdb            Up (healthy)        0.0.0.0:8086->8086/tcp
+iot-influxdb2       "/entrypoint.sh /usr…"   influxdb            Up (healthy)        0.0.0.0:8086->8086/tcp
 iot-node-red        "/bin/bash /startup.…"   node-red            Up (healthy)        0.0.0.0:1880->1880/tcp
 iot-grafana         "/run.sh"                grafana             Up (healthy)        0.0.0.0:3000->3000/tcp
 ```
@@ -42,7 +68,7 @@ iot-grafana         "/run.sh"                grafana             Up (healthy)   
 **Command:**
 ```powershell
 # Using PowerShell MQTT test script
-.\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "system/health/mosquitto" -Message "health_check"
 ```
 
 **Expected Result:**
@@ -53,6 +79,10 @@ iot-grafana         "/run.sh"                grafana             Up (healthy)   
 #### 2.2 InfluxDB Health Check
 **Command:**
 ```powershell
+# Option 1: Using automated health check script
+.\tests\scripts\test-influxdb-health.ps1
+
+# Option 2: Manual health check
 Invoke-WebRequest -Uri http://localhost:8086/health -UseBasicParsing
 ```
 
@@ -209,7 +239,10 @@ npm install
 **Command:**
 ```powershell
 # Test basic MQTT connectivity
-.\test-mqtt.ps1 -PublishTest -Topic "test/prerequisites" -Message "prerequisites_check"
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "test/prerequisites" -Message "prerequisites_check"
+
+# Test automated health checks
+.\tests\scripts\test-influxdb-health.ps1
 ```
 
 **Expected Result:**
@@ -289,6 +322,9 @@ docker-compose exec mosquitto mosquitto_passwd -b /mosquitto/config/passwd admin
 **Problem:** Node-RED health endpoint not available
 **Solution:**
 ```powershell
+# Run automated integration tests for diagnostics
+.\tests\scripts\test-integration.ps1
+
 # Check if Node-RED is accessible via main interface
 Invoke-WebRequest -Uri http://localhost:1880 -UseBasicParsing
 
@@ -314,7 +350,7 @@ node --version
 npm --version
 
 # Reinstall MQTT dependencies
-cd tests\manual-tests
+cd tests\scripts
 Remove-Item node_modules -Recurse -Force
 npm install
 ```

@@ -9,8 +9,30 @@ Ensure Grafana dashboards are functional, data is displayed correctly, and visua
 ## Prerequisites
 - Manual Test 01, 02, 03, and 04 completed successfully
 - Grafana accessible at http://localhost:3000
-- InfluxDB containing test data
+- InfluxDB 2.x containing test data
 - Web browser for dashboard testing
+- Testing framework available in `tests/scripts/` directory
+
+## Automated Testing Framework
+
+### Quick Data Flow Test
+Before running manual tests, you can use the automated testing framework for quick validation:
+
+```powershell
+# Run comprehensive data flow test (includes Grafana validation)
+.\tests\scripts\test-data-flow.ps1
+
+# Run integration tests (includes Grafana connectivity)
+.\tests\scripts\test-integration.ps1
+
+# Run all tests
+.\tests\run-all-tests.ps1
+```
+
+### Test Framework Features
+- **Data Flow**: End-to-end testing from MQTT to Grafana visualization
+- **Integration**: Cross-component authentication and data consistency
+- **Performance**: Dashboard load time and query performance testing
 
 ## Test Steps
 
@@ -20,7 +42,7 @@ Ensure Grafana dashboards are functional, data is displayed correctly, and visua
 **Action:**
 1. Open web browser
 2. Navigate to http://localhost:3000
-3. Login with credentials: admin/admin
+3. Login with credentials: admin/admin (default) or check your configuration
 
 **Expected Result:**
 - Grafana login page loads
@@ -96,7 +118,10 @@ Invoke-WebRequest -Uri http://localhost:3000/api/health -UseBasicParsing
 #### 4.1 Send Test Data and Verify Display
 **Command:**
 ```powershell
-# Send photovoltaic test data
+# Option 1: Using the automated MQTT test script
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/photovoltaic/pv_001/data" -Message '{"device_id":"pv_001","device_type":"photovoltaic","timestamp":"2024-01-15T10:30:00Z","data":{"irradiance":850.5,"temperature":45.2,"voltage":48.3,"current":12.1,"power_output":584.43},"status":"operational","location":"site_a"}'
+
+# Option 2: Using Docker exec to run mosquitto_pub inside the container
 $pvData = @{
     device_id = "pv_001"
     device_type = "photovoltaic"
@@ -112,7 +137,7 @@ $pvData = @{
     location = "site_a"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $pvData
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $pvData
 ```
 
 **Action in Grafana:**
@@ -128,7 +153,12 @@ mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/p
 #### 4.2 Test Multiple Device Types
 **Command:**
 ```powershell
-# Send wind turbine data
+# Option 1: Using the automated MQTT test script for multiple devices
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/wind_turbine/wt_001/data" -Message '{"device_id":"wt_001","device_type":"wind_turbine","timestamp":"2024-01-15T10:30:00Z","data":{"wind_speed":12.5,"power_output":850.2,"rpm":1200,"temperature":35.1},"status":"operational","location":"site_b"}'
+
+.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/biogas_plant/bg_001/data" -Message '{"device_id":"bg_001","device_type":"biogas_plant","timestamp":"2024-01-15T10:30:00Z","data":{"gas_flow":25.5,"methane_concentration":65.2,"temperature":38.5,"pressure":1.2},"status":"operational","location":"site_c"}'
+
+# Option 2: Using Docker exec to run mosquitto_pub inside the container
 $wtData = @{
     device_id = "wt_001"
     device_type = "wind_turbine"
@@ -143,9 +173,8 @@ $wtData = @{
     location = "site_b"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u wt_001 -P device_password_123 -t devices/wind_turbine/wt_001/data -m $wtData
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u wt_001 -P device_password_123 -t devices/wind_turbine/wt_001/data -m $wtData
 
-# Send biogas plant data
 $bgData = @{
     device_id = "bg_001"
     device_type = "biogas_plant"
@@ -160,7 +189,7 @@ $bgData = @{
     location = "site_c"
 } | ConvertTo-Json -Depth 3
 
-mosquitto_pub -h localhost -p 1883 -u bg_001 -P device_password_123 -t devices/biogas_plant/bg_001/data -m $bgData
+docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u bg_001 -P device_password_123 -t devices/biogas_plant/bg_001/data -m $bgData
 ```
 
 **Action in Grafana:**
@@ -419,6 +448,9 @@ docker-compose restart grafana
 **Problem:** InfluxDB data source connection fails
 **Solution:**
 ```powershell
+# Run automated integration tests for diagnostics
+.\tests\scripts\test-integration.ps1
+
 # Check InfluxDB status
 docker-compose ps influxdb
 
@@ -432,12 +464,22 @@ Invoke-WebRequest -Uri http://localhost:8086/health -UseBasicParsing
 **Problem:** Dashboards show no data or errors
 **Solution:**
 ```powershell
-# Check if data exists in InfluxDB
-$params = @{
-    db = "renewable_energy"
-    q = "SELECT COUNT(*) FROM photovoltaic_data"
+# Run automated data flow tests for diagnostics
+.\tests\scripts\test-data-flow.ps1
+
+# Check if data exists in InfluxDB 2.x
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/json"
 }
-Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -UseBasicParsing
+
+$fluxQuery = "from(bucket: `"renewable_energy`") |> range(start: -1h) |> filter(fn: (r) => r._measurement == `"photovoltaic_data`") |> count()"
+$body = @{
+    query = $fluxQuery
+    type = "flux"
+} | ConvertTo-Json
+
+Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
 
 # Verify dashboard queries
 # Check panel configurations
@@ -447,6 +489,9 @@ Invoke-WebRequest -Uri "http://localhost:8086/query" -Method GET -Body $params -
 **Problem:** Slow dashboard loading or query execution
 **Solution:**
 ```powershell
+# Run automated performance tests
+.\tests\scripts\test-performance.ps1
+
 # Check system resources
 docker stats
 

@@ -1,0 +1,60 @@
+{
+  "influxdb": {
+    "url": "http://localhost:8086",
+    "token": "renewable_energy_admin_token_123",
+    "organization": "renewable_energy_org",
+    "bucket": "renewable_energy"
+  },
+  "mqtt": {
+    "host": "localhost",
+    "port": 1883,
+    "topic": "devices/photovoltaic/test_device/data"
+  },
+  "nodered": {
+    "url": "http://localhost:1880",
+    "apiEndpoint": "http://localhost:1880/api"
+  },
+  "grafana": {
+    "url": "http://localhost:3000",
+    "token": "renewable_energy_admin_token_123"
+  },
+  "testData": {
+    "photovoltaic": {
+      "device_id": "test_pv_001",
+      "device_type": "photovoltaic",
+      "location": "test_site",
+      "status": "operational",
+      "data": {
+        "power_output": 2500.5,
+        "temperature": 45.2,
+        "voltage": 48.5,
+        "current": 51.5,
+        "irradiance": 850.0,
+        "efficiency": 0.18
+      }
+    },
+    "wind_turbine": {
+      "device_id": "test_wt_001",
+      "device_type": "wind_turbine",
+      "location": "test_site",
+      "status": "operational",
+      "data": {
+        "power_output": 1800.0,
+        "wind_speed": 12.5,
+        "wind_direction": 180,
+        "rotor_speed": 15.2,
+        "vibration": 0.05,
+        "efficiency": 0.35
+      }
+    }
+  },
+  "timeouts": {
+    "request": 10000,
+    "connection": 5000,
+    "test": 30000
+  },
+  "retries": {
+    "max": 3,
+    "delay": 1000
+  }
+} 
