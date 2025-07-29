@@ -308,6 +308,8 @@
     "rejectUnauthorized": false,
     "token": "renewable_energy_admin_token_123",
     "organization": "renewable_energy_org",
-    "bucket": "renewable_energy"
+    "bucket": "renewable_energy",
+    "username": "admin",
+    "password": "admin_password_123"
     }
 ]

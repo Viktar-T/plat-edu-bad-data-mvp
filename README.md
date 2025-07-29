@@ -1,18 +1,19 @@
 # IoT Renewable Energy Monitoring System
 
-A comprehensive IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
+A comprehensive IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB 2.x, and Grafana with Docker containerization.
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB      │
-│                 │    │   (Mosquitto)   │    │   (Processing)  │    │   (Database)    │
-│ • Photovoltaic  │    │                 │    │                 │    │                 │
-│ • Wind Turbine  │    │ • Topic Routing │    │ • Data Validation│    │ • Time-series   │
-│ • Biogas Plant  │    │ • Authentication│    │ • Transformation│    │ • Measurements  │
-│ • Heat Boiler   │    │ • QoS Management│    │ • Aggregation   │    │ • Retention     │
-│ • Energy Storage│    │ • Message Retain│    │ • Error Handling│    │ • Queries       │
+│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB 2.x  │
+│   (Simulated)   │    │   (Mosquitto)   │    │   (Processing)  │    │   (Database)    │
+│                 │    │                 │    │                 │    │                 │
+│ • Photovoltaic  │    │ • Topic Routing │    │ • Data Validation│    │ • Time-series   │
+│ • Wind Turbine  │    │ • Authentication│    │ • Transformation│    │ • Measurements  │
+│ • Biogas Plant  │    │ • QoS Management│    │ • Aggregation   │    │ • Retention     │
+│ • Heat Boiler   │    │ • Message Retain│    │ • Error Handling│    │ • Flux Queries  │
+│ • Energy Storage│    │                 │    │ • Device Sim.   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                                               │
                                                                               ▼
@@ -27,13 +28,15 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
                                                                    └─────────────────┘
 ```
 
+**Note**: IoT devices are currently **simulated within Node-RED** using realistic mathematical models and data generation algorithms. The system is designed to easily integrate with real IoT devices by replacing the simulation nodes with actual device connections.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Docker and Docker Compose
 - Git
-- mosquitto-clients (for testing)
+- PowerShell (for Windows testing)
 
 ### Installation
 
@@ -43,7 +46,11 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
    cd plat-edu-bad-data-mvp
    ```
 
-2. 
+2. **Configure environment variables**
+   ```bash
+   cp env.example .env
+   # Edit .env file with your preferred settings
+   ```
 
 3. **Start all services**
    ```bash
@@ -54,22 +61,30 @@ A comprehensive IoT-based real-time monitoring system for renewable energy sourc
    ```bash
    docker-compose ps
    ```
+
 5. **Direct Browser Access Tests**
-   - Node-RED: http://localhost:1880 ✅ (no Login, Should show Node-RED editor)
-   - Grafana: http://localhost:3000 ✅ (Login: admin/admin)
-   - InfluxDB: http://localhost:8086/ ✅ (Time-series database. Without Web Interface)
-     - InfluxDB Web Interface: http://localhost:5002 (InfluxDB 3 admin panel)
+   - Node-RED: http://localhost:1880 ✅ (Login: admin / adminpassword)
+   - Grafana: http://localhost:3000 ✅ (Login: admin / admin)
+   - InfluxDB: http://localhost:8086/ ✅ (Web interface + API endpoint); 
+     - (admin / admin_password_123 (API token: renewable_energy_admin_token_123))
    - MQTT: localhost:1883 -- Not browsable (MQTT protocol only)
 
-6. **Test MQTT connectivity**
+   **Default Credentials** (from env.example):
+   - **Node-RED**: admin / adminpassword
+   - **Grafana**: admin / admin
+   - **InfluxDB**: admin / admin_password_123 (API token: renewable_energy_admin_token_123)
+   - **MQTT**: admin / admin_password_456
+
+6. **Run comprehensive tests**
    ```powershell
    # For Windows PowerShell
-   cd tests\manual-tests
-   npm install
-   .\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
+   cd tests
+   .\run-all-tests.ps1
    
-   # For Linux/macOS
-   ./scripts/mqtt-test.sh
+   # Individual test scripts
+   .\scripts\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
+   .\scripts\test-data-flow.ps1
+   .\scripts\test-flux-queries.ps1
    ```
 
 ## 📁 Project Structure
@@ -89,17 +104,42 @@ plat-edu-bad-data-mvp/
 │       ├── passwd              # Password file (generated)
 │       └── acl                 # Access control list
 ├── node-red/                   # Node-RED configuration
-├── influxdb/                   # InfluxDB configuration
+│   ├── flows/                  # Node-RED flow files
+│   │   ├── v2.0-pv-mqtt-loop-simulation.json
+│   │   ├── v2.1-pv-mqtt-loop-simulation.json
+│   │   └── FLUX_MIGRATION_SUMMARY.md
+│   └── data/                   # Node-RED data directory
+├── influxdb/                   # InfluxDB 2.x configuration
+│   ├── config/                 # InfluxDB configuration files
+│   ├── data/                   # Time-series data storage
+│   └── backups/                # Database backups
 ├── grafana/                    # Grafana configuration
+│   ├── dashboards/             # Pre-configured dashboards
+│   │   ├── renewable-energy-overview.json
+│   │   ├── photovoltaic-monitoring.json
+│   │   ├── wind-turbine-analytics.json
+│   │   ├── biogas-plant-metrics.json
+│   │   ├── heat-boiler-monitoring.json
+│   │   └── energy-storage-monitoring.json
+│   └── provisioning/           # Auto-provisioning configuration
 ├── scripts/                    # Utility scripts
-│   ├── setup-mqtt.sh          # MQTT setup script
-│   ├── mqtt-test.sh           # MQTT connectivity testing (Linux/macOS)
-│   └── simulate-devices.sh    # Device simulation (Linux/macOS)
-└── tests/                     # Testing framework
-    └── manual-tests/          # Manual testing procedures
-        ├── test-mqtt.ps1      # MQTT testing (Windows PowerShell)
-        ├── simulate-devices.ps1 # Device simulation (Windows PowerShell)
-        └── package.json       # Node.js dependencies for testing
+│   ├── deploy-mqtt-loop.ps1   # MQTT loop deployment
+│   ├── convert-all-flows.ps1  # Flow conversion utilities
+│   └── influx3-setup.ps1      # InfluxDB setup utilities
+└── tests/                     # Comprehensive testing framework
+    ├── run-all-tests.ps1      # Main test runner
+    ├── scripts/               # Individual test scripts
+    │   ├── test-mqtt.ps1      # MQTT connectivity testing
+    │   ├── test-data-flow.ps1 # End-to-end data flow testing
+    │   ├── test-flux-queries.ps1 # Flux query testing
+    │   ├── test-integration.ps1 # Component integration testing
+    │   └── test-performance.ps1 # Performance testing
+    ├── javascript/            # JavaScript API testing
+    │   ├── test-influxdb-api.js
+    │   ├── test-config.json
+    │   └── package.json
+    └── data/                  # Test data files
+        └── test-messages/     # Sample device messages
 ```
 
 ## 🔐 MQTT Configuration
@@ -145,48 +185,45 @@ system/health/mosquitto
 system/alerts/critical
 ```
 
-## 🧪 Testing
+## 🧪 Testing Framework
 
-### MQTT Connectivity Testing
+### Comprehensive Testing Suite
 
-#### Windows PowerShell Testing
-The `tests/manual-tests/` directory contains PowerShell scripts for Windows:
+The project includes a complete testing framework with PowerShell scripts and JavaScript API tests:
+
+#### PowerShell Testing Scripts
+- **`test-mqtt.ps1`** - MQTT connectivity and message testing
+- **`test-data-flow.ps1`** - End-to-end data flow validation
+- **`test-flux-queries.ps1`** - InfluxDB Flux query testing
+- **`test-integration.ps1`** - Component integration testing
+- **`test-performance.ps1`** - Performance and load testing
+
+#### JavaScript API Testing
+- **`test-influxdb-api.js`** - InfluxDB API testing with Node.js
+- **`test-config.json`** - Centralized test configuration
+- **`package.json`** - Node.js dependencies for testing
+
+#### Test Runner
+- **`run-all-tests.ps1`** - Comprehensive test execution with detailed reporting
+
+### Running Tests
 
 ```powershell
-cd tests\manual-tests
+# Run all tests
+cd tests
+.\run-all-tests.ps1
+
+# Run individual tests
+.\scripts\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
+.\scripts\test-data-flow.ps1
+.\scripts\test-flux-queries.ps1
+.\scripts\test-integration.ps1
+.\scripts\test-performance.ps1
+
+# JavaScript API tests
+cd javascript
 npm install
-.\test-mqtt.ps1 -PublishTest -Topic "test/hello" -Message "Hello World!"
-.\simulate-devices.ps1 -AllDevices -Duration 60
-```
-
-#### Linux/macOS Testing
-The `scripts/mqtt-test.sh` script provides comprehensive testing:
-
-```bash
-# Basic connectivity test
-./scripts/mqtt-test.sh
-
-# Test with custom credentials
-./scripts/mqtt-test.sh -u admin -P mypassword
-
-# Test specific device
-./scripts/mqtt-test.sh --pv-user pv_001 --pv-password device_password_123
-```
-
-### Manual Testing
-
-```bash
-# Test basic connectivity
-mosquitto_pub -h localhost -p 1883 -u admin -P password -t test/topic -m "Hello World"
-
-# Test device data publishing
-mosquitto_pub -h localhost -p 1883 -u pv_001 -P password \
-  -t devices/photovoltaic/pv_001/data \
-  -m '{"device_id":"pv_001","data":{"power":500}}'
-
-# Test device command subscription
-mosquitto_sub -h localhost -p 1883 -u pv_001 -P password \
-  -t devices/photovoltaic/pv_001/commands
+node test-influxdb-api.js
 ```
 
 ## 🔧 Configuration
@@ -200,15 +237,23 @@ Copy `env.example` to `.env` and configure:
 MQTT_PORT=1883
 MQTT_WS_PORT=9001
 MQTT_ADMIN_USER=admin
-MQTT_ADMIN_PASSWORD=your_secure_password
+MQTT_ADMIN_PASSWORD=admin_password_456
 
-# Performance Tuning
-MOSQUITTO_MAX_CONNECTIONS=1000
-MOSQUITTO_MAX_QUEUED_MESSAGES=100
-MOSQUITTO_AUTOSAVE_INTERVAL=1800
+# InfluxDB 2.x Configuration
+INFLUXDB_ADMIN_USER=admin
+INFLUXDB_ADMIN_PASSWORD=admin_password_123
+INFLUXDB_ADMIN_TOKEN=renewable_energy_admin_token_123
+INFLUXDB_ORG=renewable_energy_org
+INFLUXDB_BUCKET=renewable_energy
+INFLUXDB_RETENTION=30d
 
-# Logging
-MOSQUITTO_LOG_LEVEL=information
+# Node-RED Configuration
+NODE_RED_USERNAME=admin
+NODE_RED_PASSWORD=adminpassword
+
+# Grafana Configuration
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 ### Service Ports
@@ -220,11 +265,13 @@ MOSQUITTO_LOG_LEVEL=information
 
 ## 📊 Data Flow
 
-1. **IoT Devices** publish telemetry data to MQTT topics
+1. **Node-RED Device Simulation** generates realistic IoT device data using mathematical models
 2. **MQTT Broker** routes messages based on topic structure
-3. **Node-RED** subscribes to device topics, validates and transforms data
-4. **InfluxDB** stores time-series data with proper retention policies
-5. **Grafana** visualizes data through dashboards and alerts
+3. **Node-RED Processing** validates and transforms data using Flux format
+4. **InfluxDB 2.x** stores time-series data with proper retention policies
+5. **Grafana** visualizes data through pre-configured dashboards and alerts
+
+**Simulation Details**: The system currently uses Node-RED flows (`v2.0-pv-mqtt-loop-simulation.json` and `v2.1-pv-mqtt-loop-simulation.json`) to simulate photovoltaic panels with realistic solar irradiance, temperature, voltage, current, and power output models. The simulation includes fault scenarios and daily/seasonal variations.
 
 ### Example Data Format
 
@@ -244,6 +291,44 @@ MOSQUITTO_LOG_LEVEL=information
   "location": "site_a"
 }
 ```
+
+### Flux Query Examples
+
+```flux
+// Data writing with Flux format
+from(bucket: "renewable_energy")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+  |> filter(fn: (r) => r.device_type == "photovoltaic")
+
+// Data reading with aggregation
+from(bucket: "renewable_energy")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r.device_type == "photovoltaic")
+  |> filter(fn: (r) => r._field == "power_output" or r._field == "efficiency")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+```
+
+## 📈 Grafana Dashboards
+
+### Pre-Configured Dashboards
+
+The system includes comprehensive dashboards for all device types:
+
+- **Renewable Energy Overview** - System-wide monitoring
+- **Photovoltaic Monitoring** - Solar panel performance metrics
+- **Wind Turbine Analytics** - Wind power generation analysis
+- **Biogas Plant Metrics** - Biogas production monitoring
+- **Heat Boiler Monitoring** - Thermal energy system tracking
+- **Energy Storage Monitoring** - Battery storage analytics
+
+### Dashboard Features
+
+- Real-time data visualization
+- Historical trend analysis
+- Performance metrics and KPIs
+- Alert configuration
+- Responsive design for multiple screen sizes
 
 ## 🛡️ Security
 
@@ -315,13 +400,26 @@ docker-compose logs grafana
    NEW_DEVICE_ID_PASSWORD=new_password
    ```
 
-### Simulating Devices
+### Node-RED Flow Development
 
-Use the device simulation script:
+The system includes two main flow versions for **device simulation**:
+- **v2.0-pv-mqtt-loop-simulation.json** - Basic photovoltaic simulation with realistic solar models
+- **v2.1-pv-mqtt-loop-simulation.json** - Enhanced photovoltaic simulation with Flux integration
 
-```bash
-./scripts/simulate-devices.sh
-```
+**Simulation Features**:
+- **Realistic Solar Models**: Irradiance based on time of day and season
+- **Temperature Effects**: Panel temperature modeling with efficiency calculations
+- **Fault Scenarios**: Random fault injection (shading, temperature, connection issues)
+- **Data Validation**: Comprehensive data range and consistency checks
+- **Flux Integration**: Proper data conversion for InfluxDB 2.x storage
+
+### Flux Migration
+
+The system has been migrated to use InfluxDB 2.x with Flux query language:
+- ✅ Token-based authentication
+- ✅ Flux-compatible data structure
+- ✅ Proper organization and bucket configuration
+- ✅ Advanced query capabilities
 
 ## 📚 Documentation
 
@@ -329,6 +427,8 @@ Use the device simulation script:
 - [MQTT Configuration](docs/mqtt-configuration.md) - Complete MQTT setup guide
 - [Development Workflow](docs/development-workflow.md) - Development guidelines
 - [Architecture Decisions](docs/decisions/) - Design decision records
+- [Testing Implementation](tests/TESTING_IMPLEMENTATION_SUMMARY.md) - Testing framework details
+- [Flux Migration](node-red/flows/FLUX_MIGRATION_SUMMARY.md) - InfluxDB 2.x migration details
 
 ## 🤝 Contributing
 
@@ -348,8 +448,9 @@ For issues and questions:
 
 1. Check the [documentation](docs/)
 2. Review [troubleshooting guide](docs/mqtt-configuration.md#troubleshooting)
-3. Open an issue on GitHub
-4. Contact the development team
+3. Run the [testing framework](tests/) to diagnose issues
+4. Open an issue on GitHub
+5. Contact the development team
 
 ## 🔄 Updates
 
@@ -357,10 +458,23 @@ For issues and questions:
 
 - ✅ Complete MQTT broker configuration with authentication
 - ✅ Topic-based access control implementation
-- ✅ Comprehensive testing scripts
+- ✅ Comprehensive testing framework with PowerShell and JavaScript
+- ✅ InfluxDB 2.x migration with Flux query language
+- ✅ Pre-configured Grafana dashboards for all device types
+- ✅ Node-RED flows with Flux data conversion
 - ✅ Security best practices documentation
 - ✅ Environment variable configuration
-- ✅ Docker service integration
+- ✅ Docker service integration with health checks
+
+### Current Implementation Status
+
+- ✅ **MQTT Broker**: Fully configured with authentication and ACL
+- ✅ **InfluxDB 2.x**: Migrated from 1.x with Flux queries
+- ✅ **Node-RED**: Flows with Flux data conversion
+- ✅ **Grafana**: Complete dashboard suite
+- ✅ **Testing**: Comprehensive PowerShell and JavaScript testing framework
+- ✅ **Documentation**: Complete system documentation
+- ✅ **Docker**: Production-ready containerization
 
 ### Roadmap
 
@@ -368,4 +482,5 @@ For issues and questions:
 - [ ] Advanced monitoring and alerting
 - [ ] Multi-site deployment support
 - [ ] API gateway integration
-- [ ] Mobile application support 
+- [ ] Mobile application support
+- [ ] Machine learning integration for predictive maintenance 
