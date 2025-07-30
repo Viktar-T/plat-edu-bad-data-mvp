@@ -22,6 +22,7 @@ function Write-Log {
 
 # Test results tracking
 $TestResults = @{
+    "Prerequisites" = $false
     "Health Check" = $false
     "Data Flow" = $false
     "Flux Queries" = $false
@@ -32,7 +33,26 @@ $TestResults = @{
 Write-Log "=== Starting Comprehensive InfluxDB 2.x Testing ==="
 Write-Log "Test execution started at: $(Get-Date)"
 
-# Test 1: Health Check
+# Test 1: Prerequisites Check
+Write-Log "Running Prerequisites Check..."
+try {
+    $PrerequisitesResult = & "tests/auto-tasts/test-prerequisites.ps1"
+    if ($LASTEXITCODE -eq 0) {
+        Write-Log "✓ Prerequisites check passed" "SUCCESS"
+        $TestResults["Prerequisites"] = $true
+    } else {
+        Write-Log "✗ Prerequisites check failed" "ERROR"
+        Write-Log "Skipping remaining tests due to prerequisites failure" "WARNING"
+        # Skip remaining tests if prerequisites fail
+        goto Summary
+    }
+} catch {
+    Write-Log "✗ Prerequisites check execution failed: $($_.Exception.Message)" "ERROR"
+    Write-Log "Skipping remaining tests due to prerequisites failure" "WARNING"
+    goto Summary
+}
+
+# Test 2: Health Check
 Write-Log "Running Health Check Tests..."
 try {
     $HealthResult = & "tests/scripts/test-influxdb-health.ps1"
@@ -103,6 +123,7 @@ try {
 }
 
 # Comprehensive Summary Report
+Summary:
 Write-Log "=== Comprehensive Test Summary ==="
 $PassedTests = ($TestResults.Values | Where-Object { $_ -eq $true }).Count
 $TotalTests = $TestResults.Count
