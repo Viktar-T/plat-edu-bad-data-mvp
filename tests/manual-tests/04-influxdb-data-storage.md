@@ -1,840 +1,713 @@
 # Manual Test 04: InfluxDB Data Storage
 
 ## Overview
-This test verifies that InfluxDB 3.x is properly receiving, storing, and managing time-series data from the renewable energy monitoring system.
+This test verifies that InfluxDB 2.x is properly receiving, storing, and managing time-series data from the renewable energy monitoring system.
+
+**🔍 What This Test Does:**
+This test checks if InfluxDB (the database) is working correctly as the "warehouse" of your IoT system. Think of InfluxDB as a specialized storage facility designed specifically for time-series data - data that changes over time, like temperature readings, power output, or wind speed measurements.
+
+**🏗️ Why This Matters:**
+InfluxDB is where all your renewable energy data gets stored permanently. If InfluxDB isn't working:
+- Data from devices gets lost
+- You can't see historical trends
+- Grafana dashboards won't show data
+- The entire monitoring system becomes useless
+
+## Technical Architecture Overview
+
+### InfluxDB 2.x Architecture
+InfluxDB 2.x is a purpose-built time-series database with the following architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    InfluxDB 2.x Architecture                │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   HTTP API  │  │   Flux      │  │   Storage   │         │
+│  │   (8086)    │  │   Query     │  │   Engine    │         │
+│  │             │  │   Language  │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   Metadata  │  │   Time      │  │   Index     │         │
+│  │   Service   │  │   Series    │  │   Service   │         │
+│  │             │  │   Database  │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   WAL       │  │   TSM       │  │   Compactor │         │
+│  │   (Write    │  │   (Time     │  │   (Data     │         │
+│  │   Ahead     │  │   Series    │  │   Compression)│       │
+│  │   Log)      │  │   Merge)    │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Data Model and Schema Design
+InfluxDB 2.x uses a flexible data model optimized for time-series data:
+
+**Core Concepts:**
+- **Organization**: Top-level container for users and resources
+- **Bucket**: Container for time-series data (replaces databases in 1.x)
+- **Measurement**: Logical grouping of related time-series data
+- **Tag**: Indexed metadata for efficient querying
+- **Field**: Actual time-series values (not indexed)
+- **Timestamp**: Time when the data point was recorded
+
+**Schema Design for Renewable Energy:**
+```
+Organization: renewable_energy_org
+├── Bucket: renewable_energy_data
+│   ├── Measurement: photovoltaic_data
+│   │   ├── Tags: device_id, location, panel_type
+│   │   └── Fields: power, voltage, current, temperature, efficiency
+│   ├── Measurement: wind_turbine_data
+│   │   ├── Tags: device_id, location, turbine_model
+│   │   └── Fields: power, wind_speed, rpm, temperature, direction
+│   ├── Measurement: energy_storage_data
+│   │   ├── Tags: device_id, location, battery_type
+│   │   └── Fields: soc, voltage, current, temperature, power
+│   └── Measurement: system_metrics
+│       ├── Tags: metric_type, location
+│       └── Fields: value, status, alert_level
+```
+
+### Storage Engine and Performance
+**Time-Structured Merge Tree (TSM):**
+- **Write-Optimized**: Efficient writes for high-frequency data
+- **Compression**: Automatic data compression to reduce storage
+- **Query Optimization**: Fast queries on time ranges and tags
+- **Retention Policies**: Automatic data lifecycle management
+
+**Performance Characteristics:**
+- **Write Throughput**: 100,000+ points per second
+- **Query Performance**: Sub-second queries on large datasets
+- **Compression Ratio**: 10:1 to 100:1 depending on data patterns
+- **Storage Efficiency**: Optimized for time-series workloads
+
+### Security Model
+- **Token-Based Authentication**: API tokens for application access
+- **User Management**: Role-based access control
+- **Organization Isolation**: Data isolation between organizations
+- **Network Security**: Optional TLS/SSL encryption
 
 ## Test Objective
-Ensure InfluxDB 3.x is correctly storing device data, maintaining data integrity, and providing proper query capabilities.
+Ensure InfluxDB 2.x is properly configured, receiving data, and can be queried for analysis.
+
+**🎯 What We're Checking:**
+- **Service Status**: Is InfluxDB running and healthy?
+- **Database Schema**: Are buckets and measurements created correctly?
+- **Data Writing**: Can Node-RED write data to InfluxDB?
+- **Data Querying**: Can we retrieve and analyze stored data?
+- **Performance**: How well does InfluxDB handle the data load?
+- **Data Management**: Are retention policies and backups working?
 
 ## Prerequisites
-- Manual Test 01, 02, and 03 completed successfully
-- InfluxDB 2.x accessible at http://localhost:8086
-- Node-RED flows sending data to InfluxDB
-- PowerShell available for API testing
-- Docker containers running and healthy
+- Manual Tests 01, 02, and 03 completed successfully
+- InfluxDB 2.x running on localhost:8086
+- Node-RED configured to write to InfluxDB
+- PowerShell execution policy set to allow script execution
 - Testing framework available in `tests/scripts/` directory
+
+**📋 What These Prerequisites Mean:**
+- **Tests 01-03**: All previous components are working
+- **InfluxDB**: The database service must be running
+- **Node-RED**: Must be configured to send data to InfluxDB
+- **PowerShell**: Our testing environment
 
 ## InfluxDB 2.x Setup and Configuration
 
-### Note: Token-Based Authentication
-Your InfluxDB 2.x instance is configured with token-based authentication using the static token `renewable_energy_admin_token_123` for the organization `renewable_energy_org`.
+### Initial Setup Verification
+**🔍 What This Does:**
+Verifies that InfluxDB 2.x was properly initialized with the correct organization, bucket, and user setup.
 
-### Verify InfluxDB 2.x Setup
+**💡 Why This Matters:**
+InfluxDB 2.x requires initial setup unlike version 1.x. The setup creates:
+- **Organization**: Your company/project container
+- **Bucket**: Where your time-series data is stored
+- **Admin User**: Initial administrator account
+- **API Token**: For applications to connect
+
+**Command:**
 ```powershell
-# Check InfluxDB health
-Invoke-WebRequest -Uri "http://localhost:8086/health" -Method GET -UseBasicParsing
-
-# Check InfluxDB version and status with authentication
-$headers = @{
-    "Authorization" = "Token renewable_energy_admin_token_123"
-    "Content-Type" = "application/json"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method GET -Headers $headers -UseBasicParsing
+# Check if InfluxDB is properly initialized
+docker exec iot-influxdb2 influx org list
+docker exec iot-influxdb2 influx bucket list
+docker exec iot-influxdb2 influx user list
 ```
 
-### Create Organization and Bucket (if needed)
-Since authentication is enabled, you can create resources via API with proper authentication:
+**📋 Understanding the Commands:**
+- `influx org list`: Shows all organizations in InfluxDB
+- `influx bucket list`: Shows all data buckets
+- `influx user list`: Shows all users
 
+**Expected Result:**
+- Organization `renewable_energy_org` exists
+- Bucket `renewable_energy_data` exists
+- Admin user exists
+- No error messages
+
+### API Token Verification
+**🔍 What This Does:**
+Verifies that the API token for Node-RED and other applications is properly configured.
+
+**💡 Why This Matters:**
+API tokens are like passwords for applications to connect to InfluxDB. Without a valid token, Node-RED can't write data to the database.
+
+**Command:**
 ```powershell
-# Create organization (if needed)
-$headers = @{
-    "Authorization" = "Token renewable_energy_admin_token_123"
-    "Content-Type" = "application/json"
-}
-
-$orgData = @{
-    name = "renewable_energy_org"
-    description = "Renewable Energy Monitoring Organization"
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers $headers -Body $orgData -UseBasicParsing
-
-# Create bucket (if needed)
-$bucketData = @{
-    name = "renewable_energy"
-    orgID = "renewable_energy_org"
-    retentionRules = @(
-        @{
-            type = "expire"
-            everySeconds = 2592000  # 30 days
-        }
-    )
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers $headers -Body $bucketData -UseBasicParsing
+# Check if API token is valid
+$env:INFLUXDB_TOKEN = "your_token_here"
+docker exec iot-influxdb2 influx ping
 ```
 
-### Set Environment Variables
-```powershell
-# Set environment variables for InfluxDB 2.x
-$env:INFLUXDB_ORG = "renewable_energy_org"
-$env:INFLUXDB_BUCKET = "renewable_energy"
-$env:INFLUXDB_TOKEN = "renewable_energy_admin_token_123"
-```
+**Expected Result:**
+- Connection successful
+- No authentication errors
+- Token is valid and working
 
 ## Automated Testing Framework
 
-### Quick Health Check
+### Quick InfluxDB Validation
 Before running manual tests, you can use the automated testing framework for quick validation:
 
 ```powershell
-# Run comprehensive health check
+# Run comprehensive InfluxDB testing
 .\tests\scripts\test-influxdb-health.ps1
 
-# Run data flow test
+# Run data flow test (includes InfluxDB validation)
 .\tests\scripts\test-data-flow.ps1
 
-# Run Flux query tests
-.\tests\scripts\test-flux-queries.ps1
+# Run integration tests (includes InfluxDB connectivity)
+.\tests\scripts\test-integration.ps1
 
 # Run all tests
 .\tests\run-all-tests.ps1
 ```
 
+**🤖 What These Scripts Do:**
+These automated scripts test InfluxDB functionality quickly and consistently. They verify connectivity, data writing, and querying capabilities.
+
 ### Test Framework Features
-- **Health Check**: Service status, connectivity, authentication, organization/bucket access
-- **Data Flow**: End-to-end testing from MQTT to Grafana
-- **Flux Queries**: Query testing with performance validation
-- **Integration**: Cross-component authentication and data consistency
+- **Health Checks**: Service status, connectivity, authentication
+- **Data Flow**: End-to-end testing from MQTT to InfluxDB
+- **Integration**: Cross-component connectivity validation
 - **Performance**: Load testing and benchmarking
 
 ## Test Steps
 
 ### Step 1: Verify InfluxDB Service Status
 
-#### 1.1 Check InfluxDB Health
+#### 1.1 Check Service Health
+**🔍 What This Does:**
+Tests if InfluxDB is running and responding to health checks. This is like checking if the warehouse is open and ready to receive shipments.
+
+**💡 Why This Matters:**
+If InfluxDB isn't running:
+- No data can be stored
+- All queries will fail
+- The entire monitoring system breaks down
+
 **Command:**
 ```powershell
-Invoke-WebRequest -Uri "http://localhost:8086/health" -Method GET -UseBasicParsing
+# Check InfluxDB health endpoint
+Invoke-WebRequest -Uri http://localhost:8086/health -UseBasicParsing
 ```
+
+**📋 Understanding the Command:**
+- `Invoke-WebRequest`: PowerShell command to make an HTTP request
+- `http://localhost:8086/health`: The health check URL for InfluxDB
+- `localhost:8086`: The address where InfluxDB is running
 
 **Expected Result:**
 - Returns HTTP 200 OK
 - JSON response indicating service is healthy
 - No error messages
 
-#### 1.2 Check InfluxDB Container Status
+#### 1.2 Check Container Status
+**🔍 What This Does:**
+Verifies that the InfluxDB Docker container is running properly and has the correct configuration.
+
 **Command:**
 ```powershell
+# Check InfluxDB container status
 docker-compose ps influxdb
+
+# Check InfluxDB logs
+docker-compose logs influxdb --tail=20
 ```
+
+**📋 Understanding the Commands:**
+- `docker-compose ps influxdb`: Shows the status of the InfluxDB container
+- `docker-compose logs influxdb`: Shows recent log messages from InfluxDB
 
 **Expected Result:**
 - Container shows "Up (healthy)" status
-- No error messages
-- Port 8086 is properly mapped
+- No error messages in logs
+- Service started successfully
 
 ### Step 2: Test Database Schema and Buckets
 
-#### 2.1 Check Available Buckets (InfluxDB 3.x)
+#### 2.1 Verify Organization Setup
+**🔍 What This Does:**
+Checks that the InfluxDB organization is properly created and configured.
+
+**💡 Why This Matters:**
+Organizations in InfluxDB 2.x are like "companies" or "projects" that contain all your data. Without a proper organization, you can't store or query data.
+
 **Command:**
 ```powershell
-# For InfluxDB 3.x, we need to use the InfluxDB CLI or API with proper authentication
-# Option 1: Using API to list buckets
-$headers = @{"Content-Type"="application/json"}
-$body = @{query="buckets()"; org=$env:INFLUXDB_ORG} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Option 2: Using InfluxDB 3.x API (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# List buckets using InfluxDB 3.x API
-$body = @{
-    query = "buckets()"
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# List organizations
+docker exec iot-influxdb2 influx org list
 ```
 
+**📋 Understanding the Command:**
+- `docker exec iot-influxdb2`: Runs a command inside the InfluxDB container
+- `influx org list`: Lists all organizations in InfluxDB
+
 **Expected Result:**
-- Returns list of available buckets
-- Should include buckets for different device types
+- Organization `renewable_energy_org` exists
+- Organization ID is displayed
 - No error messages
 
-#### 2.2 Verify Schema Structure (InfluxDB 3.x)
+#### 2.2 Verify Bucket Setup
+**🔍 What This Does:**
+Checks that the data bucket is properly created and configured.
+
+**💡 Why This Matters:**
+Buckets in InfluxDB 2.x are like "folders" where your time-series data is stored. Without a bucket, there's nowhere to put your renewable energy data.
+
 **Command:**
 ```powershell
-# For InfluxDB 3.x, we need to use Flux query language
-# Option 1: Using API with Flux
-$headers = @{"Content-Type"="application/json"}
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> keys()"
-$body = @{query=$fluxQuery; org=$env:INFLUXDB_ORG} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# List buckets
+docker exec iot-influxdb2 influx bucket list
+```
 
-# Option 2: Using API with Flux (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
+**📋 Understanding the Command:**
+- `influx bucket list`: Lists all buckets in InfluxDB
 
-# Query to get measurement names (using Flux)
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> keys()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
+**Expected Result:**
+- Bucket `renewable_energy_data` exists
+- Bucket ID is displayed
+- Retention policy is configured
+- No error messages
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+#### 2.3 Verify User Setup
+**🔍 What This Does:**
+Checks that users are properly created and have the correct permissions.
 
-# Query to get field keys for photovoltaic data
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> keys()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+**Command:**
+```powershell
+# List users
+docker exec iot-influxdb2 influx user list
 ```
 
 **Expected Result:**
-- Buckets list includes device types
-- Field keys match expected schema
-- Tag keys include device_id, location, status, etc.
+- Admin user exists
+- User permissions are correct
+- No error messages
 
 ### Step 3: Test Data Writing
 
-#### 3.1 Send Test Data via MQTT and Verify Storage
+#### 3.1 Test Direct Data Writing
+**🔍 What This Does:**
+Tests if we can write data directly to InfluxDB using the command line. This verifies that the database is working correctly.
+
+**💡 Why This Matters:**
+This test ensures that:
+- InfluxDB can accept data
+- The bucket is writable
+- Authentication is working
+- Data format is correct
+
 **Command:**
 ```powershell
-# Option 1: Using the automated MQTT test script
-.\tests\scripts\test-mqtt.ps1 -PublishTest -Topic "devices/photovoltaic/pv_001/data" -Message '{"device_id":"pv_001","device_type":"photovoltaic","timestamp":"2024-01-15T10:30:00Z","data":{"irradiance":850.5,"temperature":45.2,"voltage":48.3,"current":12.1,"power_output":584.43},"status":"operational","location":"site_a"}'
-
-# Option 2: Using Docker exec to run mosquitto_pub inside the container
-$testData = @{
-    device_id = "pv_001"
-    device_type = "photovoltaic"
-    timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    data = @{
-        irradiance = 850.5
-        temperature = 45.2
-        voltage = 48.3
-        current = 12.1
-        power_output = 584.43
-    }
-    status = "operational"
-    location = "site_a"
-} | ConvertTo-Json -Depth 3
-
-docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $testData
-
-# Wait for processing
-Start-Sleep -Seconds 5
-
-# Query the data to verify it was stored (InfluxDB 2.x with Flux)
-$headers = @{
-    "Authorization" = "Token $env:INFLUXDB_TOKEN"
-    "Content-Type" = "application/json"
-}
-
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `pv_001`) |> last()"
-$body = @{
-    query = $fluxQuery
-    type = "flux"
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# Write test data to InfluxDB
+docker exec iot-influxdb2 influx write -b renewable_energy_data -o renewable_energy_org -p ns "test_measurement,device_id=test001,device_type=photovoltaic power=1500,voltage=48.5,current=30.9"
 ```
 
-**Expected Result:**
-- Data is written to InfluxDB successfully
-- Query returns the stored data
-- All fields are present and correct
-
-#### 3.2 Test Multiple Device Types
-**Command:**
-```powershell
-# Send wind turbine data
-$wtData = @{
-    device_id = "wt_001"
-    device_type = "wind_turbine"
-    timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    data = @{
-        wind_speed = 12.5
-        power_output = 850.2
-        rpm = 1200
-        temperature = 35.1
-    }
-    status = "operational"
-    location = "site_b"
-} | ConvertTo-Json -Depth 3
-
-docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u wt_001 -P device_password_123 -t devices/wind_turbine/wt_001/data -m $wtData
-
-# Send biogas plant data
-$bgData = @{
-    device_id = "bg_001"
-    device_type = "biogas_plant"
-    timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    data = @{
-        gas_flow = 25.5
-        methane_concentration = 65.2
-        temperature = 38.5
-        pressure = 1.2
-    }
-    status = "operational"
-    location = "site_c"
-} | ConvertTo-Json -Depth 3
-
-docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u bg_001 -P device_password_123 -t devices/biogas_plant/bg_001/data -m $bgData
-
-# Wait for processing
-Start-Sleep -Seconds 5
-
-# Query all device types (InfluxDB 3.x with Flux)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Query wind turbine data
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `wt_001`) |> last()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Query biogas plant data
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `bg_001`) |> last()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-```
+**📋 Understanding the Command:**
+- `influx write`: Command to write data to InfluxDB
+- `-b renewable_energy_data`: Target bucket name
+- `-o renewable_energy_org`: Organization name
+- `-p ns`: Precision (nanoseconds)
+- The data string contains: measurement name, tags, and fields
 
 **Expected Result:**
-- All device types are stored correctly
-- Data is properly categorized by device type
-- All fields are preserved
+- Data written successfully
+- No error messages
+- Data appears in the database
+
+#### 3.2 Test Node-RED Data Writing
+**🔍 What This Does:**
+Tests if Node-RED can successfully write data to InfluxDB. This verifies the complete data flow from MQTT → Node-RED → InfluxDB.
+
+**💡 Why This Matters:**
+This is the real-world scenario - your renewable energy devices send data via MQTT, Node-RED processes it, and stores it in InfluxDB.
+
+**Action:**
+1. Send test messages through Node-RED flows
+2. Check if data appears in InfluxDB
+3. Verify data format and content
+
+**📋 Understanding the Process:**
+1. **MQTT Message**: Device sends data to MQTT broker
+2. **Node-RED Processing**: Node-RED receives and processes the data
+3. **InfluxDB Write**: Node-RED writes processed data to InfluxDB
+4. **Verification**: Check that data appears in the database
+
+**Expected Result:**
+- Data flows from Node-RED to InfluxDB
+- No write errors
+- Data appears in correct measurements
+- All fields and tags are present
 
 ### Step 4: Test Data Querying
 
-#### 4.1 Test Basic Queries (InfluxDB 3.x with Flux)
+#### 4.1 Test Basic Flux Queries
+**🔍 What This Does:**
+Tests if we can retrieve data from InfluxDB using Flux queries. Flux is InfluxDB's powerful query language.
+
+**💡 Why This Matters:**
+Querying data is essential for:
+- **Monitoring**: Checking current system status
+- **Analysis**: Understanding trends and patterns
+- **Troubleshooting**: Investigating issues
+- **Reporting**: Generating reports and dashboards
+
 **Command:**
 ```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Query recent photovoltaic data
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> limit(n: 10)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Query data for specific device
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r.device_id == `pv_001`) |> limit(n: 5)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Query data for specific time range
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# Query recent data from photovoltaic measurement
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")"
 ```
+
+**📋 Understanding the Command:**
+- `influx query`: Command to execute Flux queries
+- `-o renewable_energy_org`: Organization name
+- The Flux query:
+  - `from(bucket: "renewable_energy_data")`: Select the data bucket
+  - `|> range(start: -1h)`: Get data from the last hour
+  - `|> filter(fn: (r) => r._measurement == "photovoltaic_data")`: Filter to photovoltaic data
+
+**Expected Result:**
+- Query executes successfully
+- Data is returned in tabular format
+- No error messages
+
+#### 4.2 Test Advanced Flux Queries
+**🔍 What This Does:**
+Tests more complex queries that aggregate and analyze the data.
+
+**Command:**
+```powershell
+# Query average power by device for the last hour
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> group(columns: [\"device_id\"]) |> mean()"
+
+# Query total energy production for the last 24 hours
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean) |> sum()"
+```
+
+**📋 Understanding the Queries:**
+- **First Query**: Calculates average power for each device
+- **Second Query**: Calculates total energy production over 24 hours
 
 **Expected Result:**
 - Queries execute successfully
-- Data is returned in correct format
-- Time filtering works properly
+- Aggregated results are returned
+- Calculations are accurate
 
-#### 4.2 Test Aggregation Queries (InfluxDB 3.x with Flux)
+#### 4.3 Test Data Validation Queries
+**🔍 What This Does:**
+Tests queries that validate data quality and completeness.
+
 **Command:**
 ```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
+# Check for missing data points
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 5m, fn: count) |> filter(fn: (r) => r._value < 1)"
 
-# Calculate average power output
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> mean()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Calculate maximum temperature
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `temperature`) |> max()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Count total records
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> count()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# Check for out-of-range values
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\" and r._value > 10000)"
 ```
 
 **Expected Result:**
-- Aggregation functions work correctly
-- Results are mathematically accurate
-- No calculation errors
+- Data quality issues are identified
+- Out-of-range values are detected
+- Missing data points are found
 
-#### 4.3 Test Group By Queries (InfluxDB 3.x with Flux)
+### Step 5: Test Performance and Load
+
+#### 5.1 Test Write Performance
+**🔍 What This Does:**
+Tests how quickly InfluxDB can write data. This is important for high-frequency data from renewable energy devices.
+
+**💡 Why This Matters:**
+Solar panels and wind turbines can send data every few seconds. InfluxDB must handle this write load efficiently.
+
 **Command:**
 ```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
+# Test write performance with multiple data points
+for ($i = 1; $i -le 1000; $i++) {
+    $timestamp = [DateTimeOffset]::Now.AddSeconds($i).ToUnixTimeSeconds()
+    docker exec iot-influxdb2 influx write -b renewable_energy_data -o renewable_energy_org -p s "performance_test,device_id=test001 power=$i,voltage=48.5,current=30.9 $timestamp"
 }
+```
 
-# Group by device_id
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> group(columns: [`device_id`]) |> mean()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
+**📋 Understanding the Command:**
+- Writes 1000 data points with timestamps
+- Measures how quickly InfluxDB can handle the writes
+- Tests system performance under load
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+**Expected Result:**
+- All writes complete successfully
+- No performance degradation
+- Write throughput is acceptable
 
-# Group by location
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output`) |> group(columns: [`location`]) |> mean()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
+#### 5.2 Test Query Performance
+**🔍 What This Does:**
+Tests how quickly InfluxDB can retrieve and process data.
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+**Command:**
+```powershell
+# Test query performance on large dataset
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean)"
 ```
 
 **Expected Result:**
-- Grouping works correctly
-- Results are properly categorized
-- No grouping errors
+- Query completes within reasonable time
+- No timeout errors
+- Performance is acceptable for dashboard queries
 
-### Step 5: Test Data Retention and Performance
+### Step 6: Test Data Retention and Management
 
-#### 5.1 Test Data Retention Policies (InfluxDB 3.x)
+#### 6.1 Verify Retention Policies
+**🔍 What This Does:**
+Tests that data retention policies are working correctly. Retention policies automatically delete old data to manage storage.
+
+**💡 Why This Matters:**
+Time-series data can grow very large. Retention policies help:
+- **Manage Storage**: Prevent unlimited data growth
+- **Control Costs**: Reduce storage requirements
+- **Maintain Performance**: Keep queries fast
+- **Compliance**: Meet data retention requirements
+
 **Command:**
 ```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Check data age using Flux
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -30d) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> first() |> yield(name: `first`) |> from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -30d) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> last() |> yield(name: `last`)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Check bucket information using API
-$bucketQuery = "buckets()"
-$body = @{
-    query = $bucketQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
+# Check retention policies
+docker exec iot-influxdb2 influx bucket list
 ```
 
 **Expected Result:**
 - Retention policies are configured
-- Data age is within expected range
-- No retention policy errors
+- Data older than retention period is automatically deleted
+- Storage usage is managed
 
-#### 5.2 Test Query Performance (InfluxDB 3.x)
+#### 6.2 Test Data Backup
+**🔍 What This Does:**
+Tests that data can be backed up and restored if needed.
+
 **Command:**
 ```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
+# Create backup of InfluxDB data
+docker exec iot-influxdb2 influx backup /tmp/backup -o renewable_energy_org
+```
+
+**Expected Result:**
+- Backup completes successfully
+- Backup files are created
+- No error messages
+
+## Advanced Technical Testing
+
+### Flux Query Optimization
+Test and optimize Flux queries for better performance:
+
+```flux
+// Optimized query with proper filtering
+from(bucket: "renewable_energy_data")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+  |> filter(fn: (r) => r._field == "power")
+  |> aggregateWindow(every: 5m, fn: mean)
+  |> yield(name: "mean_power")
+```
+
+### Continuous Queries
+Test continuous queries for real-time aggregations:
+
+```flux
+// Continuous query for hourly power averages
+option task = {
+    name: "hourly_power_averages",
+    every: 1h,
+    offset: 0m
 }
 
-# Test query execution time
-$startTime = Get-Date
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
+from(bucket: "renewable_energy_data")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._field == "power")
+  |> aggregateWindow(every: 1h, fn: mean)
+  |> to(bucket: "renewable_energy_aggregated")
+```
 
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing | Out-Null
+### Data Compression Analysis
+Analyze data compression efficiency:
+
+```powershell
+# Check data compression statistics
+docker exec iot-influxdb2 influx query -o renewable_energy_org "
+from(bucket: \"_monitoring\")
+  |> range(start: -24h)
+  |> filter(fn: (r) => r._measurement == \"influxdb_tsm1_engine\")
+  |> filter(fn: (r) => r._field =~ /.*compression.*/)
+"
+```
+
+### Performance Benchmarking
+Benchmark InfluxDB performance metrics:
+
+```powershell
+# Benchmark write performance
+$startTime = Get-Date
+for ($i = 1; $i -le 10000; $i++) {
+    docker exec iot-influxdb2 influx write -b renewable_energy_data -o renewable_energy_org -p ns "benchmark_test,device_id=test001 value=$i"
+}
 $endTime = Get-Date
 $duration = $endTime - $startTime
-Write-Host "Query execution time: $($duration.TotalMilliseconds) ms"
+Write-Host "Write performance: $($duration.TotalSeconds) seconds for 10000 points"
 ```
 
-**Expected Result:**
-- Query execution time is reasonable (< 1000ms for simple queries)
-- No timeout errors
-- Performance is consistent
+## Professional Best Practices
 
-### Step 6: Test Data Integrity
+### Schema Design Best Practices
+- **Tag Strategy**: Use tags for high-cardinality data that you'll filter on
+- **Field Strategy**: Use fields for actual measurements and low-cardinality data
+- **Measurement Design**: Group related time-series in the same measurement
+- **Naming Conventions**: Use consistent naming for measurements, tags, and fields
+- **Data Types**: Choose appropriate data types for fields
 
-#### 6.1 Test Data Consistency
-**Command:**
-```powershell
-# Send multiple data points and verify consistency
-for ($i = 1; $i -le 10; $i++) {
-    $data = @{
-        device_id = "pv_001"
-        device_type = "photovoltaic"
-        timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
-        data = @{
-            irradiance = 850.5 + $i
-            temperature = 45.2 + ($i * 0.1)
-            voltage = 48.3
-            current = 12.1
-            power_output = 584.43 + ($i * 10)
-        }
-        status = "operational"
-        location = "site_a"
-        test_id = $i
-    } | ConvertTo-Json -Depth 3
+### Performance Optimization
+- **Indexing Strategy**: Use tags efficiently for fast queries
+- **Query Optimization**: Write efficient Flux queries with proper filtering
+- **Batch Writes**: Batch multiple data points in single write operations
+- **Compression**: Monitor and optimize data compression
+- **Retention Policies**: Configure appropriate retention policies
 
-    docker exec -it iot-mosquitto mosquitto_pub -h localhost -p 1883 -u pv_001 -P device_password_123 -t devices/photovoltaic/pv_001/data -m $data
-    Start-Sleep -Milliseconds 100
-}
+### Security Best Practices
+- **Token Management**: Use least-privilege tokens for different applications
+- **Network Security**: Implement TLS/SSL for production deployments
+- **Access Control**: Use proper user roles and permissions
+- **Audit Logging**: Enable audit logging for security monitoring
+- **Regular Updates**: Keep InfluxDB updated with security patches
 
-# Wait for processing
-Start-Sleep -Seconds 5
+### Monitoring and Alerting
+- **Health Monitoring**: Monitor InfluxDB service health and performance
+- **Resource Monitoring**: Track CPU, memory, and disk usage
+- **Query Performance**: Monitor slow queries and optimize them
+- **Error Alerting**: Set up alerts for database errors and failures
+- **Capacity Planning**: Monitor storage growth and plan for expansion
 
-# Verify all data points were stored (InfluxDB 3.x with Flux)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -5m) |> filter(fn: (r) => r.device_id == `pv_001`) |> count()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-```
-
-**Expected Result:**
-- All data points are stored
-- No data loss
-- Count matches expected number
-
-#### 6.2 Test Data Validation (InfluxDB 3.x)
-**Command:**
-```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Check for data type consistency
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r._field == `power_output` and r._value < 0 or r._field == `temperature` and (r._value < -50 or r._value > 100))"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Check for missing required fields
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> filter(fn: (r) => r.device_id == `` or r.location == ``)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-```
-
-**Expected Result:**
-- No invalid data types
-- No missing required fields
-- Data quality is maintained
-
-### Step 7: Test Error Handling
-
-#### 7.1 Test Invalid Query Handling (InfluxDB 3.x)
-**Command:**
-```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Test invalid Flux syntax
-$fluxQuery = "from(bucket: `invalid_bucket`) |> range(start: -1h)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Test invalid field names
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._field == `invalid_field`)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-```
-
-**Expected Result:**
-- Proper error messages returned
-- No system crashes
-- Error handling works correctly
-
-#### 7.2 Test Connection Resilience (InfluxDB 3.x)
-**Command:**
-```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Test connection under load
-for ($i = 1; $i -le 50; $i++) {
-    $fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`) |> count()"
-    $body = @{
-        query = $fluxQuery
-        org = $env:INFLUXDB_ORG
-    } | ConvertTo-Json
-
-    Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing | Out-Null
-    Start-Sleep -Milliseconds 50
-}
-```
-
-**Expected Result:**
-- All queries complete successfully
-- No connection errors
-- System remains stable
-
-### Step 8: Test Backup and Recovery
-
-#### 8.1 Test Data Export (InfluxDB 3.x)
-**Command:**
-```powershell
-# Set up headers for InfluxDB 3.x (no authentication required)
-$headers = @{
-    "Content-Type" = "application/json"
-}
-
-# Export recent data using Flux
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> filter(fn: (r) => r._measurement == `photovoltaic_data`)"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-$response = Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-$response.Content | Out-File -FilePath "backup_data.json" -Encoding UTF8
-
-# Alternative: Use API for CSV export
-$fluxQuery = "from(bucket: `$env:INFLUXDB_BUCKET`) |> range(start: -1h) |> toCSV()"
-$body = @{
-    query = $fluxQuery
-    org = $env:INFLUXDB_ORG
-} | ConvertTo-Json
-
-$response = Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query" -Method POST -Headers $headers -Body $body -UseBasicParsing
-$response.Content | Out-File -FilePath "backup_data.csv" -Encoding UTF8
-```
-
-**Expected Result:**
-- Data export completes successfully
-- Export file is created
-- Data format is correct
-
-#### 8.2 Test Data Import (InfluxDB 3.x)
-**Command:**
-```powershell
-# For InfluxDB 3.x, data import is typically done through the write API
-# Example: Write data points using the InfluxDB 3.x write API
-$writeData = "photovoltaic_data,device_id=pv_001,location=site_a power_output=584.43,temperature=45.2,irradiance=850.5 $(Get-Date -UFormat %s)000000000"
-
-$headers = @{
-    "Content-Type" = "text/plain; charset=utf-8"
-}
-
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=$env:INFLUXDB_BUCKET&org=$env:INFLUXDB_ORG" -Method POST -Headers $headers -Body $writeData
-```
-
-**Expected Result:**
-- Import functionality works (if implemented)
-- No data corruption
-- Import completes successfully
+### Backup and Recovery
+- **Regular Backups**: Implement automated backup procedures
+- **Backup Testing**: Regularly test backup and recovery procedures
+- **Disaster Recovery**: Have disaster recovery procedures documented
+- **Data Validation**: Validate backup integrity
+- **Recovery Testing**: Test recovery procedures regularly
 
 ## Test Results Documentation
 
 ### Pass Criteria
-- InfluxDB service is healthy and accessible
-- Database schema is properly configured
-- Data writing works correctly for all device types
-- Queries execute successfully and return accurate results
-- Data integrity is maintained
-- Performance is acceptable
-- Error handling works properly
-- Backup/export functionality works
+- InfluxDB service is healthy and responding
+- Organization and bucket are properly configured
+- Data can be written successfully
+- Data can be queried and retrieved
+- Performance is acceptable under load
+- Retention policies are working
+- Backup procedures are functional
 
 ### Fail Criteria
-- InfluxDB service is not accessible
-- Database schema is incorrect or missing
-- Data writing fails
-- Queries return errors or incorrect results
-- Data integrity issues
-- Performance problems
-- Poor error handling
-- Backup/export failures
+- InfluxDB service is not responding
+- Organization or bucket configuration issues
+- Data writing failures
+- Query execution errors
+- Performance issues under load
+- Retention policy failures
+- Backup procedure failures
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. InfluxDB 2.x Not Accessible
-**Problem:** Cannot connect to InfluxDB 2.x on port 8086
+#### 1. InfluxDB Service Not Responding
+**Problem:** Health check fails or service not accessible
+**🔍 What This Means:** InfluxDB might not be running or there's a configuration issue.
+
 **Solution:**
 ```powershell
-# Run automated health check
-.\tests\scripts\test-influxdb-health.ps1
-
 # Check container status
 docker-compose ps influxdb
 
-# Check logs
+# Check InfluxDB logs
 docker-compose logs influxdb
 
-# Restart service
+# Restart InfluxDB
 docker-compose restart influxdb
-
-# Verify InfluxDB 2.x is running
-docker exec -it iot-influxdb2 influx ping
 ```
 
-#### 2. Organization/Bucket Issues
-**Problem:** Organization or bucket not found
+#### 2. Authentication Failures
+**Problem:** API token not working or authentication errors
+**🔍 What This Means:** The API token might be invalid or expired.
+
 **Solution:**
 ```powershell
-# Run automated health check for detailed diagnostics
-.\tests\scripts\test-influxdb-health.ps1
+# Check token validity
+docker exec iot-influxdb2 influx ping
 
-# List organizations using API
-$headers = @{
-    "Authorization" = "Token renewable_energy_admin_token_123"
-    "Content-Type" = "application/json"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method GET -Headers $headers -UseBasicParsing
-
-# Create organization if missing
-$orgData = @{
-    name = "renewable_energy_org"
-    description = "Renewable Energy Monitoring Organization"
-} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/orgs" -Method POST -Headers $headers -Body $orgData -UseBasicParsing
-
-# List buckets using API
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets?org=renewable_energy_org" -Method GET -Headers $headers -UseBasicParsing
-
-# Create bucket if missing
-$bucketData = @{
-    name = "renewable_energy"
-    orgID = "renewable_energy_org"
-    retentionRules = @(
-        @{
-            type = "expire"
-            everySeconds = 2592000  # 30 days
-        }
-    )
-} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/buckets" -Method POST -Headers $headers -Body $bucketData -UseBasicParsing
+# Generate new token if needed
+docker exec iot-influxdb2 influx auth create --org renewable_energy_org --user admin
 ```
 
 #### 3. Data Writing Failures
-**Problem:** Data not being written to InfluxDB 2.x
+**Problem:** Can't write data to InfluxDB
+**🔍 What This Means:** There might be permission issues or bucket problems.
+
 **Solution:**
 ```powershell
-# Run automated data flow test for diagnostics
-.\tests\scripts\test-data-flow.ps1
+# Check bucket permissions
+docker exec iot-influxdb2 influx bucket list
 
-# Check Node-RED connection to InfluxDB 2.x
-# Verify InfluxDB write permissions
-# Check network connectivity between containers
-
-# Test write API directly
-$writeData = "test_measurement,device_id=test value=123 $(Get-Date -UFormat %s)000000000"
-$headers = @{
-    "Authorization" = "Token renewable_energy_admin_token_123"
-    "Content-Type" = "text/plain; charset=utf-8"
-}
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/write?bucket=renewable_energy&org=renewable_energy_org" -Method POST -Headers $headers -Body $writeData
+# Check organization access
+docker exec iot-influxdb2 influx org list
 ```
 
 #### 4. Query Performance Issues
-**Problem:** Slow Flux query execution
+**Problem:** Queries are slow or timeout
+**🔍 What This Means:** The queries might be inefficient or the system is overloaded.
+
 **Solution:**
 ```powershell
-# Run automated performance tests
-.\tests\scripts\test-performance.ps1
+# Check system resources
+docker stats iot-influxdb2
 
-# Check InfluxDB resource usage
-docker stats influxdb
-
-# Optimize Flux queries
-# Check for proper time range filters
-# Use appropriate aggregation functions
-
-# Test query performance
-$startTime = Get-Date
-# Run your query here
-$endTime = Get-Date
-$duration = $endTime - $startTime
-Write-Host "Query execution time: $($duration.TotalMilliseconds) ms"
+# Optimize queries with proper filtering
+# Use appropriate time ranges
+# Add proper indexes via tags
 ```
 
-#### 5. Flux Query Syntax Issues
-**Problem:** Flux queries return errors
+#### 5. Storage Issues
+**Problem:** Disk space issues or data corruption
+**🔍 What This Means:** Storage might be full or data might be corrupted.
+
 **Solution:**
 ```powershell
-# Run automated Flux query tests
-.\tests\scripts\test-flux-queries.ps1
+# Check disk usage
+docker exec iot-influxdb2 df -h
 
-# Test simple Flux query first
-$headers = @{
-    "Authorization" = "Token renewable_energy_admin_token_123"
-    "Content-Type" = "application/json"
-}
-$body = @{
-    query = "buckets()"
-    type = "flux"
-} | ConvertTo-Json
-Invoke-WebRequest -Uri "http://localhost:8086/api/v2/query?org=renewable_energy_org" -Method POST -Headers $headers -Body $body -UseBasicParsing
-
-# Check Flux syntax documentation
-# Use InfluxDB UI for query testing
-# Verify bucket and measurement names
+# Check data integrity
+docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> limit(n: 1)"
 ```
 
 ## Next Steps
-If InfluxDB data storage testing passes, proceed to:
+If all InfluxDB tests pass, proceed to:
 - [Manual Test 05: Grafana Data Visualization](./05-grafana-data-visualization.md)
 
 ## Test Report Template
@@ -846,13 +719,12 @@ Environment: [Windows/Linux/Mac]
 
 Results:
 □ InfluxDB service healthy
-□ Database schema correct
-□ Data writing functional
-□ Query execution successful
-□ Data integrity maintained
+□ Organization and bucket configured
+□ Data writing successful
+□ Data querying functional
 □ Performance acceptable
-□ Error handling working
-□ Backup/export functional
+□ Retention policies working
+□ Backup procedures functional
 
 Overall Status: PASS/FAIL
 
