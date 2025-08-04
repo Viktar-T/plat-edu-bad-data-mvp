@@ -388,6 +388,73 @@ If any of these tests fail, here's what it might mean:
 **🔍 What This Step Does:**
 Looks at the "log files" of each service to see if there are any error messages. Logs are like a diary that each service keeps - they record what the service is doing and any problems it encounters.
 
+#### 🤖 Automated Alternative: Use the Automated Script
+
+**💡 Quick Option:**
+Instead of manually checking each service's logs, you can use the automated script that does all the checking for you:
+
+```powershell
+# Navigate to auto-tests directory
+cd tests\auto-tests
+
+# Run the automated logs check script
+.\01-step-4-docker-logs.ps1
+
+
+# Run from project root
+cd tests\auto-tests\01-step-4-docker-logs.ps1
+
+```
+
+**🎯 What the Automated Script Does:**
+- ✅ **Checks all 4 services** automatically (Mosquitto, InfluxDB, Node-RED, Grafana)
+- ✅ **Searches for error patterns** in log files (error, failed, exception, fatal, panic)
+- ✅ **Provides colored output** for easy reading
+- ✅ **Generates a summary report** of all services
+- ✅ **Exits with proper codes** (0 for success, 1 for failures)
+
+**📋 Usage Examples:**
+```powershell
+# Basic usage (checks last 20 lines of each service)
+.\01-step-4-docker-logs.ps1
+
+# Check more log lines (e.g., last 50 lines)
+.\01-step-4-docker-logs.ps1 -LogLines 50
+
+# Show all logs (not just last N lines)
+.\01-step-4-docker-logs.ps1 -ShowAllLogs
+```
+
+**📊 Expected Output:**
+```
+🚀 Starting Docker Logs Check (Step 4 from Prerequisites Test)
+===============================================================
+
+🔍 Checking MQTT Broker (Mosquitto) logs...
+✅ MQTT Broker (Mosquitto) logs retrieved successfully
+✅ No errors found in MQTT Broker (Mosquitto) logs
+
+🔍 Checking InfluxDB Database logs...
+✅ InfluxDB Database logs retrieved successfully
+✅ No errors found in InfluxDB Database logs
+
+📊 Test Summary
+===============
+✅ Mosquitto: PASSED
+✅ InfluxDB: PASSED
+✅ Node-RED: PASSED
+✅ Grafana: PASSED
+
+📈 Overall Results:
+   Passed: 4 service(s)
+   Failed: 0 service(s)
+
+🎉 All services are healthy! No errors found in logs.
+```
+
+**🔧 Manual Alternative:**
+If you prefer to check logs manually or need to see specific details, continue with the manual steps below.
+
 #### 4.1 MQTT Broker Logs
 **🔍 What This Does:**
 Checks the MQTT broker's log for any startup errors or authentication issues.

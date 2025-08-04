@@ -105,7 +105,7 @@
     "id": "pv-error-handling",
     "type": "switch",
     "z": "photovoltaic-simulation",
-    "name": "Error Check",
+    "name": "Error Handler",
     "property": "status",
     "propertyType": "msg",
     "rules": [
@@ -120,14 +120,14 @@
         "vt": "str"
       }
     ],
-    "check": "all",
+    "checkall": "true",
     "repair": false,
     "outputs": 2,
     "x": 520,
     "y": 200,
     "wires": [
       [
-        "pv-influxdb-writer"
+        "pv-data-transformer"
       ],
       [
         "pv-error-log"
@@ -135,16 +135,39 @@
     ]
   },
   {
-    "id": "pv-influxdb-writer",
+    "id": "pv-data-transformer",
     "type": "function",
     "z": "photovoltaic-simulation",
-    "name": "InfluxDB Writer",
-    "func": "// Custom InfluxDB writer using the InfluxDB client directly\nconst { InfluxDB, Point } = require('@influxdata/influxdb-client');\n\n// InfluxDB configuration\nconst url = 'http://influxdb:8086';\nconst token = 'renewable_energy_admin_token_123';\nconst org = 'renewable_energy_org';\nconst bucket = 'renewable_energy';\n\n// Create InfluxDB client\nconst influxDB = new InfluxDB({ url, token });\nconst writeApi = influxDB.getWriteApi(org, bucket, 'ms');\n\n// Get data from message\nconst data = msg.payload;\n\n// Create InfluxDB point\nconst point = new Point('photovoltaic_data')\n    .tag('device_id', data.device_id)\n    .tag('device_type', data.device_type)\n    .tag('location', data.location)\n    .tag('status', data.status)\n    .floatField('irradiance', data.data.irradiance)\n    .floatField('temperature', data.data.temperature)\n    .floatField('voltage', data.data.voltage)\n    .floatField('current', data.data.current)\n    .floatField('power_output', data.data.power_output)\n    .timestamp(new Date(data.timestamp));\n\n// Write to InfluxDB\nwriteApi.writePoint(point)\n    .then(() => {\n        return writeApi.close();\n    })\n    .then(() => {\n        node.log('✅ Data written to InfluxDB successfully');\n        msg.influxdb_status = 'success';\n    })\n    .catch((error) => {\n        node.error('❌ Failed to write to InfluxDB: ' + error.message);\n        msg.influxdb_status = 'error';\n        msg.influxdb_error = error.message;\n    });\n\nreturn msg;",
+    "name": "Data Transformer",
+    "func": "// Transform data for InfluxDB 2.x format\nconst data = msg.payload;\n\n// Ensure all numeric values are properly converted\nconst irradiance = parseFloat(data.data.irradiance) || 0;\nconst temperature = parseFloat(data.data.temperature) || 0;\nconst voltage = parseFloat(data.data.voltage) || 0;\nconst current = parseFloat(data.data.current) || 0;\nconst power_output = parseFloat(data.data.power_output) || 0;\nconst efficiency = parseFloat(data.data.efficiency) || 0;\n\n// Create InfluxDB 2.x compatible data structure\nconst influxData = {\n    measurement: 'photovoltaic_data',\n    tags: {\n        device_id: data.device_id,\n        device_type: data.device_type,\n        location: data.location || 'unknown',\n        status: data.status || 'operational'\n    },\n    fields: {\n        irradiance: irradiance,\n        temperature: temperature,\n        voltage: voltage,\n        current: current,\n        power_output: power_output,\n        efficiency: efficiency\n    },\n    timestamp: new Date(data.timestamp).getTime()\n};\n\n// Set the payload for InfluxDB node\nmsg.payload = influxData;\n\nnode.log('✅ Data transformed for InfluxDB - Irradiance: ' + irradiance + ', Temperature: ' + temperature);\nreturn msg;",
     "outputs": 1,
     "noerr": 0,
     "initialize": "",
     "finalize": "",
     "libs": [],
+    "x": 620,
+    "y": 160,
+    "wires": [
+      [
+        "pv-influxdb-writer",
+        "pv-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "pv-influxdb-writer",
+    "type": "influxdb out",
+    "z": "photovoltaic-simulation",
+    "influxdb": "influxdb-config",
+    "name": "InfluxDB Writer",
+    "measurement": "photovoltaic_data",
+    "precision": "ms",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "renewable_energy_org",
+    "bucket": "renewable_energy",
     "x": 720,
     "y": 160,
     "wires": [
@@ -227,10 +250,8 @@
     "influxdbVersion": "2.0",
     "url": "http://influxdb:8086",
     "rejectUnauthorized": false,
-    "token": "renewable_energy_admin_token_123",
+    "token": "wjTR5y9bbOqEos_YvIKkqHrKlsIsnsUvz-abGbSyk1VYkKGUBbyzcrPJ9r2ewgXZjWbqKwpygq8eTOOTGeUfcA==",
     "organization": "renewable_energy_org",
-    "bucket": "renewable_energy",
-    "username": "admin",
-    "password": "admin_password_123"
+    "bucket": "renewable_energy"
   }
 ] 
