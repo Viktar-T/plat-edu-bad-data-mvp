@@ -309,9 +309,9 @@ docker exec iot-influxdb2 influx user list
 
 ### Step 3: Test Data Writing
 
-#### 3.1 Test Direct Data Writing
+#### 3.1 Test Direct Data Writing-Read
 **🔍 What This Does:**
-Tests if we can write data directly to InfluxDB using the command line. This verifies that the database is working correctly.
+Tests if we can write data directly to InfluxDB using the command line and then read it back. This verifies that the database is working correctly for both write and read operations.
 
 **💡 Why This Matters:**
 This test ensures that:
@@ -319,6 +319,7 @@ This test ensures that:
 - The bucket is writable
 - Authentication is working
 - Data format is correct
+- Data can be retrieved and verified
 
 **Step 1: Create Test Bucket**
 ```powershell
@@ -332,10 +333,55 @@ docker exec iot-influxdb2 influx bucket create -n renewable_energy_test -o renew
 docker exec iot-influxdb2 influx write -b renewable_energy_test -o renewable_energy_org -p ns --token renewable_energy_admin_token_123 "test_measurement,device_id=test001,device_type=photovoltaic power=1500,voltage=48.5,current=30.9"
 ```
 
+**Step 3: Read Test Data**
+```powershell
+# Read the test data back from the bucket to verify it was stored correctly
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 'from(bucket: "renewable_energy_test") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "test_measurement")'
+```
+
+**Step 4: Verify Data Integrity**
+```powershell
+# Verify specific data points were written correctly
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 'from(bucket: "renewable_energy_test") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "test_measurement" and r.device_id == "test001") |> filter(fn: (r) => r._field == "power" or r._field == "voltage" or r._field == "current")'
+```
+
+**🔍 What This Command Does:**
+This command performs a detailed verification of the data that was written in Step 2. It's like doing a quality control check to ensure that:
+- The exact data we wrote is actually stored in the database
+- All the specific values (power=1500, voltage=48.5, current=30.9) are preserved correctly
+- The data structure (measurement name, device_id, tags) is intact
+
+**📋 Breaking Down the Flux Query:**
+1. **`from(bucket: "renewable_energy_test")`**: Selects our test bucket
+2. **`|> range(start: -1h)`**: Gets data from the last hour (when we wrote our test data)
+3. **`|> filter(fn: (r) => r._measurement == "test_measurement" and r.device_id == "test001")`**: 
+   - Filters to only our specific measurement name
+   - Filters to only our specific device_id
+4. **`|> filter(fn: (r) => r._field == "power" or r._field == "voltage" or r._field == "current")`**: 
+   - Shows only the three fields we wrote (power, voltage, current)
+   - Excludes any other fields that might exist
+
+**💡 Why This Step is Important:**
+- **Data Accuracy**: Ensures the values we wrote (1500, 48.5, 30.9) are stored exactly as written
+- **Data Structure**: Verifies that tags (device_id, device_type) are preserved correctly
+- **Data Completeness**: Confirms all three fields (power, voltage, current) are present
+- **Quality Assurance**: Acts as a final verification that the database is working correctly
+
+**Expected Output:**
+The command should return exactly 3 rows of data:
+- One row for `power` field with value `1500`
+- One row for `voltage` field with value `48.5` 
+- One row for `current` field with value `30.9`
+
+Each row should show the correct timestamp, measurement name, device_id, and device_type tags.
+
 **📋 Understanding the Commands:**
 - **Step 1**: Creates a new bucket called `renewable_energy_test` with 30-day retention
 - **Step 2**: Writes test data to the new bucket
+- **Step 3**: Reads all test measurement data from the last hour
+- **Step 4**: Verifies specific data points with detailed filtering
 - `influx write`: Command to write data to InfluxDB
+- `influx query`: Command to read data from InfluxDB
 - `-b renewable_energy_test`: Target bucket name (newly created)
 - `-o renewable_energy_org`: Organization name
 - `-p ns`: Precision (nanoseconds)
@@ -345,10 +391,12 @@ docker exec iot-influxdb2 influx write -b renewable_energy_test -o renewable_ene
 **Expected Result:**
 - Test bucket created successfully
 - Data written successfully
+- Data can be read back correctly
+- All data points match the original values
 - No error messages
 - Data appears in the new test bucket
 
-**Step 3: Cleanup (Optional)**
+**Step 5: Cleanup (Optional)**
 ```powershell
 # Remove the test bucket after testing (optional)
 docker exec iot-influxdb2 influx bucket delete -n renewable_energy_test -o renewable_energy_org --token renewable_energy_admin_token_123
