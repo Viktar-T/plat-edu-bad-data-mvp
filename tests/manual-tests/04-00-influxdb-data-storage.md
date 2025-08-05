@@ -320,23 +320,39 @@ This test ensures that:
 - Authentication is working
 - Data format is correct
 
-**Command:**
+**Step 1: Create Test Bucket**
 ```powershell
-# Write test data to InfluxDB
-docker exec iot-influxdb2 influx write -b renewable_energy_data -o renewable_energy_org -p ns "test_measurement,device_id=test001,device_type=photovoltaic power=1500,voltage=48.5,current=30.9"
+# Create a new test bucket for this test
+docker exec iot-influxdb2 influx bucket create -n renewable_energy_test -o renewable_energy_org -r 30d --token renewable_energy_admin_token_123
 ```
 
-**📋 Understanding the Command:**
+**Step 2: Write Test Data**
+```powershell
+# Write test data to the new test bucket
+docker exec iot-influxdb2 influx write -b renewable_energy_test -o renewable_energy_org -p ns --token renewable_energy_admin_token_123 "test_measurement,device_id=test001,device_type=photovoltaic power=1500,voltage=48.5,current=30.9"
+```
+
+**📋 Understanding the Commands:**
+- **Step 1**: Creates a new bucket called `renewable_energy_test` with 30-day retention
+- **Step 2**: Writes test data to the new bucket
 - `influx write`: Command to write data to InfluxDB
-- `-b renewable_energy_data`: Target bucket name
+- `-b renewable_energy_test`: Target bucket name (newly created)
 - `-o renewable_energy_org`: Organization name
 - `-p ns`: Precision (nanoseconds)
+- `--token renewable_energy_admin_token_123`: Authentication token
 - The data string contains: measurement name, tags, and fields
 
 **Expected Result:**
+- Test bucket created successfully
 - Data written successfully
 - No error messages
-- Data appears in the database
+- Data appears in the new test bucket
+
+**Step 3: Cleanup (Optional)**
+```powershell
+# Remove the test bucket after testing (optional)
+docker exec iot-influxdb2 influx bucket delete -n renewable_energy_test -o renewable_energy_org --token renewable_energy_admin_token_123
+```
 
 #### 3.2 Test Node-RED Data Writing
 **🔍 What This Does:**
@@ -377,17 +393,18 @@ Querying data is essential for:
 
 **Command:**
 ```powershell
-# Query recent data from photovoltaic measurement
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")"
+# Query recent data from test measurement
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"test_measurement\")"
 ```
 
 **📋 Understanding the Command:**
 - `influx query`: Command to execute Flux queries
 - `-o renewable_energy_org`: Organization name
+- `--token renewable_energy_admin_token_123`: Authentication token
 - The Flux query:
-  - `from(bucket: "renewable_energy_data")`: Select the data bucket
+  - `from(bucket: "renewable_energy_test")`: Select the test bucket
   - `|> range(start: -1h)`: Get data from the last hour
-  - `|> filter(fn: (r) => r._measurement == "photovoltaic_data")`: Filter to photovoltaic data
+  - `|> filter(fn: (r) => r._measurement == "test_measurement")`: Filter to test measurement
 
 **Expected Result:**
 - Query executes successfully
@@ -401,10 +418,10 @@ Tests more complex queries that aggregate and analyze the data.
 **Command:**
 ```powershell
 # Query average power by device for the last hour
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> group(columns: [\"device_id\"]) |> mean()"
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> group(columns: [\"device_id\"]) |> mean()"
 
 # Query total energy production for the last 24 hours
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean) |> sum()"
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean) |> sum()"
 ```
 
 **📋 Understanding the Queries:**
@@ -423,10 +440,10 @@ Tests queries that validate data quality and completeness.
 **Command:**
 ```powershell
 # Check for missing data points
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 5m, fn: count) |> filter(fn: (r) => r._value < 1)"
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 5m, fn: count) |> filter(fn: (r) => r._value < 1)"
 
 # Check for out-of-range values
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\" and r._value > 10000)"
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -1h) |> filter(fn: (r) => r._field == \"power\" and r._value > 10000)"
 ```
 
 **Expected Result:**
@@ -448,7 +465,7 @@ Solar panels and wind turbines can send data every few seconds. InfluxDB must ha
 # Test write performance with multiple data points
 for ($i = 1; $i -le 1000; $i++) {
     $timestamp = [DateTimeOffset]::Now.AddSeconds($i).ToUnixTimeSeconds()
-    docker exec iot-influxdb2 influx write -b renewable_energy_data -o renewable_energy_org -p s "performance_test,device_id=test001 power=$i,voltage=48.5,current=30.9 $timestamp"
+    docker exec iot-influxdb2 influx write -b renewable_energy_test -o renewable_energy_org -p s --token renewable_energy_admin_token_123 "performance_test,device_id=test001 power=$i,voltage=48.5,current=30.9 $timestamp"
 }
 ```
 
@@ -469,7 +486,7 @@ Tests how quickly InfluxDB can retrieve and process data.
 **Command:**
 ```powershell
 # Test query performance on large dataset
-docker exec iot-influxdb2 influx query -o renewable_energy_org "from(bucket: \"renewable_energy_data\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean)"
+docker exec iot-influxdb2 influx query -o renewable_energy_org --token renewable_energy_admin_token_123 "from(bucket: \"renewable_energy_test\") |> range(start: -24h) |> filter(fn: (r) => r._field == \"power\") |> aggregateWindow(every: 1h, fn: mean)"
 ```
 
 **Expected Result:**

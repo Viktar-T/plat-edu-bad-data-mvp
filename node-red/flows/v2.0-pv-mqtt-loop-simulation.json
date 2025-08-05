@@ -105,7 +105,7 @@
     "id": "pv-error-handling",
     "type": "switch",
     "z": "photovoltaic-simulation",
-    "name": "Error Handler",
+    "name": "Error Check",
     "property": "status",
     "propertyType": "msg",
     "rules": [
@@ -120,7 +120,7 @@
         "vt": "str"
       }
     ],
-    "checkall": "true",
+    "check": "all",
     "repair": false,
     "outputs": 2,
     "x": 520,
@@ -162,10 +162,7 @@
     "name": "InfluxDB Writer",
     "measurement": "photovoltaic_data",
     "precision": "ms",
-    "retentionPolicy": "",
-    "database": "",
     "precisionV18FluxV20": "ms",
-    "retentionPolicyV18Flux": "",
     "org": "renewable_energy_org",
     "bucket": "renewable_energy",
     "x": 720,
@@ -243,14 +240,13 @@
     "hostname": "influxdb",
     "port": "8086",
     "protocol": "http",
-    "database": "renewable_energy",
     "name": "InfluxDB",
     "usetls": false,
     "tls": "",
     "influxdbVersion": "2.0",
     "url": "http://influxdb:8086",
     "rejectUnauthorized": false,
-    "token": "wjTR5y9bbOqEos_YvIKkqHrKlsIsnsUvz-abGbSyk1VYkKGUBbyzcrPJ9r2ewgXZjWbqKwpygq8eTOOTGeUfcA==",
+    "token": "renewable_energy_admin_token_123",
     "organization": "renewable_energy_org",
     "bucket": "renewable_energy"
   }
