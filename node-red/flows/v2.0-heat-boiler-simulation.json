@@ -1,0 +1,254 @@
+[
+  {
+    "id": "hb-inject-30s",
+    "type": "inject",
+    "z": "heat-boiler-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "hb-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "hb-simulation-function",
+    "type": "function",
+    "z": "heat-boiler-simulation",
+    "name": "Heat Boiler Data Generator",
+    "func": "// Heat Boiler Data Simulation\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Ambient temperature model (°C)\nfunction calculateAmbientTemperature() {\n    const baseTemp = 20;\n    const seasonalFactor = 1 + 0.4 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const dailyFactor = 1 + 0.3 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const noise = (Math.random() - 0.5) * 3;\n    return baseTemp * seasonalFactor * dailyFactor + noise;\n}\n\n// Fuel flow rate model (L/h)\nfunction calculateFuelFlowRate(ambientTemp) {\n    const baseFlowRate = 15;\n    const tempFactor = 1 + 0.05 * (10 - ambientTemp);\n    const demandVariation = 1 + 0.2 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const noise = (Math.random() - 0.5) * 2;\n    return Math.max(5, baseFlowRate * tempFactor * demandVariation + noise);\n}\n\n// Water temperature model (°C)\nfunction calculateWaterTemperature(fuelFlowRate, ambientTemp) {\n    const baseWaterTemp = 80;\n    const flowFactor = 1 + 0.02 * (fuelFlowRate - 15);\n    const ambientFactor = 1 + 0.01 * (ambientTemp - 20);\n    const noise = (Math.random() - 0.5) * 5;\n    return Math.max(60, Math.min(95, baseWaterTemp * flowFactor * ambientFactor + noise));\n}\n\n// Pressure model (bar)\nfunction calculatePressure(waterTemp) {\n    const basePressure = 2.0;\n    const tempFactor = 1 + 0.01 * (waterTemp - 80);\n    const noise = (Math.random() - 0.5) * 0.2;\n    return Math.max(1.5, basePressure * tempFactor + noise);\n}\n\n// Efficiency model (%)\nfunction calculateEfficiency(waterTemp, fuelFlowRate) {\n    const baseEfficiency = 85;\n    const tempFactor = 1 - 0.002 * Math.abs(waterTemp - 80);\n    const flowFactor = 1 - 0.01 * Math.abs(fuelFlowRate - 15);\n    const agingFactor = 0.98;\n    const noise = (Math.random() - 0.5) * 2;\n    return Math.max(70, Math.min(95, baseEfficiency * tempFactor * flowFactor * agingFactor + noise));\n}\n\n// Heat output model (kW)\nfunction calculateHeatOutput(fuelFlowRate, efficiency) {\n    const fuelEnergyDensity = 10.5; // kWh/L\n    const heatOutput = fuelFlowRate * fuelEnergyDensity * (efficiency / 100);\n    const noise = (Math.random() - 0.5) * 5;\n    return Math.max(0, heatOutput + noise);\n}\n\n// Generate data with fault scenarios\nfunction generateHeatBoilerData() {\n    const faultProbability = 0.001;\n    const isFault = Math.random() < faultProbability;\n    \n    let ambientTemp = calculateAmbientTemperature();\n    let fuelFlowRate = calculateFuelFlowRate(ambientTemp);\n    let waterTemp = calculateWaterTemperature(fuelFlowRate, ambientTemp);\n    let pressure = calculatePressure(waterTemp);\n    let efficiency = calculateEfficiency(waterTemp, fuelFlowRate);\n    let heatOutput = calculateHeatOutput(fuelFlowRate, efficiency);\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // Low efficiency fault\n                efficiency *= 0.7;\n                heatOutput *= 0.7;\n                fuelFlowRate *= 1.2;\n                break;\n            case 1: // Pressure fault\n                pressure *= 1.5;\n                waterTemp += 10;\n                efficiency *= 0.8;\n                break;\n            case 2: // Fuel supply fault\n                fuelFlowRate *= 0.6;\n                heatOutput *= 0.6;\n                waterTemp *= 0.9;\n                break;\n            case 3: // Temperature sensor fault\n                waterTemp += 20;\n                pressure *= 1.3;\n                efficiency *= 0.9;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `hb_${String(Math.floor(Math.random() * 10) + 1).padStart(3, '0')}`,\n        device_type: 'heat_boiler',\n        timestamp: now.toISOString(),\n        data: {\n            ambient_temperature: Math.round(ambientTemp * 100) / 100,\n            fuel_flow_rate: Math.round(fuelFlowRate * 100) / 100,\n            water_temperature: Math.round(waterTemp * 100) / 100,\n            pressure: Math.round(pressure * 100) / 100,\n            efficiency: Math.round(efficiency * 100) / 100,\n            heat_output: Math.round(heatOutput * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_d',\n        fault_type: isFault ? ['low_efficiency', 'pressure', 'fuel_supply', 'sensor'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst hbData = generateHeatBoilerData();\nmsg.payload = hbData;\nmsg.topic = `devices/heat_boiler/${hbData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "hb-mqtt-output"
+      ]
+    ]
+  },
+  {
+    "id": "hb-mqtt-output",
+    "type": "mqtt out",
+    "z": "heat-boiler-simulation",
+    "name": "MQTT Output (Publish)",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker-config",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "hb-mqtt-input",
+    "type": "mqtt in",
+    "z": "heat-boiler-simulation",
+    "name": "MQTT Input (Subscribe)",
+    "topic": "devices/heat_boiler/+/telemetry",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt-broker-config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "hb-validation"
+      ]
+    ]
+  },
+  {
+    "id": "hb-validation",
+    "type": "function",
+    "z": "heat-boiler-simulation",
+    "name": "Data Validation",
+    "func": "// Validate heat boiler data received from MQTT\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    ambient_temperature: { min: -20, max: 50 },\n    fuel_flow_rate: { min: 0, max: 30 },\n    water_temperature: { min: 50, max: 100 },\n    pressure: { min: 1.0, max: 4.0 },\n    efficiency: { min: 60, max: 98 },\n    heat_output: { min: 0, max: 300 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.water_temperature < data.data.ambient_temperature) {\n    errors.push('Water temperature below ambient temperature');\n}\n\nif (data.data.efficiency > 95) {\n    errors.push('Efficiency exceeds realistic maximum');\n}\n\nif (data.data.pressure > 3.5 && data.data.water_temperature < 90) {\n    errors.push('High pressure with low water temperature');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 200,
+    "wires": [
+      [
+        "hb-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "hb-error-handling",
+    "type": "switch",
+    "z": "heat-boiler-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 200,
+    "wires": [
+      [
+        "hb-data-transformer"
+      ],
+      [
+        "hb-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "hb-data-transformer",
+    "type": "function",
+    "z": "heat-boiler-simulation",
+    "name": "Data Transformer",
+    "func": "// Transform data for InfluxDB 2.x format\nconst data = msg.payload;\n\n// Ensure all numeric values are properly converted\nconst ambientTemp = parseFloat(data.data.ambient_temperature) || 0;\nconst fuelFlowRate = parseFloat(data.data.fuel_flow_rate) || 0;\nconst waterTemp = parseFloat(data.data.water_temperature) || 0;\nconst pressure = parseFloat(data.data.pressure) || 0;\nconst efficiency = parseFloat(data.data.efficiency) || 0;\nconst heatOutput = parseFloat(data.data.heat_output) || 0;\n\n// Calculate COP (Coefficient of Performance) if not provided\nconst cop = data.data.cop ? parseFloat(data.data.cop) : \n    (heatOutput > 0 && fuelFlowRate > 0) ? (heatOutput / (fuelFlowRate * 10.5)) : 0;\n\n// The Node-RED InfluxDB output node expects fields directly in the payload\n// and tags as separate message properties\nmsg.payload = {\n    ambient_temperature: ambientTemp,\n    fuel_flow_rate: fuelFlowRate,\n    water_temperature: waterTemp,\n    pressure: pressure,\n    efficiency: efficiency,\n    heat_output: heatOutput,\n    cop: cop\n};\n\n// Set tags as message properties\nmsg.device_id = data.device_id;\nmsg.device_type = data.device_type;\nmsg.location = data.location || 'unknown';\nmsg.status = data.status || 'operational';\n\n// Set timestamp\nmsg.timestamp = new Date(data.timestamp).getTime();\n\n// Add debug information\nnode.log('✅ Heat boiler data transformed for InfluxDB:');\nnode.log('  - Ambient Temperature: ' + ambientTemp + ' °C');\nnode.log('  - Fuel Flow Rate: ' + fuelFlowRate + ' L/h');\nnode.log('  - Water Temperature: ' + waterTemp + ' °C');\nnode.log('  - Pressure: ' + pressure + ' bar');\nnode.log('  - Efficiency: ' + efficiency + ' %');\nnode.log('  - Heat Output: ' + heatOutput + ' kW');\nnode.log('  - COP: ' + cop);\nnode.log('  - Fields count: ' + Object.keys(msg.payload).length);\nnode.log('  - Tags: device_id=' + msg.device_id + ', device_type=' + msg.device_type);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 160,
+    "wires": [
+      [
+        "hb-influxdb-writer",
+        "hb-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "hb-influxdb-writer",
+    "type": "influxdb out",
+    "z": "heat-boiler-simulation",
+    "influxdb": "influxdb-config",
+    "name": "InfluxDB Writer",
+    "measurement": "heat_boiler_data",
+    "precision": "ms",
+    "precisionV18FluxV20": "ms",
+    "org": "renewable_energy_org",
+    "bucket": "renewable_energy",
+    "tags": "device_id={{device_id}},device_type={{device_type}},location={{location}},status={{status}}",
+    "x": 720,
+    "y": 160,
+    "wires": [
+      [
+        "hb-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "hb-success-log",
+    "type": "debug",
+    "z": "heat-boiler-simulation",
+    "name": "Success Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "influxdb_status",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "hb-error-log",
+    "type": "debug",
+    "z": "heat-boiler-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker-config",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "renewable_energy_admin_token_123",
+    "organization": "renewable_energy_org",
+    "bucket": "renewable_energy"
+  }
+] 

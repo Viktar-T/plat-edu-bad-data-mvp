@@ -1,0 +1,254 @@
+[
+  {
+    "id": "es-inject-30s",
+    "type": "inject",
+    "z": "energy-storage-simulation",
+    "name": "30s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "30",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "es-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "es-simulation-function",
+    "type": "function",
+    "z": "energy-storage-simulation",
+    "name": "Energy Storage Data Generator",
+    "func": "// Energy Storage Data Simulation\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Initialize global state for battery simulation\nif (!global.batteryState) {\n    global.batteryState = {\n        soc: 50, // State of Charge (%)\n        cycles: 0, // Charge cycles\n        age: 0, // Days since installation\n        degradation: 1.0, // Capacity retention factor\n        lastUpdate: now.getTime()\n    };\n}\n\n// Temperature model (°C)\nfunction calculateTemperature() {\n    const baseTemp = 25;\n    const seasonalFactor = 1 + 0.2 * Math.sin(2 * Math.PI * (dayOfYear - 172) / 365);\n    const dailyFactor = 1 + 0.1 * Math.sin(2 * Math.PI * (hour - 12) / 24);\n    const loadFactor = 1 + 0.05 * (Math.abs(global.batteryState.soc - 50) / 50);\n    const noise = (Math.random() - 0.5) * 3;\n    return baseTemp * seasonalFactor * dailyFactor * loadFactor + noise;\n}\n\n// Voltage model (V)\nfunction calculateVoltage(soc, temperature) {\n    const baseVoltage = 48;\n    const socFactor = 0.8 + 0.4 * (soc / 100);\n    const tempFactor = 1 + 0.002 * (temperature - 25);\n    const degradationFactor = global.batteryState.degradation;\n    const noise = (Math.random() - 0.5) * 1;\n    return Math.max(40, baseVoltage * socFactor * tempFactor * degradationFactor + noise);\n}\n\n// Current model (A)\nfunction calculateCurrent(soc, temperature) {\n    const baseCurrent = 20;\n    const socFactor = 1 - 0.5 * (soc / 100);\n    const tempFactor = 1 + 0.01 * (temperature - 25);\n    const degradationFactor = global.batteryState.degradation;\n    const noise = (Math.random() - 0.5) * 2;\n    return baseCurrent * socFactor * tempFactor * degradationFactor + noise;\n}\n\n// Power model (W)\nfunction calculatePower(voltage, current) {\n    return voltage * current;\n}\n\n// State of Charge model (%)\nfunction calculateSOC() {\n    const timeDiff = (now.getTime() - global.batteryState.lastUpdate) / (1000 * 60 * 30); // 30s intervals\n    const selfDischargeRate = 0.1; // % per day\n    const selfDischarge = (selfDischargeRate / 2880) * timeDiff; // 2880 = 30s intervals per day\n    \n    // Simulate charge/discharge cycles based on time of day\n    let chargeRate = 0;\n    if (hour >= 6 && hour <= 18) {\n        // Daytime: charging from solar/wind\n        chargeRate = 0.5;\n    } else if (hour >= 19 && hour <= 23) {\n        // Evening: discharging for peak demand\n        chargeRate = -1.0;\n    } else {\n        // Night: slow charging or standby\n        chargeRate = 0.1;\n    }\n    \n    const netChange = chargeRate - selfDischarge;\n    global.batteryState.soc = Math.max(10, Math.min(95, global.batteryState.soc + netChange));\n    \n    // Update cycle count\n    if (Math.abs(netChange) > 0.1) {\n        global.batteryState.cycles += Math.abs(netChange) / 100;\n    }\n    \n    global.batteryState.lastUpdate = now.getTime();\n    return global.batteryState.soc;\n}\n\n// Capacity model (kWh)\nfunction calculateCapacity() {\n    const baseCapacity = 100; // kWh\n    const degradationFactor = global.batteryState.degradation;\n    const tempFactor = 1 + 0.005 * (calculateTemperature() - 25);\n    return baseCapacity * degradationFactor * tempFactor;\n}\n\n// Degradation model\nfunction calculateDegradation() {\n    const daysSinceInstall = (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (1000 * 60 * 60 * 24);\n    const cycleDegradation = 1 - (global.batteryState.cycles * 0.0001); // 0.01% per cycle\n    const calendarDegradation = 1 - (daysSinceInstall * 0.0001); // 0.01% per day\n    const tempDegradation = 1 - (Math.max(0, calculateTemperature() - 30) * 0.001); // 0.1% per °C above 30°C\n    \n    global.batteryState.degradation = Math.max(0.7, cycleDegradation * calendarDegradation * tempDegradation);\n    return global.batteryState.degradation;\n}\n\n// Generate data with fault scenarios\nfunction generateEnergyStorageData() {\n    const faultProbability = 0.001;\n    const isFault = Math.random() < faultProbability;\n    \n    let temperature = calculateTemperature();\n    let soc = calculateSOC();\n    let degradation = calculateDegradation();\n    let voltage = calculateVoltage(soc, temperature);\n    let current = calculateCurrent(soc, temperature);\n    let power = calculatePower(voltage, current);\n    let capacity = calculateCapacity();\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // Cell imbalance\n                voltage *= 0.8;\n                current *= 0.9;\n                power *= 0.7;\n                break;\n            case 1: // Temperature fault\n                temperature += 20;\n                voltage *= 0.9;\n                degradation *= 0.95;\n                break;\n            case 2: // Capacity loss\n                capacity *= 0.7;\n                soc *= 0.8;\n                power *= 0.6;\n                break;\n            case 3: // Communication fault\n                voltage *= 1.2;\n                current *= 0.8;\n                power *= 0.9;\n                break;\n        }\n    }\n    \n    return {\n        device_id: `es_${String(Math.floor(Math.random() * 10) + 1).padStart(3, '0')}`,\n        device_type: 'energy_storage',\n        timestamp: now.toISOString(),\n        data: {\n            temperature: Math.round(temperature * 100) / 100,\n            state_of_charge: Math.round(soc * 100) / 100,\n            voltage: Math.round(voltage * 100) / 100,\n            current: Math.round(current * 100) / 100,\n            power: Math.round(power * 100) / 100,\n            capacity: Math.round(capacity * 100) / 100,\n            degradation: Math.round(degradation * 10000) / 10000\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_e',\n        fault_type: isFault ? ['cell_imbalance', 'temperature', 'capacity_loss', 'communication'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst esData = generateEnergyStorageData();\nmsg.payload = esData;\nmsg.topic = `devices/energy_storage/${esData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "es-mqtt-output"
+      ]
+    ]
+  },
+  {
+    "id": "es-mqtt-output",
+    "type": "mqtt out",
+    "z": "energy-storage-simulation",
+    "name": "MQTT Output (Publish)",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker-config",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "es-mqtt-input",
+    "type": "mqtt in",
+    "z": "energy-storage-simulation",
+    "name": "MQTT Input (Subscribe)",
+    "topic": "devices/energy_storage/+/telemetry",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt-broker-config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "es-validation"
+      ]
+    ]
+  },
+  {
+    "id": "es-validation",
+    "type": "function",
+    "z": "energy-storage-simulation",
+    "name": "Data Validation",
+    "func": "// Validate energy storage data received from MQTT\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    temperature: { min: -10, max: 60 },\n    state_of_charge: { min: 5, max: 100 },\n    voltage: { min: 40, max: 60 },\n    current: { min: -50, max: 50 },\n    power: { min: -2000, max: 2000 },\n    capacity: { min: 50, max: 120 },\n    degradation: { min: 0.7, max: 1.0 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.state_of_charge < 10 && data.data.power > 0) {\n    errors.push('Charging when SOC is very low');\n}\n\nif (data.data.state_of_charge > 95 && data.data.power < 0) {\n    errors.push('Discharging when SOC is very high');\n}\n\nif (Math.abs(data.data.power - (data.data.voltage * data.data.current)) > 100) {\n    errors.push('Power calculation mismatch');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 200,
+    "wires": [
+      [
+        "es-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "es-error-handling",
+    "type": "switch",
+    "z": "energy-storage-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 200,
+    "wires": [
+      [
+        "es-data-transformer"
+      ],
+      [
+        "es-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "es-data-transformer",
+    "type": "function",
+    "z": "energy-storage-simulation",
+    "name": "Data Transformer",
+    "func": "// Transform data for InfluxDB 2.x format\nconst data = msg.payload;\n\n// Ensure all numeric values are properly converted\nconst temperature = parseFloat(data.data.temperature) || 0;\nconst stateOfCharge = parseFloat(data.data.state_of_charge) || 0;\nconst voltage = parseFloat(data.data.voltage) || 0;\nconst current = parseFloat(data.data.current) || 0;\nconst power = parseFloat(data.data.power) || 0;\nconst capacity = parseFloat(data.data.capacity) || 0;\nconst degradation = parseFloat(data.data.degradation) || 1.0;\n\n// Calculate efficiency if not provided\nconst efficiency = data.data.efficiency ? parseFloat(data.data.efficiency) : \n    (Math.abs(power) > 0) ? Math.min(95, 90 + (degradation * 10)) : 0;\n\n// The Node-RED InfluxDB output node expects fields directly in the payload\n// and tags as separate message properties\nmsg.payload = {\n    temperature: temperature,\n    state_of_charge: stateOfCharge,\n    voltage: voltage,\n    current: current,\n    power: power,\n    capacity: capacity,\n    degradation: degradation,\n    efficiency: efficiency\n};\n\n// Set tags as message properties\nmsg.device_id = data.device_id;\nmsg.device_type = data.device_type;\nmsg.location = data.location || 'unknown';\nmsg.status = data.status || 'operational';\n\n// Set timestamp\nmsg.timestamp = new Date(data.timestamp).getTime();\n\n// Add debug information\nnode.log('✅ Energy storage data transformed for InfluxDB:');\nnode.log('  - Temperature: ' + temperature + ' °C');\nnode.log('  - State of Charge: ' + stateOfCharge + ' %');\nnode.log('  - Voltage: ' + voltage + ' V');\nnode.log('  - Current: ' + current + ' A');\nnode.log('  - Power: ' + power + ' W');\nnode.log('  - Capacity: ' + capacity + ' kWh');\nnode.log('  - Degradation: ' + degradation);\nnode.log('  - Efficiency: ' + efficiency + ' %');\nnode.log('  - Fields count: ' + Object.keys(msg.payload).length);\nnode.log('  - Tags: device_id=' + msg.device_id + ', device_type=' + msg.device_type);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 160,
+    "wires": [
+      [
+        "es-influxdb-writer",
+        "es-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "es-influxdb-writer",
+    "type": "influxdb out",
+    "z": "energy-storage-simulation",
+    "influxdb": "influxdb-config",
+    "name": "InfluxDB Writer",
+    "measurement": "energy_storage_data",
+    "precision": "ms",
+    "precisionV18FluxV20": "ms",
+    "org": "renewable_energy_org",
+    "bucket": "renewable_energy",
+    "tags": "device_id={{device_id}},device_type={{device_type}},location={{location}},status={{status}}",
+    "x": 720,
+    "y": 160,
+    "wires": [
+      [
+        "es-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "es-success-log",
+    "type": "debug",
+    "z": "energy-storage-simulation",
+    "name": "Success Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "influxdb_status",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "es-error-log",
+    "type": "debug",
+    "z": "energy-storage-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker-config",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "renewable_energy_admin_token_123",
+    "organization": "renewable_energy_org",
+    "bucket": "renewable_energy"
+  }
+] 
