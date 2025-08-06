@@ -1,429 +1,908 @@
-# 🌐 React Web App for Real-Time MQTT Data Visualization
+# 🌐 React Web App for Renewable Energy IoT Monitoring - Direct InfluxDB Integration
 
-> **Build a React web application to display real-time data from your IoT monitoring system using MQTT WebSocket connections.**
+> **Build a React web application that connects directly to InfluxDB for real-time and historical renewable energy data visualization.**
 
 [![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
-[![MQTT](https://img.shields.io/badge/MQTT-WebSocket-green?logo=mqtt)](https://mqtt.org/)
-[![WebSocket](https://img.shields.io/badge/WebSocket-Enabled-orange?logo=websocket)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+[![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-green?logo=influxdb)](https://influxdata.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-blue?logo=docker)](https://www.docker.com/)
 
 ---
 
 ## 📋 Table of Contents
 
 - [🎯 Overview](#-overview)
-- [📋 Prerequisites](#-prerequisites)
+- [🔧 Prerequisites](#-prerequisites)
 - [🚀 Quick Start](#-quick-start)
-- [🔧 Implementation](#-implementation)
-- [📊 Advanced Features](#-advanced-features)
-- [🛡️ Security Considerations](#️-security-considerations)
-- [💡 Tips & Best Practices](#-tips--best-practices)
-- [🔍 Troubleshooting](#-troubleshooting)
+- [📊 Implementation Guide](#-implementation-guide)
+- [🔌 InfluxDB Integration](#-influxdb-integration)
+- [📈 Data Visualization](#-data-visualization)
+- [⚡ Performance Optimization](#-performance-optimization)
+- [🛡️ Security & Authentication](#️-security--authentication)
+- [🔍 Advanced Features](#-advanced-features)
+- [💡 Best Practices](#-best-practices)
+- [🔧 Troubleshooting](#-troubleshooting)
+- [📚 API Reference](#-api-reference)
 
 ---
 
 ## 🎯 Overview
 
-This guide shows you how to create a **React web application** that connects to your IoT monitoring system's MQTT broker via WebSocket to display real-time data. Perfect for creating dashboards, monitoring interfaces, and live data visualization.
+This guide shows you how to create a **React web application** that connects directly to your InfluxDB time-series database to display real-time and historical renewable energy data. This approach provides the most direct and efficient way to access your IoT monitoring system's data.
 
 ### 🔄 How It Works
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   MQTT Broker   │───▶│   WebSocket     │───▶│   React App     │
-│   (Mosquitto)   │    │   Connection    │    │   (Dashboard)   │
-│   Port 9001     │    │   ws://localhost│    │   Real-time UI  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB      │
+│   (Solar, Wind, │    │   (Mosquitto)   │    │   (Processing)  │    │   (Time-Series) │
+│   Biogas, etc.) │    │   Port 1883     │    │   Port 1880     │    │   Port 8086     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                     ┌─────────────────┐
+                                                                     │   React App     │
+                                                                     │   (Dashboard)   │
+                                                                     │   Direct API    │
+                                                                     └─────────────────┘
 ```
+
+### ✨ Key Benefits
+
+- ✅ **Direct access** to time-series database
+- ✅ **Rich query capabilities** with Flux language
+- ✅ **Historical data** with flexible time ranges
+- ✅ **Real-time updates** via polling or Server-Sent Events
+- ✅ **No additional infrastructure** needed
+- ✅ **Built-in aggregation** and data processing
+- ✅ **Optimized for time-series data**
 
 ---
 
-## 📋 Prerequisites
+## 🔧 Prerequisites
 
 Before you begin, ensure you have the following:
 
 ### ✅ System Requirements
 
-- **MQTT Broker**: Your Mosquitto broker is running with WebSocket enabled
-- **WebSocket Port**: Port 9001 is accessible (default WebSocket port)
+- **InfluxDB 2.7**: Running and accessible on port 8086
 - **React Environment**: Basic React app setup (create-react-app or similar)
-- **Node.js**: Version 14+ for modern React features
+- **Node.js**: Version 16+ for modern React features
+- **Docker**: Your IoT system running via docker-compose
 
-### 🔧 MQTT Broker Configuration
+### 🔧 InfluxDB Configuration
 
-Make sure your MQTT broker has WebSocket support enabled:
+Your InfluxDB should be configured with:
 
 ```bash
-# In your mosquitto.conf
-listener 1883
-protocol mqtt
-
-listener 9001
-protocol websockets
+# Environment variables (from your docker-compose.yml)
+INFLUXDB_ADMIN_USER=admin
+INFLUXDB_ADMIN_PASSWORD=admin_password_123
+INFLUXDB_ADMIN_TOKEN=renewable_energy_admin_token_123
+INFLUXDB_ORG=renewable_energy_org
+INFLUXDB_BUCKET=renewable_energy
 ```
+
+### 📊 Data Structure
+
+Your InfluxDB should contain measurements for:
+- `photovoltaic_data` - Solar panel data
+- `wind_turbine_data` - Wind turbine data
+- `biogas_plant_data` - Biogas plant data
+- `heat_boiler_data` - Heat boiler data
+- `energy_storage_data` - Energy storage data
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. **Install MQTT.js Library**
-
-The `mqtt.js` library is the standard for browser MQTT/WebSocket connections:
+### 1. **Install Dependencies**
 
 ```bash
-npm install mqtt
+# Create new React app (if starting fresh)
+npx create-react-app renewable-energy-dashboard --template typescript
+
+# Navigate to project
+cd renewable-energy-dashboard
+
+# Install required dependencies
+npm install @influxdata/influxdb-client
+npm install recharts
+npm install @types/node
+npm install axios
+npm install react-query
 ```
 
-### 2. **Create Your MQTT Dashboard Component**
+### 2. **Set Up Environment Variables**
 
-Create a new file: `src/components/MqttDashboard.js`
+Create `.env` file in your React app root:
 
-```jsx
-import React, { useEffect, useState } from "react";
-import mqtt from "mqtt";
+```env
+REACT_APP_INFLUXDB_URL=http://localhost:8086
+REACT_APP_INFLUXDB_TOKEN=renewable_energy_admin_token_123
+REACT_APP_INFLUXDB_ORG=renewable_energy_org
+REACT_APP_INFLUXDB_BUCKET=renewable_energy
+```
 
-const MQTT_BROKER = "ws://localhost:9001"; // WebSocket URL (change if needed)
-const MQTT_TOPIC = "test/topic";           // Your topic
+### 3. **Create InfluxDB Client Configuration**
 
-export default function MqttDashboard() {
-  const [messages, setMessages] = useState([]);
+Create `src/config/influxdb.ts`:
 
-  useEffect(() => {
-    // 1. Connect to broker
-    const client = mqtt.connect(MQTT_BROKER);
+```typescript
+import { InfluxDB } from '@influxdata/influxdb-client'
 
-    // 2. On connection, subscribe to topic
-    client.on("connect", () => {
-      console.log("Connected to MQTT broker!");
-      client.subscribe(MQTT_TOPIC);
-    });
+const url = process.env.REACT_APP_INFLUXDB_URL || 'http://localhost:8086'
+const token = process.env.REACT_APP_INFLUXDB_TOKEN || 'renewable_energy_admin_token_123'
+const org = process.env.REACT_APP_INFLUXDB_ORG || 'renewable_energy_org'
+const bucket = process.env.REACT_APP_INFLUXDB_BUCKET || 'renewable_energy'
 
-    // 3. Listen for messages
-    client.on("message", (topic, message) => {
-      setMessages((msgs) => [
-        ...msgs,
-        { topic, message: message.toString(), timestamp: new Date().toLocaleTimeString() }
-      ]);
-    });
+export const influxDB = new InfluxDB({ url, token })
+export const queryApi = influxDB.getQueryApi(org)
 
-    // 4. Cleanup on unmount
-    return () => client.end();
-  }, []);
-
-  return (
-    <div>
-      <h2>Real-Time MQTT Dashboard</h2>
-      <ul>
-        {messages.map((msg, i) => (
-          <li key={i}>
-            [{msg.timestamp}] <b>{msg.topic}:</b> {msg.message}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+export const INFLUXDB_CONFIG = {
+  url,
+  token,
+  org,
+  bucket
 }
 ```
 
-### 3. **Add Component to Your App**
+### 4. **Create Basic Dashboard Component**
 
-Update your `src/App.js`:
+Create `src/components/EnergyDashboard.tsx`:
 
-```jsx
-import React from "react";
-import MqttDashboard from "./components/MqttDashboard";
+```typescript
+import React, { useEffect, useState } from 'react'
+import { queryApi, INFLUXDB_CONFIG } from '../config/influxdb'
+
+interface EnergyData {
+  timestamp: string
+  device_id: string
+  power_output: number
+  temperature: number
+  efficiency: number
+}
+
+export default function EnergyDashboard() {
+  const [solarData, setSolarData] = useState<EnergyData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchSolarData()
+  }, [])
+
+  const fetchSolarData = async () => {
+    try {
+      setLoading(true)
+      
+      const fluxQuery = `
+        from(bucket: "${INFLUXDB_CONFIG.bucket}")
+          |> range(start: -1h)
+          |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+          |> filter(fn: (r) => r._field == "power_output" or r._field == "temperature" or r._field == "efficiency")
+          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+          |> sort(columns: ["_time"])
+      `
+
+      const results: EnergyData[] = []
+      
+      await queryApi.queryRaw(fluxQuery, {
+        next: (line) => {
+          if (line.startsWith('#')) return
+          const data = JSON.parse(line)
+          if (data.result === '_result' && data.table === 0) {
+            results.push({
+              timestamp: data._time,
+              device_id: data.device_id,
+              power_output: data.power_output || 0,
+              temperature: data.temperature || 0,
+              efficiency: data.efficiency || 0
+            })
+          }
+        },
+        error: (error) => {
+          console.error('Query error:', error)
+          setError('Failed to fetch data')
+        },
+        complete: () => {
+          setSolarData(results)
+          setLoading(false)
+        }
+      })
+    } catch (err) {
+      setError('Failed to connect to InfluxDB')
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <div>Loading energy data...</div>
+  if (error) return <div>Error: {error}</div>
+
+  return (
+    <div className="energy-dashboard">
+      <h2>Renewable Energy Dashboard</h2>
+      <div className="data-grid">
+        {solarData.map((data, index) => (
+          <div key={index} className="data-card">
+            <h3>Device: {data.device_id}</h3>
+            <p>Power Output: {data.power_output.toFixed(2)} kW</p>
+            <p>Temperature: {data.temperature.toFixed(1)}°C</p>
+            <p>Efficiency: {(data.efficiency * 100).toFixed(1)}%</p>
+            <small>{new Date(data.timestamp).toLocaleString()}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+### 5. **Add Component to Your App**
+
+Update `src/App.tsx`:
+
+```typescript
+import React from 'react'
+import EnergyDashboard from './components/EnergyDashboard'
+import './App.css'
 
 function App() {
   return (
     <div className="App">
-      <MqttDashboard />
+      <header className="App-header">
+        <h1>Renewable Energy IoT Monitoring</h1>
+      </header>
+      <main>
+        <EnergyDashboard />
+      </main>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
 ```
 
-### 4. **Start Your Application**
+### 6. **Start Your Application**
 
 ```bash
 npm start
 ```
 
-Open `http://localhost:3000` (or whatever port your React app runs on).
+Open `http://localhost:3000` to see your dashboard.
 
 ---
 
-## 🔧 Implementation
+## 📊 Implementation Guide
 
-### 🔌 Connection Configuration
+### 🔌 InfluxDB Connection Setup
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| **MQTT_BROKER** | WebSocket URL to your MQTT broker | `ws://localhost:9001` |
-| **MQTT_TOPIC** | Topic to subscribe to | `devices/photovoltaic/pv_001/data` |
-| **Connection Options** | Additional MQTT connection settings | `{ username, password, clientId }` |
+#### Basic Connection
 
-### 📡 Multiple Topic Subscription
+```typescript
+import { InfluxDB } from '@influxdata/influxdb-client'
 
-```jsx
-// Subscribe to multiple topics
-const topics = [
-  "devices/photovoltaic/+/data",
-  "devices/wind_turbine/+/status",
-  "system/health/+"
-];
+const influxDB = new InfluxDB({
+  url: 'http://localhost:8086',
+  token: 'your_token_here'
+})
 
-topics.forEach(topic => {
-  client.subscribe(topic);
-});
+const queryApi = influxDB.getQueryApi('your_org')
 ```
 
-### 🔄 Real-Time Data Handling
+#### Connection with Error Handling
 
-```jsx
-client.on("message", (topic, message) => {
-  try {
-    const data = JSON.parse(message.toString());
-    
-    // Update different state based on topic
-    if (topic.includes("photovoltaic")) {
-      setSolarData(data);
-    } else if (topic.includes("wind_turbine")) {
-      setWindData(data);
-    }
-  } catch (error) {
-    console.error("Error parsing message:", error);
+```typescript
+import { InfluxDB } from '@influxdata/influxdb-client'
+
+class InfluxDBService {
+  private client: InfluxDB
+  private queryApi: any
+  private isConnected: boolean = false
+
+  constructor() {
+    this.client = new InfluxDB({
+      url: process.env.REACT_APP_INFLUXDB_URL!,
+      token: process.env.REACT_APP_INFLUXDB_TOKEN!
+    })
+    this.queryApi = this.client.getQueryApi(process.env.REACT_APP_INFLUXDB_ORG!)
   }
-});
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const query = `from(bucket: "${process.env.REACT_APP_INFLUXDB_BUCKET}")
+        |> range(start: -1m)
+        |> limit(n: 1)`
+      
+      await this.queryApi.queryRaw(query)
+      this.isConnected = true
+      return true
+    } catch (error) {
+      console.error('InfluxDB connection failed:', error)
+      this.isConnected = false
+      return false
+    }
+  }
+
+  getConnectionStatus(): boolean {
+    return this.isConnected
+  }
+}
+
+export const influxDBService = new InfluxDBService()
 ```
 
----
+### 📈 Data Fetching Patterns
 
-## 📊 Advanced Features
+#### Real-Time Data with Polling
 
-### 📈 Data Visualization
+```typescript
+import { useEffect, useState, useCallback } from 'react'
+import { queryApi } from '../config/influxdb'
 
-For production dashboards, consider these libraries:
+export function useRealTimeData(measurement: string, interval: number = 5000) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
 
-| Library | Purpose | Use Case |
-|---------|---------|----------|
-| **Recharts** | Charts and graphs | Time series data, performance metrics |
-| **React-Gauge** | Gauge displays | Real-time values, status indicators |
-| **React-Table** | Data tables | Device lists, historical data |
-| **React-Grid-Layout** | Dashboard layout | Customizable dashboard arrangements |
+  const fetchData = useCallback(async () => {
+    try {
+      const fluxQuery = `
+        from(bucket: "${process.env.REACT_APP_INFLUXDB_BUCKET}")
+          |> range(start: -5m)
+          |> filter(fn: (r) => r._measurement == "${measurement}")
+          |> sort(columns: ["_time"])
+      `
 
-### 🎨 Enhanced Dashboard Example
-
-```jsx
-import React, { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import mqtt from "mqtt";
-
-export default function EnhancedDashboard() {
-  const [solarData, setSolarData] = useState([]);
-  const [connectionStatus, setConnectionStatus] = useState("disconnected");
+      const results: any[] = []
+      
+      await queryApi.queryRaw(fluxQuery, {
+        next: (line: string) => {
+          if (!line.startsWith('#')) {
+            const parsed = JSON.parse(line)
+            if (parsed.result === '_result') {
+              results.push(parsed)
+            }
+          }
+        },
+        complete: () => {
+          setData(results)
+          setLoading(false)
+        }
+      })
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }, [measurement])
 
   useEffect(() => {
-    const client = mqtt.connect("ws://localhost:9001", {
-      username: "your_username",
-      password: "your_password"
-    });
+    fetchData()
+    const intervalId = setInterval(fetchData, interval)
+    return () => clearInterval(intervalId)
+  }, [fetchData, interval])
 
-    client.on("connect", () => {
-      setConnectionStatus("connected");
-      client.subscribe("devices/photovoltaic/+/data");
-    });
+  return { data, loading, refetch: fetchData }
+}
+```
 
-    client.on("message", (topic, message) => {
-      const data = JSON.parse(message.toString());
-      setSolarData(prev => [...prev, {
-        time: new Date().toLocaleTimeString(),
-        power: data.data.power_output,
-        temperature: data.data.temperature
-      }].slice(-50)); // Keep last 50 readings
-    });
+#### Historical Data with Time Range
 
-    return () => client.end();
-  }, []);
+```typescript
+export function useHistoricalData(
+  measurement: string, 
+  timeRange: { start: string, end: string }
+) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        const fluxQuery = `
+          from(bucket: "${process.env.REACT_APP_INFLUXDB_BUCKET}")
+            |> range(start: ${timeRange.start}, stop: ${timeRange.end})
+            |> filter(fn: (r) => r._measurement == "${measurement}")
+            |> aggregateWindow(every: 1h, fn: mean)
+            |> sort(columns: ["_time"])
+        `
+
+        const results: any[] = []
+        
+        await queryApi.queryRaw(fluxQuery, {
+          next: (line: string) => {
+            if (!line.startsWith('#')) {
+              const parsed = JSON.parse(line)
+              if (parsed.result === '_result') {
+                results.push(parsed)
+              }
+            }
+          },
+          complete: () => {
+            setData(results)
+            setLoading(false)
+          }
+        })
+      } catch (error) {
+        console.error('Error fetching historical data:', error)
+        setLoading(false)
+      }
+    }
+
+    fetchHistoricalData()
+  }, [measurement, timeRange])
+
+  return { data, loading }
+}
+```
+
+### 🎨 Data Visualization Components
+
+#### Line Chart Component
+
+```typescript
+import React from 'react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+
+interface ChartData {
+  timestamp: string
+  value: number
+  field: string
+}
+
+interface EnergyChartProps {
+  data: ChartData[]
+  title: string
+  yAxisLabel: string
+}
+
+export function EnergyChart({ data, title, yAxisLabel }: EnergyChartProps) {
+  const chartData = data.map(item => ({
+    time: new Date(item.timestamp).toLocaleTimeString(),
+    [item.field]: item.value
+  }))
 
   return (
-    <div className="dashboard">
-      <div className="status-bar">
-        <span className={`status ${connectionStatus}`}>
-          {connectionStatus.toUpperCase()}
-        </span>
-      </div>
-      
-      <div className="charts">
-        <LineChart width={600} height={300} data={solarData}>
+    <div className="chart-container">
+      <h3>{title}</h3>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="time" />
-          <YAxis />
+          <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
           <Tooltip />
-          <Line type="monotone" dataKey="power" stroke="#8884d8" />
+          <Legend />
+          <Line 
+            type="monotone" 
+            dataKey={data[0]?.field || 'value'} 
+            stroke="#8884d8" 
+            strokeWidth={2}
+            dot={false}
+          />
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+```
+
+#### Gauge Component
+
+```typescript
+import React from 'react'
+
+interface GaugeProps {
+  value: number
+  min: number
+  max: number
+  title: string
+  unit: string
+  color?: string
+}
+
+export function Gauge({ value, min, max, title, unit, color = '#8884d8' }: GaugeProps) {
+  const percentage = ((value - min) / (max - min)) * 100
+  const angle = (percentage / 100) * 180
+
+  return (
+    <div className="gauge-container">
+      <h4>{title}</h4>
+      <div className="gauge">
+        <div 
+          className="gauge-fill"
+          style={{
+            transform: `rotate(${angle}deg)`,
+            backgroundColor: color
+          }}
+        />
+        <div className="gauge-value">
+          {value.toFixed(1)} {unit}
+        </div>
       </div>
     </div>
-  );
+  )
 }
 ```
 
 ---
 
-## 🛡️ Security Considerations
+## ⚡ Performance Optimization
 
-### 🔐 Authentication
+### 🔄 Efficient Data Fetching
 
-For production applications, always implement proper authentication:
+#### Debounced Queries
 
-```jsx
-const client = mqtt.connect("ws://localhost:9001", {
-  username: "your_username",
-  password: "your_password",
-  clientId: `webapp_${Math.random().toString(16).slice(3)}`
-});
-```
+```typescript
+import { useMemo, useCallback } from 'react'
+import { debounce } from 'lodash'
 
-### 🌐 SSL/TLS Encryption
+export function useDebouncedQuery(query: string, delay: number = 300) {
+  const debouncedQuery = useMemo(
+    () => debounce(async (queryString: string) => {
+      // Execute query logic here
+    }, delay),
+    [delay]
+  )
 
-Use secure WebSocket connections in production:
-
-```jsx
-// Secure connection
-const client = mqtt.connect("wss://your-broker.com:9001", {
-  username: "your_username",
-  password: "your_password"
-});
-```
-
-### 🚪 Access Control
-
-Ensure your MQTT broker has proper ACL (Access Control List) configured:
-
-```bash
-# In mosquitto ACL file
-topic read devices/+/+/data
-topic read system/health/+
-```
-
----
-
-## 💡 Tips & Best Practices
-
-### 🎯 Best Practices
-
-| Practice | Description | Benefit |
-|----------|-------------|---------|
-| **Error Handling** | Always handle connection errors and message parsing | Prevents app crashes |
-| **Connection Management** | Proper cleanup on component unmount | Prevents memory leaks |
-| **State Management** | Use appropriate state management for complex data | Better performance |
-| **Topic Structure** | Follow consistent topic naming conventions | Easier maintenance |
-
-### 🔧 Performance Optimization
-
-```jsx
-// Limit message history to prevent memory issues
-const [messages, setMessages] = useState([]);
-
-client.on("message", (topic, message) => {
-  setMessages(prev => {
-    const newMessages = [...prev, { topic, message: message.toString(), timestamp: new Date() }];
-    return newMessages.slice(-100); // Keep only last 100 messages
-  });
-});
-```
-
-### 📱 Responsive Design
-
-```css
-/* CSS for responsive dashboard */
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
+  return debouncedQuery
 }
+```
 
-.chart-container {
-  min-height: 300px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
+#### Caching with React Query
+
+```typescript
+import { useQuery } from 'react-query'
+
+export function useCachedEnergyData(measurement: string, timeRange: string) {
+  return useQuery(
+    ['energy-data', measurement, timeRange],
+    async () => {
+      // Fetch data from InfluxDB
+      const fluxQuery = `
+        from(bucket: "${process.env.REACT_APP_INFLUXDB_BUCKET}")
+          |> range(start: ${timeRange})
+          |> filter(fn: (r) => r._measurement == "${measurement}")
+      `
+      
+      // Execute query and return data
+      return executeQuery(fluxQuery)
+    },
+    {
+      staleTime: 30000, // Data is fresh for 30 seconds
+      cacheTime: 300000, // Cache for 5 minutes
+      refetchInterval: 60000, // Refetch every minute
+    }
+  )
+}
+```
+
+### 📊 Data Aggregation
+
+#### Pre-aggregated Queries
+
+```typescript
+export function getAggregatedData(measurement: string, window: string) {
+  const fluxQuery = `
+    from(bucket: "${process.env.REACT_APP_INFLUXDB_BUCKET}")
+      |> range(start: -24h)
+      |> filter(fn: (r) => r._measurement == "${measurement}")
+      |> aggregateWindow(every: ${window}, fn: mean)
+      |> sort(columns: ["_time"])
+  `
+  
+  return fluxQuery
 }
 ```
 
 ---
 
-## 🔍 Troubleshooting
+## 🛡️ Security & Authentication
+
+### 🔐 Token Management
+
+```typescript
+class InfluxDBAuth {
+  private static instance: InfluxDBAuth
+  private token: string | null = null
+
+  static getInstance(): InfluxDBAuth {
+    if (!InfluxDBAuth.instance) {
+      InfluxDBAuth.instance = new InfluxDBAuth()
+    }
+    return InfluxDBAuth.instance
+  }
+
+  setToken(token: string): void {
+    this.token = token
+    localStorage.setItem('influxdb_token', token)
+  }
+
+  getToken(): string | null {
+    if (!this.token) {
+      this.token = localStorage.getItem('influxdb_token')
+    }
+    return this.token
+  }
+
+  clearToken(): void {
+    this.token = null
+    localStorage.removeItem('influxdb_token')
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.getToken()
+  }
+}
+
+export const influxDBAuth = InfluxDBAuth.getInstance()
+```
+
+### 🌐 HTTPS Configuration
+
+```typescript
+// For production, use HTTPS
+const getInfluxDBConfig = () => {
+  const isProduction = process.env.NODE_ENV === 'production'
+  
+  return {
+    url: isProduction 
+      ? 'https://your-influxdb-domain.com:8086'
+      : 'http://localhost:8086',
+    token: process.env.REACT_APP_INFLUXDB_TOKEN,
+    org: process.env.REACT_APP_INFLUXDB_ORG
+  }
+}
+```
+
+---
+
+## 🔍 Advanced Features
+
+### 📊 Multi-Device Dashboard
+
+```typescript
+import React from 'react'
+import { useRealTimeData } from '../hooks/useRealTimeData'
+import { EnergyChart } from './EnergyChart'
+import { Gauge } from './Gauge'
+
+export function MultiDeviceDashboard() {
+  const { data: solarData, loading: solarLoading } = useRealTimeData('photovoltaic_data')
+  const { data: windData, loading: windLoading } = useRealTimeData('wind_turbine_data')
+  const { data: storageData, loading: storageLoading } = useRealTimeData('energy_storage_data')
+
+  if (solarLoading || windLoading || storageLoading) {
+    return <div>Loading dashboard...</div>
+  }
+
+  return (
+    <div className="multi-device-dashboard">
+      <div className="dashboard-grid">
+        <div className="device-section">
+          <h2>Solar Panels</h2>
+          <EnergyChart 
+            data={solarData} 
+            title="Power Output" 
+            yAxisLabel="Power (kW)" 
+          />
+          <div className="gauges">
+            <Gauge 
+              value={solarData[0]?.power_output || 0} 
+              min={0} 
+              max={100} 
+              title="Current Power" 
+              unit="kW" 
+              color="#ffd700"
+            />
+            <Gauge 
+              value={solarData[0]?.efficiency || 0} 
+              min={0} 
+              max={1} 
+              title="Efficiency" 
+              unit="%" 
+              color="#32cd32"
+            />
+          </div>
+        </div>
+
+        <div className="device-section">
+          <h2>Wind Turbines</h2>
+          <EnergyChart 
+            data={windData} 
+            title="Wind Power" 
+            yAxisLabel="Power (kW)" 
+          />
+        </div>
+
+        <div className="device-section">
+          <h2>Energy Storage</h2>
+          <EnergyChart 
+            data={storageData} 
+            title="Battery Level" 
+            yAxisLabel="Charge (%)" 
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+### 🔔 Real-Time Alerts
+
+```typescript
+export function useEnergyAlerts() {
+  const [alerts, setAlerts] = useState([])
+
+  const checkAlerts = useCallback((data) => {
+    const newAlerts = []
+    
+    data.forEach(device => {
+      if (device.power_output < 10) {
+        newAlerts.push({
+          type: 'warning',
+          message: `Low power output on device ${device.device_id}`,
+          timestamp: new Date().toISOString()
+        })
+      }
+      
+      if (device.temperature > 80) {
+        newAlerts.push({
+          type: 'error',
+          message: `High temperature on device ${device.device_id}`,
+          timestamp: new Date().toISOString()
+        })
+      }
+    })
+    
+    setAlerts(prev => [...prev, ...newAlerts])
+  }, [])
+
+  return { alerts, checkAlerts }
+}
+```
+
+---
+
+## 💡 Best Practices
+
+### 📊 Data Management
+
+- **Use appropriate time ranges** for queries to avoid performance issues
+- **Implement data pagination** for large datasets
+- **Cache frequently accessed data** using React Query or SWR
+- **Use aggregation functions** for performance optimization
+
+### 🎨 UI/UX Guidelines
+
+- **Show loading states** for better user experience
+- **Implement error boundaries** to handle connection failures
+- **Use responsive design** for mobile compatibility
+- **Provide data refresh options** for manual updates
+
+### 🔧 Code Organization
+
+- **Separate concerns** between data fetching and UI components
+- **Use custom hooks** for reusable data logic
+- **Implement proper TypeScript types** for type safety
+- **Follow React best practices** for component structure
+
+---
+
+## 🔧 Troubleshooting
 
 ### ❌ Common Issues
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| **Connection Failed** | WebSocket port not enabled | Enable WebSocket in mosquitto.conf |
-| **No Messages Received** | Wrong topic subscription | Verify topic name and permissions |
-| **Authentication Error** | Invalid credentials | Check username/password |
-| **Memory Leaks** | No cleanup on unmount | Always call `client.end()` |
+| **Connection Failed** | InfluxDB not running | Check docker-compose status |
+| **Authentication Error** | Invalid token | Verify token in environment variables |
+| **CORS Error** | Browser security policy | Configure InfluxDB CORS settings |
+| **Query Timeout** | Large time range | Reduce query time range or add aggregation |
 
 ### 🔧 Debug Commands
 
 ```bash
-# Check if WebSocket port is open
-netstat -an | grep 9001
+# Check InfluxDB status
+curl -f http://localhost:8086/health
 
-# Test MQTT WebSocket connection
-wscat -c ws://localhost:9001
+# Test query via curl
+curl -X POST http://localhost:8086/api/v2/query \
+  -H "Authorization: Token your_token_here" \
+  -H "Content-Type: application/vnd.flux" \
+  -d 'from(bucket:"renewable_energy") |> range(start: -1h) |> limit(n: 1)'
 
-# Check mosquitto logs
-docker-compose logs mosquitto
+# Check React app environment
+echo $REACT_APP_INFLUXDB_URL
 ```
 
-### 📊 Connection Status Monitoring
+### 📊 Performance Monitoring
 
-```jsx
-const [connectionStatus, setConnectionStatus] = useState("disconnected");
-
-client.on("connect", () => {
-  setConnectionStatus("connected");
-  console.log("✅ Connected to MQTT broker");
-});
-
-client.on("error", (error) => {
-  setConnectionStatus("error");
-  console.error("❌ MQTT connection error:", error);
-});
-
-client.on("close", () => {
-  setConnectionStatus("disconnected");
-  console.log("🔌 MQTT connection closed");
-});
+```typescript
+// Add performance monitoring to queries
+const measureQueryPerformance = async (queryFn: () => Promise<any>) => {
+  const startTime = performance.now()
+  try {
+    const result = await queryFn()
+    const endTime = performance.now()
+    console.log(`Query completed in ${endTime - startTime}ms`)
+    return result
+  } catch (error) {
+    console.error('Query failed:', error)
+    throw error
+  }
+}
 ```
 
 ---
 
-## 🎯 What's Happening Here?
+## 📚 API Reference
 
-### 🔄 Data Flow Process
+### 🔌 InfluxDB Client Methods
 
-1. **🔌 Connect**: Your React app connects to the MQTT broker using WebSocket (`ws://localhost:9001`)
-2. **📡 Subscribe**: It subscribes to specific topics (e.g., `devices/photovoltaic/+/data`)
-3. **📊 Display**: Every new message is immediately shown in the React UI—real-time updates!
-4. **🔄 Update**: The UI automatically re-renders when new data arrives
+```typescript
+// Query API
+queryApi.queryRaw(fluxQuery, options)
+queryApi.queryLines(fluxQuery, options)
+queryApi.queryRows(fluxQuery, options)
 
-### 🎨 Use Cases
+// Write API (if needed)
+writeApi.writePoint(point)
+writeApi.writePoints(points)
+writeApi.close()
+```
 
-- **📊 Real-time dashboards** for IoT device monitoring
-- **📈 Live charts** showing sensor data trends
-- **🔔 Alert displays** for system notifications
-- **📱 Mobile-responsive** monitoring interfaces
-- **🎛️ Control panels** for device management
+### 📊 Flux Query Examples
+
+```typescript
+// Basic query
+const basicQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+`
+
+// Aggregated query
+const aggregatedQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -24h)
+    |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+    |> aggregateWindow(every: 1h, fn: mean)
+    |> sort(columns: ["_time"])
+`
+
+// Multi-field query
+const multiFieldQuery = `
+  from(bucket: "renewable_energy")
+    |> range(start: -1h)
+    |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+    |> filter(fn: (r) => r._field == "power_output" or r._field == "temperature")
+    |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+`
+```
+
+---
+
+## 📖 **Comprehensive Documentation**
+
+For detailed implementation with React examples, TypeScript interfaces, and ready-to-use components, see:
+
+### **[📊 InfluxDB 2.7 RESTful API Guide](../docs/influxdb/01-influxdb-api.md)**
+
+This comprehensive guide includes:
+- **Complete API reference** with all endpoints
+- **TypeScript interfaces** for all data types
+- **React hooks** for data fetching
+- **Error handling** patterns
+- **Performance optimization** techniques
+- **Security best practices**
+- **Real-world examples** and use cases
 
 ---
 
 <div align="center">
 
-**🌐 Ready to build your real-time IoT dashboard?**
+**🌐 Ready to build your renewable energy dashboard?**
 
-*Connect your React app to the MQTT broker and start visualizing live data!*
+*Connect your React app directly to InfluxDB and start visualizing your IoT data!*
 
 </div>
