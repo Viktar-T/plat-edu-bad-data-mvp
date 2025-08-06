@@ -1,12 +1,12 @@
 {
   "id": null,
   "title": "Wind Turbine Analytics",
-  "tags": ["wind-turbine", "analytics", "power-curve", "mvp"],
+  "tags": ["wind-turbine", "wind-power", "analytics", "mvp"],
   "style": "dark",
   "timezone": "utc",
   "refresh": "30s",
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -17,16 +17,18 @@
       {
         "name": "turbine_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"wind_turbine\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"wind_turbine_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
       },
       {
-        "name": "wind_speed_range",
-        "type": "custom",
-        "query": "0-5, 5-10, 10-15, 15-20, 20+",
+        "name": "location",
+        "type": "query",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"wind_turbine_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "datasource": "InfluxDB 2.x",
+        "refresh": 2,
         "includeAll": true,
         "multi": true
       }
@@ -38,12 +40,12 @@
   "panels": [
     {
       "id": 1,
-      "title": "Total Wind Power Output",
+      "title": "Total Wind Power",
       "type": "stat",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -57,8 +59,8 @@
             "steps": [
               {"color": "red", "value": null},
               {"color": "green", "value": 0},
-              {"color": "yellow", "value": 5000},
-              {"color": "red", "value": 10000}
+              {"color": "yellow", "value": 1000},
+              {"color": "red", "value": 2000}
             ]
           },
           "unit": "watt"
@@ -68,237 +70,12 @@
     },
     {
       "id": 2,
-      "title": "Current Wind Speed",
-      "type": "gauge",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")\n  |> mean()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "blue", "value": null},
-              {"color": "blue", "value": 3},
-              {"color": "green", "value": 12},
-              {"color": "yellow", "value": 20},
-              {"color": "red", "value": 25}
-            ]
-          },
-          "unit": "ms",
-          "min": 0,
-          "max": 25
-        }
-      },
-      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
-    },
-    {
-      "id": 3,
-      "title": "Wind Direction",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"wind_direction\")\n  |> mean()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {"text": "N"},
-                "45": {"text": "NE"},
-                "90": {"text": "E"},
-                "135": {"text": "SE"},
-                "180": {"text": "S"},
-                "225": {"text": "SW"},
-                "270": {"text": "W"},
-                "315": {"text": "NW"}
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "steps": [
-              {"color": "green", "value": null}
-            ]
-          },
-          "unit": "degrees"
-        }
-      },
-      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
-    },
-    {
-      "id": 4,
-      "title": "Power Curve (Wind Speed vs Power Output)",
-      "type": "scatter",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"wind_speed\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> filter(fn: (r) => r.wind_speed > 0)",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "points",
-            "fillOpacity": 50,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "watt"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
-    },
-    {
-      "id": 5,
-      "title": "Wind Speed vs Power Output Over Time",
-      "type": "timeseries",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"wind_speed\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "power_output"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "watt"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "left"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "wind_speed"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "ms"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
-    },
-    {
-      "id": 6,
       "title": "Turbine Efficiency",
       "type": "gauge",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -321,16 +98,47 @@
           "max": 100
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
     },
     {
-      "id": 7,
-      "title": "Rotor Speed and Temperature",
+      "id": 3,
+      "title": "Wind Speed",
+      "type": "stat",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")\n  |> mean()",
+          "datasource": "InfluxDB 2.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "blue", "value": null},
+              {"color": "blue", "value": 3},
+              {"color": "green", "value": 8},
+              {"color": "yellow", "value": 15},
+              {"color": "red", "value": 25}
+            ]
+          },
+          "unit": "ms"
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "id": 4,
+      "title": "Power Output (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"rotor_speed\" or r._field == \"temperature\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -340,6 +148,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -349,15 +160,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -366,63 +178,49 @@
             "thresholdsStyle": {
               "mode": "off"
             }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "rotor_speed"
-            },
-            "properties": [
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "unit",
-                "value": "rpm"
+                "color": "green",
+                "value": null
               },
               {
-                "id": "custom.axisPlacement",
-                "value": "left"
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "temperature"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "celsius"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+          "unit": "watt"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
     },
     {
-      "id": 8,
-      "title": "Wind Speed Distribution",
-      "type": "histogram",
+      "id": 5,
+      "title": "Wind Speed (6h)",
+      "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")\n  |> histogram(bins: 20)",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -432,24 +230,28 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
+            "drawStyle": "line",
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -459,137 +261,203 @@
               "mode": "off"
             }
           },
-          "unit": "short"
-        }
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
     },
     {
-      "id": 9,
-      "title": "Individual Turbine Status",
-      "type": "table",
+      "id": 6,
+      "title": "Efficiency (6h)",
+      "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"wind_speed\" or r._field == \"efficiency\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
           },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "green", "value": 0}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Device ID"
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__value": true,
-              "__field": true
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "indexByName": {},
-            "renameByName": {
-              "device_id": "Device ID",
-              "power_output": "Power Output (W)",
-              "wind_speed": "Wind Speed (m/s)",
-              "efficiency": "Efficiency (%)",
-              "status": "Status"
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          }
-        }
-      ],
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
-    },
-    {
-      "id": 10,
-      "title": "Capacity Factor",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> mean()\n  |> map(fn: (r) => ({r with _value: r._value / 10000.0 * 100}))",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
           },
           "mappings": [],
           "thresholds": {
+            "mode": "absolute",
             "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 20},
-              {"color": "yellow", "value": 30},
-              {"color": "green", "value": 50}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
           "unit": "percent"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
     },
     {
-      "id": 11,
-      "title": "Operational Hours (24h)",
-      "type": "stat",
+      "id": 7,
+      "title": "Rotor Speed (6h)",
+      "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"wind_turbine\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> filter(fn: (r) => r._value > 0)\n  |> count()\n  |> map(fn: (r) => ({r with _value: r._value * 0.5}))",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"rotor_speed\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
+            "mode": "absolute",
             "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 15},
-              {"color": "yellow", "value": 20},
-              {"color": "green", "value": 24}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "unit": "h"
+          "unit": "rpm"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
     }
   ]
 } 

@@ -6,7 +6,7 @@
   "timezone": "utc",
   "refresh": "30s",
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -17,16 +17,18 @@
       {
         "name": "plant_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"biogas_plant\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"biogas_plant_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
       },
       {
-        "name": "methane_range",
-        "type": "custom",
-        "query": "<50%, 50-60%, 60-70%, 70-80%, >80%",
+        "name": "location",
+        "type": "query",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"biogas_plant_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "datasource": "InfluxDB 2.x",
+        "refresh": 2,
         "includeAll": true,
         "multi": true
       }
@@ -43,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> sum()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -73,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -105,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -131,12 +133,12 @@
     },
     {
       "id": 4,
-      "title": "Gas Flow vs Methane Concentration",
+      "title": "Gas Flow Rate (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\" or r._field == \"methane_concentration\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -146,6 +148,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -155,15 +160,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -172,63 +178,49 @@
             "thresholdsStyle": {
               "mode": "off"
             }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "gas_flow_rate"
-            },
-            "properties": [
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "unit",
-                "value": "m3ps"
+                "color": "green",
+                "value": null
               },
               {
-                "id": "custom.axisPlacement",
-                "value": "left"
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "methane_concentration"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+          "unit": "m3ps"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
     },
     {
       "id": 5,
-      "title": "Temperature and Pressure Trends",
+      "title": "Methane Concentration (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"temperature\" or r._field == \"pressure\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -238,6 +230,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -247,15 +242,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -264,47 +260,115 @@
             "thresholdsStyle": {
               "mode": "off"
             }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "temperature"
-            },
-            "properties": [
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "unit",
-                "value": "celsius"
+                "color": "green",
+                "value": null
               },
               {
-                "id": "custom.axisPlacement",
-                "value": "left"
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "pressure"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bar"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+          "unit": "percent"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+    },
+    {
+      "id": 6,
+      "title": "Temperature (6h)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
+          "datasource": "InfluxDB 2.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -314,272 +378,86 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
     },
     {
-      "id": 6,
-      "title": "Plant Efficiency",
-      "type": "gauge",
+      "id": 7,
+      "title": "Pressure (6h)",
+      "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"pressure\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
+            "mode": "absolute",
             "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 60},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 100}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
+          "unit": "bar"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       },
       "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
-    },
-    {
-      "id": 7,
-      "title": "Daily Gas Production (7 Days)",
-      "type": "barchart",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "m3ps"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
-    },
-    {
-      "id": 8,
-      "title": "Methane Concentration Distribution",
-      "type": "histogram",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> histogram(bins: 20)",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
-    },
-    {
-      "id": 9,
-      "title": "Individual Plant Status",
-      "type": "table",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\" or r._field == \"methane_concentration\" or r._field == \"temperature\" or r._field == \"efficiency\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "green", "value": 0}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Device ID"
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__value": true,
-              "__field": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "device_id": "Device ID",
-              "gas_flow_rate": "Gas Flow (m³/h)",
-              "methane_concentration": "Methane (%)",
-              "temperature": "Temperature (°C)",
-              "efficiency": "Efficiency (%)",
-              "status": "Status"
-            }
-          }
-        }
-      ],
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
-    },
-    {
-      "id": 10,
-      "title": "Gas Quality Score",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()\n  |> map(fn: (r) => ({r with _value: if r._value >= 70 then 100 else if r._value >= 50 then 70 else 30}))",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 30},
-              {"color": "yellow", "value": 70},
-              {"color": "green", "value": 100}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
-    },
-    {
-      "id": 11,
-      "title": "Production Efficiency",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"biogas_plant\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> mean()\n  |> map(fn: (r) => ({r with _value: r._value / 150.0 * 100}))",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 60},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 100}
-            ]
-          },
-          "unit": "percent"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
     }
   ]
 } 

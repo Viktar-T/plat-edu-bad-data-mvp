@@ -1,12 +1,12 @@
 {
   "id": null,
-  "title": "Renewable Energy System Overview",
-  "tags": ["renewable-energy", "overview", "mvp"],
+  "title": "Renewable Energy Overview",
+  "tags": ["overview", "renewable", "energy", "mvp"],
   "style": "dark",
   "timezone": "utc",
   "refresh": "30s",
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -17,7 +17,7 @@
       {
         "name": "device_type",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"device_type\"]) |> distinct(column: \"device_type\")",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"_measurement\"]) |> distinct(column: \"_measurement\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -45,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\" or r._field == \"gas_flow_rate\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -58,7 +58,9 @@
           "thresholds": {
             "steps": [
               {"color": "red", "value": null},
-              {"color": "green", "value": 0}
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 2000},
+              {"color": "red", "value": 5000}
             ]
           },
           "unit": "watt"
@@ -68,40 +70,12 @@
     },
     {
       "id": 2,
-      "title": "Active Devices Count",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"status\")\n  |> filter(fn: (r) => r._value == \"operational\")\n  |> group()\n  |> count()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "green", "value": 0}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
-    },
-    {
-      "id": 3,
       "title": "System Efficiency",
       "type": "gauge",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -114,8 +88,9 @@
           "thresholds": {
             "steps": [
               {"color": "red", "value": null},
-              {"color": "yellow", "value": 60},
-              {"color": "green", "value": 80}
+              {"color": "red", "value": 60},
+              {"color": "yellow", "value": 80},
+              {"color": "green", "value": 100}
             ]
           },
           "unit": "percent",
@@ -123,41 +98,46 @@
           "max": 100
         }
       },
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Active Devices",
+      "type": "stat",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> group(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()",
+          "datasource": "InfluxDB 2.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 10},
+              {"color": "red", "value": 20}
+            ]
+          },
+          "unit": "short"
+        }
+      },
       "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
     },
     {
       "id": 4,
-      "title": "Power Generation by Device Type",
-      "type": "piechart",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> group(columns: [\"device_type\"])\n  |> sum()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        }
-      },
-      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
-    },
-    {
-      "id": 5,
-      "title": "Power Generation Trends",
+      "title": "Power Generation (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> group(columns: [\"device_type\"])",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\")\n  |> group(columns: [\"_measurement\"])",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -167,6 +147,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -176,15 +159,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -194,76 +178,121 @@
               "mode": "off"
             }
           },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
           "unit": "watt"
-        }
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
     },
     {
-      "id": 6,
-      "title": "Device Status Summary",
-      "type": "table",
+      "id": 5,
+      "title": "Efficiency Trends (6h)",
+      "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"status\" or r._field == \"power_output\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\", \"device_type\"])\n  |> last()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> group(columns: [\"_measurement\"])",
           "datasource": "InfluxDB 2.x"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
+            "mode": "absolute",
             "steps": [
-              {"color": "red", "value": null},
-              {"color": "green", "value": 0}
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "unit": "short"
-        }
+          "unit": "percent"
+        },
+        "overrides": []
       },
       "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Device ID"
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__value": true,
-              "__field": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "device_id": "Device ID",
-              "device_type": "Device Type",
-              "status": "Status",
-              "power_output": "Power Output (W)"
-            }
-          }
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
-      ],
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
     }
   ]
 } 

@@ -6,7 +6,7 @@
   "timezone": "utc",
   "refresh": "30s",
   "time": {
-    "from": "now-24h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -17,16 +17,18 @@
       {
         "name": "battery_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r.device_type == \"energy_storage\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"energy_storage_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
         "multi": true
       },
       {
-        "name": "soc_range",
-        "type": "custom",
-        "query": "<20%, 20-40%, 40-60%, 60-80%, 80-100%",
+        "name": "location",
+        "type": "query",
+        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"energy_storage_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "datasource": "InfluxDB 2.x",
+        "refresh": 2,
         "includeAll": true,
         "multi": true
       }
@@ -38,12 +40,12 @@
   "panels": [
     {
       "id": 1,
-      "title": "Total Stored Energy",
+      "title": "Total Energy Stored",
       "type": "stat",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"stored_energy\")\n  |> sum()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"energy_stored\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -56,24 +58,24 @@
           "thresholds": {
             "steps": [
               {"color": "red", "value": null},
-              {"color": "red", "value": 10},
-              {"color": "yellow", "value": 50},
-              {"color": "green", "value": 100}
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 500},
+              {"color": "red", "value": 1000}
             ]
           },
-          "unit": "kwatth"
+          "unit": "kwh"
         }
       },
       "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
     },
     {
       "id": 2,
-      "title": "Average State of Charge",
+      "title": "State of Charge",
       "type": "gauge",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -87,10 +89,8 @@
             "steps": [
               {"color": "red", "value": null},
               {"color": "red", "value": 20},
-              {"color": "yellow", "value": 40},
-              {"color": "green", "value": 80},
-              {"color": "yellow", "value": 90},
-              {"color": "red", "value": 100}
+              {"color": "yellow", "value": 50},
+              {"color": "green", "value": 100}
             ]
           },
           "unit": "percent",
@@ -107,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -121,8 +121,8 @@
             "steps": [
               {"color": "blue", "value": null},
               {"color": "blue", "value": 10},
-              {"color": "green", "value": 35},
-              {"color": "yellow", "value": 45},
+              {"color": "green", "value": 25},
+              {"color": "yellow", "value": 40},
               {"color": "red", "value": 60}
             ]
           },
@@ -133,12 +133,12 @@
     },
     {
       "id": 4,
-      "title": "State of Charge Trends",
+      "title": "Energy Stored (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> group(columns: [\"device_id\"])",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"energy_stored\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -148,6 +148,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -157,15 +160,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -175,31 +179,48 @@
               "mode": "off"
             }
           },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwh"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
     },
     {
       "id": 5,
-      "title": "Voltage and Current Trends",
+      "title": "State of Charge (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"voltage\" or r._field == \"current\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -209,6 +230,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -218,15 +242,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -235,47 +260,115 @@
             "thresholdsStyle": {
               "mode": "off"
             }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "voltage"
-            },
-            "properties": [
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "unit",
-                "value": "volt"
+                "color": "green",
+                "value": null
               },
               {
-                "id": "custom.axisPlacement",
-                "value": "left"
+                "color": "red",
+                "value": 80
               }
             ]
           },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "current"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "amp"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+          "unit": "percent"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+    },
+    {
+      "id": 6,
+      "title": "Temperature (6h)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
+          "datasource": "InfluxDB 2.x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -285,45 +378,13 @@
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
     },
     {
-      "id": 6,
-      "title": "Battery Health",
-      "type": "gauge",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"health\")\n  |> mean()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "red", "value": 60},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 100}
-            ]
-          },
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
-    },
-    {
       "id": 7,
-      "title": "Charge/Discharge Cycles",
+      "title": "Voltage (6h)",
       "type": "timeseries",
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_cycles\" or r._field == \"discharge_cycles\")\n  |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
+          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"energy_storage_data\")\n  |> filter(fn: (r) => r._field == \"voltage\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -333,6 +394,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -342,15 +406,16 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -360,211 +425,39 @@
               "mode": "off"
             }
           },
-          "unit": "short"
-        }
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
-    },
-    {
-      "id": 8,
-      "title": "Energy Flow Distribution",
-      "type": "piechart",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_power\" or r._field == \"discharge_power\")\n  |> group(columns: [\"_field\"])\n  |> sum()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "green", "value": null},
-              {"color": "red", "value": 80}
-            ]
-          },
-          "unit": "kwatt"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": ["lastNotNull"],
-          "fields": "",
-          "values": false
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
-    },
-    {
-      "id": 9,
-      "title": "Individual Battery Status",
-      "type": "table",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"state_of_charge\" or r._field == \"voltage\" or r._field == \"temperature\" or r._field == \"health\" or r._field == \"status\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"device_id\"])\n  |> last()\n  |> sort(columns: [\"device_id\"])",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": null},
-              {"color": "green", "value": 0}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": false,
-            "displayName": "Device ID"
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__value": true,
-              "__field": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "device_id": "Device ID",
-              "state_of_charge": "State of Charge (%)",
-              "voltage": "Voltage (V)",
-              "temperature": "Temperature (°C)",
-              "health": "Health (%)",
-              "status": "Status"
-            }
-          }
-        }
-      ],
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
-    },
-    {
-      "id": 10,
-      "title": "Daily Energy Throughput (7 Days)",
-      "type": "barchart",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_power\" or r._field == \"discharge_power\")\n  |> aggregateWindow(every: 1d, fn: sum, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with _value: r.charge_power + r.discharge_power}))",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "unit": "kwatth"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "visible",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40}
-    },
-    {
-      "id": 11,
-      "title": "Total Cycle Count",
-      "type": "stat",
-      "targets": [
-        {
-          "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r.device_type == \"energy_storage\")\n  |> filter(fn: (r) => r._field == \"charge_cycles\" or r._field == \"discharge_cycles\")\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> map(fn: (r) => ({r with _value: r.charge_cycles + r.discharge_cycles}))\n  |> mean()",
-          "datasource": "InfluxDB 2.x"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "steps": [
-              {"color": "green", "value": null},
-              {"color": "green", "value": 1000},
-              {"color": "yellow", "value": 2000},
-              {"color": "red", "value": 3000}
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
     }
   ]
 } 
