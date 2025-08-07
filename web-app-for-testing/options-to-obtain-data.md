@@ -31,7 +31,9 @@
 
 ## 🎯 Overview
 
-This guide is specifically designed for **React web app developers** who need to integrate renewable energy IoT monitoring data into their applications. Your system provides multiple data sources that can be accessed through different APIs and protocols.
+This guide is specifically designed for **React frontend and Express backend developers** who need to integrate renewable energy IoT monitoring data into their applications. Your system provides multiple data sources that can be accessed through different APIs and protocols.
+
+**Architecture**: React Frontend ↔ Express Backend ↔ InfluxDB 2.7
 
 ### 🔄 System Data Flow
 
@@ -41,50 +43,60 @@ This guide is specifically designed for **React web app developers** who need to
 │   (Solar, Wind, │    │   (Mosquitto)   │    │   (Processing)  │    │   (Time-Series) │
 │   Biogas, etc.) │    │   Port 1883     │    │   Port 1880     │    │   Port 8086     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                       │
-                                                       ▼
-                                              ┌─────────────────┐
-                                              │   Grafana       │
-                                              │   (Visualization│
-                                              │   Port 3000     │
-                                              └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                     ┌─────────────────┐
+                                                                     │   Express       │
+                                                                     │   Backend API   │
+                                                                     │   Port 3001     │
+                                                                     └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                     ┌─────────────────┐
+                                                                     │   React App     │
+                                                                     │   (Frontend)    │
+                                                                     │   Port 3000     │
+                                                                     └─────────────────┘
 ```
 
 ---
 
 ## 🔧 Current System Architecture
 
-Your system includes these services that React developers can integrate with:
+Your system includes these services that React and Express developers can integrate with:
 
 - **MQTT Broker (Mosquitto)**: Port 1883 (MQTT), Port 9001 (WebSocket)
-- **InfluxDB 2.7**: Time-series database with HTTP API on port 8086
+- **InfluxDB 2.7**: Time-series database with HTTP API on port 8086 (integrates easily with streaming analytics tools)
 - **Node-RED**: Data processing flows on port 1880
-- **Grafana**: Visualization platform on port 3000
+- **Express Backend**: API server on port 3001 (handles InfluxDB communication)
+- **React Frontend**: Web application on port 3000
 - **Docker Network**: All services connected via `iot-network`
 
 ---
 
 ## 📊 Data Integration Options
 
-### Option 1: Direct InfluxDB Integration
+### Option 1: Express Backend + InfluxDB Integration
 
-**🏆 Recommended Primary Approach for React Developers**
+**🏆 Recommended Primary Approach for React + Express Developers**
 
 #### What It Is
-Connect your React app directly to InfluxDB using its HTTP API to fetch both real-time and historical data.
+Connect your Express backend to InfluxDB using its HTTP API, then serve data to your React frontend through RESTful endpoints.
 
 #### How It Works
-- Use InfluxDB's HTTP API endpoints (`/api/v2/query`)
+- Express backend uses InfluxDB's HTTP API endpoints (`/api/v2/query`)
 - Send Flux queries to fetch data by device type, time range, aggregations
-- Implement polling for real-time updates or use Server-Sent Events
+- Express provides RESTful API endpoints for React frontend
+- React frontend consumes Express API endpoints
 - Leverage InfluxDB's built-in functions for data processing
 
 #### Advantages
-- ✅ **Direct access** to your time-series database
+- ✅ **Separation of concerns** - Express handles data logic, React handles UI
 - ✅ **Rich query capabilities** with Flux language
 - ✅ **Historical data** with flexible time ranges
 - ✅ **Real-time updates** via polling or WebSocket
-- ✅ **No additional infrastructure** needed
+- ✅ **Streaming analytics integration** - InfluxDB integrates easily with streaming analytics tools
+- ✅ **Client libraries** available for popular programming languages
 - ✅ **Built-in aggregation** and data processing
 - ✅ **Optimized for time-series data**
 - ✅ **Built-in data retention policies**

@@ -1,8 +1,9 @@
-# 🌐 React Web App for Renewable Energy IoT Monitoring - Direct InfluxDB Integration
+# 🌐 React + Express Web App for Renewable Energy IoT Monitoring
 
-> **Build a React web application that connects directly to InfluxDB for real-time and historical renewable energy data visualization.**
+> **Build a React frontend with Express backend that connects to InfluxDB for real-time and historical renewable energy data visualization.**
 
 [![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
+[![Express](https://img.shields.io/badge/Express-4.18+-green?logo=express)](https://expressjs.com/)
 [![InfluxDB](https://img.shields.io/badge/InfluxDB-2.7-green?logo=influxdb)](https://influxdata.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue?logo=docker)](https://www.docker.com/)
@@ -28,7 +29,9 @@
 
 ## 🎯 Overview
 
-This guide shows you how to create a **React web application** that connects directly to your InfluxDB time-series database to display real-time and historical renewable energy data. This approach provides the most direct and efficient way to access your IoT monitoring system's data.
+This guide shows you how to create a **React frontend with Express backend** that connects to your InfluxDB time-series database to display real-time and historical renewable energy data. This approach provides separation of concerns with Express handling data logic and React providing the user interface.
+
+**Architecture**: React Frontend ↔ Express Backend ↔ InfluxDB 2.7
 
 ### 🔄 How It Works
 
@@ -41,19 +44,27 @@ This guide shows you how to create a **React web application** that connects dir
                                                                               │
                                                                               ▼
                                                                      ┌─────────────────┐
+                                                                     │   Express       │
+                                                                     │   Backend API   │
+                                                                     │   Port 3001     │
+                                                                     └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                     ┌─────────────────┐
                                                                      │   React App     │
-                                                                     │   (Dashboard)   │
-                                                                     │   Direct API    │
+                                                                     │   (Frontend)    │
+                                                                     │   Port 3000     │
                                                                      └─────────────────┘
 ```
 
 ### ✨ Key Benefits
 
-- ✅ **Direct access** to time-series database
+- ✅ **Separation of concerns** - Express handles data logic, React handles UI
 - ✅ **Rich query capabilities** with Flux language
 - ✅ **Historical data** with flexible time ranges
 - ✅ **Real-time updates** via polling or Server-Sent Events
-- ✅ **No additional infrastructure** needed
+- ✅ **Streaming analytics integration** - InfluxDB integrates easily with streaming analytics tools
+- ✅ **Client libraries** available for popular programming languages
 - ✅ **Built-in aggregation** and data processing
 - ✅ **Optimized for time-series data**
 
@@ -66,8 +77,9 @@ Before you begin, ensure you have the following:
 ### ✅ System Requirements
 
 - **InfluxDB 2.7**: Running and accessible on port 8086
+- **Express Backend**: Node.js server for API endpoints
 - **React Environment**: Basic React app setup (create-react-app or similar)
-- **Node.js**: Version 16+ for modern React features
+- **Node.js**: Version 16+ for modern React and Express features
 - **Docker**: Your IoT system running via docker-compose
 
 ### 🔧 InfluxDB Configuration
@@ -105,55 +117,132 @@ npx create-react-app renewable-energy-dashboard --template typescript
 # Navigate to project
 cd renewable-energy-dashboard
 
-# Install required dependencies
-npm install @influxdata/influxdb-client
+# Install React frontend dependencies
 npm install recharts
 npm install @types/node
 npm install axios
 npm install react-query
+
+# Create Express backend directory
+mkdir backend
+cd backend
+
+# Install Express backend dependencies
+npm init -y
+npm install express
+npm install @influxdata/influxdb-client
+npm install cors
+npm install dotenv
+npm install @types/express
+npm install @types/cors
 ```
 
 ### 2. **Set Up Environment Variables**
 
+Create `.env` file in your Express backend directory:
+
+```env
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_TOKEN=renewable_energy_admin_token_123
+INFLUXDB_ORG=renewable_energy_org
+INFLUXDB_BUCKET=renewable_energy
+PORT=3001
+```
+
 Create `.env` file in your React app root:
 
 ```env
-REACT_APP_INFLUXDB_URL=http://localhost:8086
-REACT_APP_INFLUXDB_TOKEN=renewable_energy_admin_token_123
-REACT_APP_INFLUXDB_ORG=renewable_energy_org
-REACT_APP_INFLUXDB_BUCKET=renewable_energy
+REACT_APP_API_URL=http://localhost:3001
 ```
 
-### 3. **Create InfluxDB Client Configuration**
+### 3. **Create Express Backend Server**
 
-Create `src/config/influxdb.ts`:
+Create `backend/server.js`:
 
-```typescript
-import { InfluxDB } from '@influxdata/influxdb-client'
+```javascript
+const express = require('express')
+const cors = require('cors')
+const { InfluxDB } = require('@influxdata/influxdb-client')
+require('dotenv').config()
 
-const url = process.env.REACT_APP_INFLUXDB_URL || 'http://localhost:8086'
-const token = process.env.REACT_APP_INFLUXDB_TOKEN || 'renewable_energy_admin_token_123'
-const org = process.env.REACT_APP_INFLUXDB_ORG || 'renewable_energy_org'
-const bucket = process.env.REACT_APP_INFLUXDB_BUCKET || 'renewable_energy'
+const app = express()
+const PORT = process.env.PORT || 3001
 
-export const influxDB = new InfluxDB({ url, token })
-export const queryApi = influxDB.getQueryApi(org)
+// Middleware
+app.use(cors())
+app.use(express.json())
 
-export const INFLUXDB_CONFIG = {
-  url,
-  token,
-  org,
-  bucket
-}
+// InfluxDB Configuration
+const url = process.env.INFLUXDB_URL || 'http://localhost:8086'
+const token = process.env.INFLUXDB_TOKEN || 'renewable_energy_admin_token_123'
+const org = process.env.INFLUXDB_ORG || 'renewable_energy_org'
+const bucket = process.env.INFLUXDB_BUCKET || 'renewable_energy'
+
+const influxDB = new InfluxDB({ url, token })
+const queryApi = influxDB.getQueryApi(org)
+
+// API Routes
+app.get('/api/energy-data', async (req, res) => {
+  try {
+    const { measurement, timeRange, deviceId, field } = req.query
+    
+    let fluxQuery = `
+      from(bucket: "${bucket}")
+        |> range(start: ${timeRange || '-1h'})
+        |> filter(fn: (r) => r._measurement == "${measurement}")
+    `
+    
+    if (deviceId) {
+      fluxQuery += `|> filter(fn: (r) => r.device_id == "${deviceId}")`
+    }
+    
+    if (field) {
+      fluxQuery += `|> filter(fn: (r) => r._field == "${field}")`
+    }
+    
+    fluxQuery += `|> sort(columns: ["_time"])`
+    
+    const results = []
+    await queryApi.queryRaw(fluxQuery, {
+      next: (line) => {
+        if (!line.startsWith('#')) {
+          const data = JSON.parse(line)
+          if (data.result === '_result') {
+            results.push(data)
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Query error:', error)
+        res.status(500).json({ error: 'Query failed' })
+      },
+      complete: () => {
+        res.json({
+          success: true,
+          data: results,
+          timestamp: new Date().toISOString()
+        })
+      }
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+app.listen(PORT, () => {
+  console.log(`Express server running on port ${PORT}`)
+})
 ```
 
-### 4. **Create Basic Dashboard Component**
+### 4. **Create React Frontend Component**
 
 Create `src/components/EnergyDashboard.tsx`:
 
 ```typescript
 import React, { useEffect, useState } from 'react'
-import { queryApi, INFLUXDB_CONFIG } from '../config/influxdb'
 
 interface EnergyData {
   timestamp: string
@@ -176,42 +265,17 @@ export default function EnergyDashboard() {
     try {
       setLoading(true)
       
-      const fluxQuery = `
-        from(bucket: "${INFLUXDB_CONFIG.bucket}")
-          |> range(start: -1h)
-          |> filter(fn: (r) => r._measurement == "photovoltaic_data")
-          |> filter(fn: (r) => r._field == "power_output" or r._field == "temperature" or r._field == "efficiency")
-          |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-          |> sort(columns: ["_time"])
-      `
-
-      const results: EnergyData[] = []
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/energy-data?measurement=photovoltaic_data&timeRange=-1h`)
+      const result = await response.json()
       
-      await queryApi.queryRaw(fluxQuery, {
-        next: (line) => {
-          if (line.startsWith('#')) return
-          const data = JSON.parse(line)
-          if (data.result === '_result' && data.table === 0) {
-            results.push({
-              timestamp: data._time,
-              device_id: data.device_id,
-              power_output: data.power_output || 0,
-              temperature: data.temperature || 0,
-              efficiency: data.efficiency || 0
-            })
-          }
-        },
-        error: (error) => {
-          console.error('Query error:', error)
-          setError('Failed to fetch data')
-        },
-        complete: () => {
-          setSolarData(results)
-          setLoading(false)
-        }
-      })
+      if (result.success) {
+        setSolarData(result.data)
+      } else {
+        setError(result.error)
+      }
     } catch (err) {
-      setError('Failed to connect to InfluxDB')
+      setError('Failed to connect to backend API')
+    } finally {
       setLoading(false)
     }
   }
@@ -266,6 +330,12 @@ export default App
 ### 6. **Start Your Application**
 
 ```bash
+# Start Express backend (in backend directory)
+cd backend
+npm start
+
+# Start React frontend (in project root)
+cd ..
 npm start
 ```
 

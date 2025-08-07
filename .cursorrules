@@ -4,13 +4,36 @@
 This is an **MVP (Minimum Viable Product)** IoT-based real-time monitoring system for renewable energy sources including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. The system uses Node-RED, MQTT, InfluxDB, and Grafana with Docker containerization.
 
 ## Tech Stack & Architecture
-- **Data Flow**: MQTT → Node-RED → InfluxDB → Grafana
+- **Data Flow 1**: MQTT → Node-RED → InfluxDB → Grafana (existing)
+- **Data Flow 2**: MQTT → Node-RED → InfluxDB → Express Backend → React Frontend (new)
 - **Containerization**: Docker & Docker Compose
 - **MQTT Broker**: Eclipse Mosquitto
 - **Database**: InfluxDB 2.x (time-series)
-- **Visualization**: Grafana
+- **Visualization**: Grafana (existing) + Custom React Web App (new)
 - **Data Processing**: Node-RED flows
+- **Backend API**: Express.js server
+- **Frontend**: React with TypeScript
 - **Simulation**: Realistic renewable energy device data
+
+## System Architecture Overview
+
+### Flow 1: Grafana Dashboard (Existing)
+- **Data Flow**: MQTT → Node-RED → InfluxDB → Grafana
+- **Purpose**: Real-time monitoring and historical analysis
+- **Port**: Grafana (3000)
+- **Features**: Pre-built dashboards, alerting, time-series visualization
+
+### Flow 2: Custom Web App (New)
+- **Data Flow**: MQTT → Node-RED → InfluxDB → Express Backend → React Frontend
+- **Purpose**: Custom user interface and specialized analytics
+- **Ports**: Express backend (3001), React frontend (3000)
+- **Features**: Custom dashboards, specialized reporting, user-specific views
+
+### Shared Infrastructure
+- **MQTT Broker**: Eclipse Mosquitto (Port 1883)
+- **Data Processing**: Node-RED flows (Port 1880)
+- **Database**: InfluxDB 2.7 (Port 8086)
+- **Integration**: InfluxDB integrates easily with streaming analytics tools and provides client libraries for popular programming languages
 
 ## Development Guidelines
 
@@ -64,13 +87,37 @@ This is an **MVP (Minimum Viable Product)** IoT-based real-time monitoring syste
 - Include fault scenarios for system resilience testing
 - Implement realistic noise and fluctuations in data
 
-### Grafana Dashboard Design
+### Grafana Dashboard Design (Flow 1)
 - Create responsive dashboards with proper time range handling
 - Use appropriate visualization types for each metric
 - Implement proper alerting rules for system faults
 - Include both real-time and historical data views
 - Use consistent color schemes and themes
 - Implement proper data source configuration
+- Focus on system-wide monitoring and alerting
+- Optimize for real-time data visualization
+
+### React Frontend Development (Flow 2)
+- Use TypeScript for type safety and better development experience
+- Implement responsive design for mobile and desktop compatibility
+- Use modern React patterns (hooks, functional components)
+- Implement proper error boundaries and loading states
+- Use React Query or SWR for data fetching and caching
+- Create reusable components for charts and data visualization
+- Follow React best practices for performance optimization
+- Focus on user-specific dashboards and specialized analytics
+- Implement custom reporting and data export features
+
+### Express Backend Development (Flow 2)
+- Create RESTful API endpoints for data access
+- Implement proper error handling and validation
+- Use middleware for CORS, authentication, and logging
+- Structure API routes logically by resource type
+- Implement rate limiting and security measures
+- Use environment variables for configuration
+- Add proper API documentation and versioning
+- Provide specialized data aggregation and processing
+- Support custom analytics and reporting features
 
 ### Data Validation & Quality
 - Validate all incoming MQTT messages against defined schemas
@@ -85,6 +132,11 @@ This is an **MVP (Minimum Viable Product)** IoT-based real-time monitoring syste
 - Use batch processing for high-volume data
 - Implement proper caching strategies
 - Monitor resource usage and set appropriate limits
+- **Flow 1 (Grafana)**: Optimize dashboard queries and alerting performance
+- **Flow 2 (Custom App)**: Optimize React component re-renders with React.memo and useMemo
+- **Flow 2 (Custom App)**: Implement debouncing for real-time data updates
+- **Flow 2 (Custom App)**: Use code splitting and lazy loading for React components
+- **Flow 2 (Custom App)**: Optimize Express API response times with proper indexing
 
 ### Security Best Practices
 - Use proper authentication for all services
@@ -92,12 +144,54 @@ This is an **MVP (Minimum Viable Product)** IoT-based real-time monitoring syste
 - Use environment variables for sensitive configuration
 - Implement proper access controls
 - Regular security updates for all components
+- Implement CORS policies for Express backend
+- Use JWT tokens for API authentication
+- Validate and sanitize all user inputs
+- Implement rate limiting to prevent abuse
+- Use HTTPS in production environments
 
 ### Testing & Validation
-- Implement end-to-end testing for data flow
+- Implement end-to-end testing for both data flows
 - Create unit tests for Node-RED function nodes
 - Use Docker health checks for service validation
 - Implement proper monitoring and alerting
 - Include performance benchmarking
+- **Flow 1 (Grafana)**: Test dashboard functionality and alerting systems
+- **Flow 2 (Custom App)**: Write unit tests for React components using Jest and React Testing Library
+- **Flow 2 (Custom App)**: Create integration tests for Express API endpoints
+- **Flow 2 (Custom App)**: Implement API testing with tools like Postman or Supertest
+- **Flow 2 (Custom App)**: Add frontend testing for user interactions and data visualization
+- **Flow 2 (Custom App)**: Include load testing for API endpoints and database queries
 
 ## File Structure Conventions
+
+### Custom Web App Structure
+```
+web-app-for-testing/
+├── frontend/                 # React application
+│   ├── src/
+│   │   ├── components/       # Reusable React components
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── services/        # API service functions
+│   │   ├── types/           # TypeScript type definitions
+│   │   ├── utils/           # Utility functions
+│   │   └── pages/           # Page components
+│   ├── public/              # Static assets
+│   ├── package.json
+│   └── tsconfig.json
+├── backend/                  # Express.js server
+│   ├── src/
+│   │   ├── routes/          # API route handlers
+│   │   ├── controllers/     # Business logic
+│   │   ├── middleware/      # Express middleware
+│   │   ├── services/        # InfluxDB service layer
+│   │   ├── utils/           # Utility functions
+│   │   └── types/           # TypeScript type definitions
+│   ├── package.json
+│   └── tsconfig.json
+└── shared/                   # Shared types and utilities
+    ├── types/
+    └── constants/
+```
+
+### General Project Structure

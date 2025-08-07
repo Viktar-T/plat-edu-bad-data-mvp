@@ -27,7 +27,16 @@
 
 ## 🎯 Overview
 
-This guide provides comprehensive documentation for integrating InfluxDB 2.7 RESTful API with React applications for renewable energy IoT monitoring. Your system uses InfluxDB 2.7 with the following configuration:
+This guide provides comprehensive documentation for integrating InfluxDB 2.7 RESTful API with **React frontend and Express backend** applications for renewable energy IoT monitoring. Your system uses InfluxDB 2.7 with the following configuration:
+
+**Architecture**: React Frontend ↔ Express Backend ↔ InfluxDB 2.7
+
+### 🚀 Integration Benefits
+
+- **Streaming Analytics**: InfluxDB integrates easily with streaming analytics tools of choice
+- **Client Libraries**: Query data directly via API or use client libraries for popular programming languages
+- **Full-Stack Architecture**: Express backend handles data processing, React frontend provides UI
+- **Scalable Design**: Separation of concerns between frontend, backend, and database layers
 
 ### 🔧 Current Setup
 
@@ -49,9 +58,16 @@ This guide provides comprehensive documentation for integrating InfluxDB 2.7 RES
                                                                               │
                                                                               ▼
                                                                      ┌─────────────────┐
+                                                                     │   Express       │
+                                                                     │   Backend API   │
+                                                                     │   Port 3001     │
+                                                                     └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                     ┌─────────────────┐
                                                                      │   React App     │
-                                                                     │   (Dashboard)   │
-                                                                     │   RESTful API   │
+                                                                     │   (Frontend)    │
+                                                                     │   Port 3000     │
                                                                      └─────────────────┘
 ```
 
@@ -97,7 +113,7 @@ const INFLUXDB_API_URL = `${INFLUXDB_BASE_URL}/api/${INFLUXDB_API_VERSION}`
 
 ### 🔑 Token-Based Authentication
 
-InfluxDB 2.7 uses token-based authentication. For your React app:
+InfluxDB 2.7 uses token-based authentication. For your Express backend:
 
 ```typescript
 // Configuration
@@ -580,11 +596,11 @@ const compareDevices = (deviceIds: string[]) => {
 
 ---
 
-## ⚡ React Integration Patterns
+## ⚡ Express Backend + React Frontend Integration Patterns
 
-### 🔌 Custom Hooks
+### 🔌 Express Backend API Endpoints
 
-#### 1. **Basic Data Fetching Hook**
+#### 1. **Basic Data Fetching Endpoint**
 
 ```typescript
 import { useState, useEffect, useCallback } from 'react'
@@ -597,87 +613,152 @@ interface UseInfluxDataOptions {
   interval?: number
 }
 
-export function useInfluxData({
-  measurement,
-  timeRange,
-  deviceId,
-  field,
-  interval
-}: UseInfluxDataOptions) {
+// Express.js endpoint for fetching InfluxDB data
+app.get('/api/energy-data', async (req, res) => {
+  try {
+    const { measurement, timeRange, deviceId, field } = req.query
+    
+    let fluxQuery = `
+      from(bucket: "${INFLUXDB_CONFIG.bucket}")
+        |> range(start: ${timeRange || '-1h'})
+        |> filter(fn: (r) => r._measurement == "${measurement}")
+    `
+    
+    if (deviceId) {
+      fluxQuery += `|> filter(fn: (r) => r.device_id == "${deviceId}")`
+    }
+    
+    if (field) {
+      fluxQuery += `|> filter(fn: (r) => r._field == "${field}")`
+    }
+    
+    fluxQuery += `|> sort(columns: ["_time"])`
+    
+    const result = await executeQuery(fluxQuery)
+    const parsedData = parseCSVResult(result)
+    
+    res.json({
+      success: true,
+      data: parsedData,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+})
+```
+
+#### 2. **Real-Time Data Endpoint**
+
+```typescript
+// Express.js endpoint for real-time data with WebSocket support
+app.get('/api/energy-data/realtime', async (req, res) => {
+  try {
+    const { measurement, deviceId } = req.query
+    
+    const fluxQuery = `
+      from(bucket: "${INFLUXDB_CONFIG.bucket}")
+        |> range(start: -5m)
+        |> filter(fn: (r) => r._measurement == "${measurement}")
+        ${deviceId ? `|> filter(fn: (r) => r.device_id == "${deviceId}")` : ''}
+        |> sort(columns: ["_time"])
+    `
+    
+    const result = await executeQuery(fluxQuery)
+    const parsedData = parseCSVResult(result)
+    
+    res.json({
+      success: true,
+      data: parsedData,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+})
+```
+
+#### 3. **Historical Data Endpoint**
+
+```typescript
+// Express.js endpoint for historical data
+app.get('/api/energy-data/historical', async (req, res) => {
+  try {
+    const { measurement, timeRange, deviceId, aggregation } = req.query
+    
+    let fluxQuery = `
+      from(bucket: "${INFLUXDB_CONFIG.bucket}")
+        |> range(start: ${timeRange || '-24h'})
+        |> filter(fn: (r) => r._measurement == "${measurement}")
+    `
+    
+    if (deviceId) {
+      fluxQuery += `|> filter(fn: (r) => r.device_id == "${deviceId}")`
+    }
+    
+    if (aggregation) {
+      fluxQuery += `|> aggregateWindow(every: ${aggregation}, fn: mean)`
+    }
+    
+    fluxQuery += `|> sort(columns: ["_time"])`
+    
+    const result = await executeQuery(fluxQuery)
+    const parsedData = parseCSVResult(result)
+    
+    res.json({
+      success: true,
+      data: parsedData,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+})
+```
+
+### 🎨 React Frontend Integration
+
+#### React Hooks for API Consumption
+
+```typescript
+// React hook for consuming Express backend API
+export function useEnergyData(measurement: string, timeRange: string = '-1h') {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      let fluxQuery = `
-        from(bucket: "${INFLUXDB_CONFIG.bucket}")
-          |> range(start: ${timeRange})
-          |> filter(fn: (r) => r._measurement == "${measurement}")
-      `
-      
-      if (deviceId) {
-        fluxQuery += `|> filter(fn: (r) => r.device_id == "${deviceId}")`
-      }
-      
-      if (field) {
-        fluxQuery += `|> filter(fn: (r) => r._field == "${field}")`
-      }
-      
-      fluxQuery += `|> sort(columns: ["_time"])`
-      
-      const result = await executeQuery(fluxQuery)
-      const parsedData = parseCSVResult(result)
-      setData(parsedData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }, [measurement, timeRange, deviceId, field])
-
   useEffect(() => {
-    fetchData()
-    
-    if (interval) {
-      const intervalId = setInterval(fetchData, interval)
-      return () => clearInterval(intervalId)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/energy-data?measurement=${measurement}&timeRange=${timeRange}`)
+        const result = await response.json()
+        
+        if (result.success) {
+          setData(result.data)
+        } else {
+          setError(result.error)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [fetchData, interval])
 
-  return { data, loading, error, refetch: fetchData }
-}
-```
+    fetchData()
+  }, [measurement, timeRange])
 
-#### 2. **Real-Time Data Hook**
-
-```typescript
-export function useRealTimeData(measurement: string, deviceId?: string) {
-  return useInfluxData({
-    measurement,
-    timeRange: '-5m',
-    deviceId,
-    interval: 5000 // 5 seconds
-  })
-}
-```
-
-#### 3. **Historical Data Hook**
-
-```typescript
-export function useHistoricalData(
-  measurement: string, 
-  timeRange: string, 
-  deviceId?: string
-) {
-  return useInfluxData({
-    measurement,
-    timeRange,
-    deviceId
-  })
+  return { data, loading, error }
 }
 ```
 
