@@ -1,10 +1,10 @@
-# 🚀 Renewable Energy IoT Monitoring System - VPS Deployment Strategy
+# 🚀 Renewable Energy IoT Monitoring System - Mikrus VPS Deployment Strategy
 
-> **Complete deployment strategy for Mikrus 3.0 VPS deployment of renewable energy IoT monitoring system**
+> **Complete deployment strategy for Mikrus VPS deployment of renewable energy IoT monitoring system**
 
 ## 📋 Overview
 
-This comprehensive deployment strategy provides step-by-step instructions for deploying your renewable energy IoT monitoring system on Mikrus 3.0 VPS. The strategy is divided into phases, each focusing on specific aspects of the deployment process.
+This comprehensive deployment strategy provides step-by-step instructions for deploying your renewable energy IoT monitoring system on Mikrus VPS. The strategy is designed specifically for Mikrus servers and optimized for Windows users connecting from a Windows PC.
 
 ### 🎯 System Architecture
 - **MQTT Broker**: Eclipse Mosquitto (Port 1883) - Think of this as the "post office" for your IoT devices. It receives messages from sensors and distributes them to other parts of the system
@@ -13,12 +13,33 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 - **Visualization**: Grafana (Port 3000) - Creates beautiful charts and dashboards from your data (like a digital artist that paints pictures with your data)
 - **Custom Web App**: Express Backend (Port 3001) + React Frontend (Port 3002) - A custom website you can build to display your data in unique ways
 
-### 🏗️ VPS Specifications (Mikrus 3.0)
+### 🏗️ Mikrus VPS Specifications
+
+#### **Mikrus 3.0 (Recommended Minimum)**
 - **RAM**: 2GB - Think of this as your computer's "working memory" - the more you have, the more things you can do at once
 - **Storage**: 25GB SSD - This is like your computer's "hard drive" - where all your data and programs are stored
 - **CPU**: 2 cores - These are like the "brains" of your computer - the more cores, the faster it can process information
 - **Location**: Finland - Where your server is physically located (affects internet speed and data privacy laws)
 - **Price**: 130.00zł/year - ZUT faktura
+- **Network**: 1Gbps - How fast your server can send and receive data over the internet
+
+#### **Mikrus 3.5 (Optimal Choice)**
+- **RAM**: 3GB - More memory for better performance
+- **Storage**: 40GB SSD - More storage space for your data
+- **CPU**: 3 cores - More processing power
+- **Location**: Finland
+- **Price**: 180.00zł/year
+- **Network**: 1Gbps
+
+#### **Mikrus Server Features**
+- **Operating System**: Ubuntu 22.04 LTS (latest stable version)
+- **Docker Support**: Pre-installed Docker and Docker Compose
+- **SSH Access**: Secure shell access for remote management
+- **Backup System**: Automatic daily backups included
+- **Monitoring**: Built-in server monitoring tools
+- **Control Panel**: Web-based control panel for easy management
+- **IPv4/IPv6**: Dual stack networking support
+- **DDoS Protection**: Basic DDoS protection included
 
 ---
 
@@ -50,7 +71,7 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 
 **Objectives:**
 - ✅ Deploy all Docker containers
-- ✅ Configure resource limits for Mikrus 3.0
+- ✅ Configure resource limits for Mikrus VPS
 - ✅ Set up data persistence
 - ✅ Configure networking between services
 - ✅ Test basic functionality
@@ -94,7 +115,7 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 - ✅ Optimize system performance for production
 - ✅ Implement advanced monitoring and alerting
 - ✅ Configure automated maintenance tasks
-- ✅ Optimize resource usage for Mikrus 3.0
+- ✅ Optimize resource usage for Mikrus VPS
 - ✅ Implement production-grade security measures
 
 **Key Components:**
@@ -110,11 +131,25 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 
 ## 🛠️ Quick Start Guide
 
-### **Prerequisites**
-- Mikrus 3.0 VPS account - Your virtual server account
-- SSH access to VPS - A secure way to connect to your server from your computer
-- Local development environment with project files - Your project files on your computer
+### **Prerequisites for Windows Users**
+- Mikrus VPS account - Your virtual server account
+- SSH client for Windows (PuTTY, Windows Terminal, or WSL) - A secure way to connect to your server from your Windows computer
+- Local development environment with project files - Your project files on your Windows computer
 - Basic Linux command line knowledge - Knowing how to type commands to control your server
+- File transfer tool (WinSCP, FileZilla, or WSL) - To copy files between your Windows PC and the server
+
+### **Windows-Specific Tools**
+- **SSH Client Options:**
+  - **Windows Terminal** (recommended) - Built into Windows 10/11
+  - **PuTTY** - Popular SSH client for Windows
+  - **WSL (Windows Subsystem for Linux)** - Linux environment on Windows
+  - **VS Code with Remote SSH extension** - For editing files directly on the server
+
+- **File Transfer Options:**
+  - **WinSCP** - GUI file transfer tool
+  - **FileZilla** - Cross-platform FTP client
+  - **WSL** - Use Linux commands like `scp` and `rsync`
+  - **VS Code Remote SSH** - Edit files directly on the server
 
 ### **Deployment Checklist**
 
@@ -124,9 +159,10 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 - [ ] Project files ready for transfer - Your code and configuration files are ready
 - [ ] Environment variables prepared - The settings your applications need are ready
 - [ ] Backup strategy planned - You know how you'll backup your data
+- [ ] Windows SSH client installed - You have a way to connect to your server from Windows
 
 #### **Phase 1 - VPS Setup:**
-- [ ] Connect to VPS via SSH - Log into your server
+- [ ] Connect to VPS via SSH - Log into your server from Windows
 - [ ] Update system packages - Install the latest security updates
 - [ ] Configure security (firewall, SSH) - Make your server secure
 - [ ] Install Docker and Docker Compose - Install the container system
@@ -134,8 +170,8 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 - [ ] Test basic connectivity - Make sure you can connect to all parts of your system
 
 #### **Phase 2 - Application Deployment:**
-- [ ] Transfer project files to VPS - Copy your code to the server
-- [ ] Configure Docker Compose for Mikrus 3.0 - Set up your applications for your specific server
+- [ ] Transfer project files to VPS - Copy your code to the server using Windows tools
+- [ ] Configure Docker Compose for Mikrus VPS - Set up your applications for your specific server
 - [ ] Deploy all services - Start all your applications
 - [ ] Configure web applications - Set up your custom website
 - [ ] Test service connectivity - Make sure all parts can talk to each other
@@ -160,7 +196,7 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 
 ## 📊 Performance Expectations
 
-### **Resource Usage on Mikrus 3.0:**
+### **Resource Usage on Mikrus VPS:**
 
 | Service | Memory | CPU | Storage | Status | Explanation |
 |---------|--------|-----|---------|--------|-------------|
@@ -173,9 +209,14 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 | **System Overhead** | 200-400MB | 0.5 core | 2GB | ✅ Acceptable | The operating system and basic tools |
 
 **Total Expected Usage:**
-- **Memory**: 1.2-2.2GB (within 2GB limit) - You're using most of your available memory, but it should work
-- **CPU**: 1.1-2.5 cores (within 2 core limit) - You're using most of your available CPU power, but it should work
-- **Storage**: 8-14GB (within 25GB limit) - You have plenty of storage space left
+- **Memory**: 1.2-2.2GB (within 2GB limit for Mikrus 3.0) - You're using most of your available memory, but it should work
+- **CPU**: 1.1-2.5 cores (within 2 core limit for Mikrus 3.0) - You're using most of your available CPU power, but it should work
+- **Storage**: 8-14GB (within 25GB limit for Mikrus 3.0) - You have plenty of storage space left
+
+**Mikrus 3.5 Advantages:**
+- **Memory**: 3GB available - More headroom for better performance
+- **CPU**: 3 cores available - Better multitasking and responsiveness
+- **Storage**: 40GB available - More space for data retention and backups
 
 ---
 
@@ -293,6 +334,15 @@ docker network inspect iot-network
 ```
 **What this means:** Your applications can't talk to each other. This is like having a broken phone line between different parts of your system.
 
+#### **Issue 5: Windows SSH Connection Problems**
+```bash
+# Symptoms: Can't connect from Windows
+# Solution: Check SSH client configuration
+# For PuTTY: Verify hostname, port, and key settings
+# For Windows Terminal: Use ssh username@server-ip
+```
+**What this means:** You can't connect to your server from your Windows computer. This could be due to incorrect SSH settings or network issues.
+
 ---
 
 ## 🔒 Security Considerations
@@ -316,6 +366,12 @@ docker network inspect iot-network
 - Data encryption at rest - Encrypting your data when it's stored on the server
 - Access control implementation - Controlling who can access your data
 - Audit logging - Keeping records of who accessed what and when
+
+#### **Mikrus-Specific Security:**
+- **DDoS Protection**: Basic DDoS protection included with Mikrus servers
+- **Backup System**: Automatic daily backups included
+- **Monitoring**: Built-in server monitoring tools
+- **Control Panel**: Web-based control panel for easy management
 
 ---
 
@@ -366,30 +422,30 @@ docker network inspect iot-network
 
 #### **Phase 1 - Setup:**
 ```
-I need to set up a secure VPS environment for my renewable energy IoT monitoring system.
-VPS specs: 2GB RAM, 25GB storage, 2 cores.
-Please help configure security, Docker, and monitoring tools for optimal performance.
+I need to set up a secure Mikrus VPS environment for my renewable energy IoT monitoring system.
+VPS specs: 2GB RAM, 25GB storage, 2 cores, Ubuntu 22.04.
+Please help configure security, Docker, and monitoring tools for optimal performance on Mikrus servers.
 ```
 
 #### **Phase 2 - Deployment:**
 ```
-I'm deploying a renewable energy IoT system on a 2GB RAM VPS.
+I'm deploying a renewable energy IoT system on a Mikrus VPS with 2GB RAM.
 Services: MQTT, InfluxDB 2.7, Node-RED, Grafana, Express, React.
-Please help optimize Docker configurations and resource allocation for this hardware.
+Please help optimize Docker configurations and resource allocation for Mikrus hardware.
 ```
 
 #### **Phase 3 - Testing:**
 ```
-I need to test my IoT monitoring system deployed on a VPS.
+I need to test my IoT monitoring system deployed on a Mikrus VPS.
 Components: Docker containers, time-series database, web applications.
-Please help create comprehensive testing procedures and validation scripts.
+Please help create comprehensive testing procedures and validation scripts for Mikrus environment.
 ```
 
 #### **Phase 4 - Optimization:**
 ```
-My renewable energy IoT system needs production optimization.
+My renewable energy IoT system needs production optimization on Mikrus VPS.
 Current issues: performance tuning, monitoring, maintenance automation.
-Please help implement production-grade configurations and monitoring.
+Please help implement production-grade configurations and monitoring for Mikrus servers.
 ```
 
 ---
@@ -421,6 +477,18 @@ docker-compose restart [service-name]
 ./system-cleanup.sh
 ```
 
+### **Windows-Specific Commands:**
+```powershell
+# Connect via Windows Terminal
+ssh username@your-mikrus-server-ip
+
+# Transfer files using WSL
+scp -r ./project-folder username@server-ip:/home/username/
+
+# Use WinSCP for GUI file transfer
+# Download from: https://winscp.net/
+```
+
 ### **Emergency Procedures:**
 ```bash
 # Emergency restart
@@ -440,10 +508,10 @@ docker-compose down && docker-compose up -d
 ### **Deployment Success Criteria:**
 
 #### **Performance Metrics:**
-- Memory usage < 1.8GB - Your system should use less than 1.8GB of memory
-- CPU load < 1.5 - Your server should not be working too hard
+- Memory usage < 1.8GB (Mikrus 3.0) / < 2.5GB (Mikrus 3.5) - Your system should use less memory than available
+- CPU load < 1.5 (Mikrus 3.0) / < 2.5 (Mikrus 3.5) - Your server should not be working too hard
 - Response time < 2s - Your system should respond to requests quickly
-- Disk usage < 20GB - You should have plenty of storage space left
+- Disk usage < 20GB (Mikrus 3.0) / < 35GB (Mikrus 3.5) - You should have plenty of storage space left
 
 #### **Reliability Metrics:**
 - 99% uptime - Your system should be available 99% of the time
@@ -465,14 +533,14 @@ After completing the deployment:
 
 1. **Monitor Performance**: Use the provided monitoring scripts
 2. **Optimize Further**: Based on usage patterns
-3. **Scale if Needed**: Consider upgrading VPS or adding services
+3. **Scale if Needed**: Consider upgrading to Mikrus 3.5 or higher
 4. **Maintain Regularly**: Follow maintenance procedures
 5. **Update Security**: Keep systems patched and secure
 
 ---
 
-**🎉 Your renewable energy IoT monitoring system is now ready for production deployment on Mikrus 3.0 VPS!**
+**🎉 Your renewable energy IoT monitoring system is now ready for production deployment on Mikrus VPS!**
 
 ---
 
-*This deployment strategy is designed specifically for Mikrus 3.0 VPS with 2GB RAM and 25GB storage. For other VPS providers or specifications, adjustments may be necessary.*
+*This deployment strategy is designed specifically for Mikrus VPS servers with Ubuntu 22.04 LTS. The strategy is optimized for Windows users connecting from a Windows PC environment.*
