@@ -33,7 +33,7 @@ This phase covers data migration from your local development environment to the 
 
 ## 🛠️ Step-by-Step Instructions
 
-### **Step 1: Data Migration**
+## Step 1 – Data Migration
 
 #### 1.1 Export Local Data (if applicable)
 ```bash
@@ -112,7 +112,7 @@ docker exec -it iot-influxdb2 influx restore /backups/influxdb-backup
 # Use InfluxDB CLI or API to import historical data
 ```
 
-### **Step 2: System Testing**
+## Step 2 – System Testing
 
 #### 2.1 Create Comprehensive Test Suite
 ```bash
@@ -279,7 +279,7 @@ for i in {1..3}; do
 done
 ```
 
-### **Step 3: Load Testing**
+## Step 3 – Load Testing
 
 #### 3.1 Create Load Test Script
 ```bash
@@ -387,7 +387,7 @@ docker stats --no-stream
 ./performance-monitor.sh
 ```
 
-### **Step 4: Data Validation**
+## Step 4 – Data Validation
 
 #### 4.1 Create Data Validation Script
 ```bash
@@ -523,7 +523,7 @@ for i in {1..5}; do
 done
 ```
 
-### **Step 5: Backup and Recovery Testing**
+## Step 5 – Backup and Recovery Testing
 
 #### 5.1 Create Backup Script
 ```bash
@@ -759,3 +759,13 @@ Please help create automated backup scripts and recovery procedures for a produc
 ---
 
 **🎉 Phase 3 Complete! Your system is now tested, validated, and ready for production optimization.**
+
+## Use in Cursor – Generate synthetic MQTT payloads and Influx queries
+```text
+You are assisting with end-to-end data flow validation.
+Produce:
+- A Windows PowerShell block to publish test MQTT messages (via mosquitto_pub inside the container using docker exec) on topics devices/pv/TEST-001/metrics with realistic JSON payloads including ISO 8601 timestamps.
+- A bash block for the VPS to write sample points to Influx via HTTP API (org/bucket/token placeholders) and to query recent points to verify ingestion.
+- A checklist to confirm Grafana dashboards load and panels return data.
+Show expected outputs and how to interpret failures.
+```

@@ -25,7 +25,7 @@ Application deployment is like setting up all the programs on your server. Think
 
 ## 🚀 Step-by-Step Deployment
 
-### **Step 1: File Transfer from Windows**
+## Step 1 – File Transfer from Windows
 
 #### **1.1 Transfer Project Files**
 
@@ -73,7 +73,7 @@ ls -la docker-compose.yml .env
 
 ---
 
-### **Step 2: Docker Compose Configuration**
+## Step 2 – Docker Compose Configuration
 
 #### **2.1 Optimize Docker Compose for Mikrus VPS**
 ```bash
@@ -391,7 +391,7 @@ volumes:
 
 ---
 
-### **Step 3: Web Application Components**
+## Step 3 – Web Application Components
 
 #### **3.1 Express Backend Dockerfile**
 ```bash
@@ -597,7 +597,7 @@ http {
 
 ---
 
-### **Step 4: Deployment Steps**
+## Step 4 – Deployment Steps
 
 #### **4.1 Start Core Services First**
 ```bash
@@ -665,7 +665,7 @@ curl -f http://localhost:3002         # React Frontend
 
 ---
 
-### **Step 5: Configuration and Testing**
+## Step 5 – Configuration and Testing
 
 #### **5.1 Configure InfluxDB**
 ```bash
@@ -722,7 +722,7 @@ curl http://your-server-ip:3001/api/data
 
 ---
 
-### **Step 6: Performance Monitoring**
+## Step 6 – Performance Monitoring
 
 #### **6.1 Create Performance Monitor Script**
 ```bash
@@ -793,7 +793,7 @@ crontab -e
 
 ---
 
-### **Step 7: Testing and Validation**
+## Step 7 – Testing and Validation
 
 #### **7.1 Service Connectivity Tests**
 ```bash
@@ -853,7 +853,7 @@ wait
 
 ---
 
-### **Step 8: Performance Metrics**
+## Step 8 – Performance Metrics
 
 #### **8.1 Resource Usage on Mikrus VPS:**
 
@@ -1054,4 +1054,17 @@ After completing Phase 2:
 
 ---
 
-*This deployment is optimized for Mikrus VPS servers with Ubuntu 22.04 LTS and Windows users connecting from a Windows PC environment.*
+*This deployment is optimized for Mikrus VPS servers with Ubuntu 24.04 LTS and Windows users connecting from a Windows PC environment.*
+
+## Use in Cursor – Health check and misconfiguration scan
+```text
+Act as a deployment verifier for this repository on Mikrus.
+Tasks:
+- Generate Windows PowerShell commands to run on the VPS via SSH that:
+  - docker compose ps, docker ps --format, and health statuses for mosquitto, influxdb, node-red, grafana.
+  - Stream the last 200 log lines per service and grep for common errors (port in use, permission denied, auth errors, OOMKilled).
+  - curl/Invoke-WebRequest health endpoints: :1880, :8086/health, :3000/api/health.
+- Summarize common misconfigurations: missing .env, wrong token/org/bucket, port collisions, volume permissions, firewall.
+- Output a remediation checklist with exact commands to fix typical issues.
+Return commands separated into Windows PowerShell (local) and bash (remote VPS).
+```

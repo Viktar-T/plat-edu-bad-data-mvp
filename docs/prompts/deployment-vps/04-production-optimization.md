@@ -33,7 +33,7 @@ This phase focuses on optimizing the system for production use, implementing adv
 
 ## 🛠️ Step-by-Step Instructions
 
-### **Step 1: Performance Optimization**
+## Step 1 – Performance Optimization
 
 #### 1.1 Optimize Docker Resource Limits
 ```bash
@@ -489,7 +489,7 @@ http {
 }
 ```
 
-### **Step 2: Advanced Monitoring Setup**
+## Step 2 – Advanced Monitoring Setup
 
 #### 2.1 Create Advanced Monitoring Script
 ```bash
@@ -732,7 +732,7 @@ crontab -e
 0 2 * * * /home/iotadmin/backup-system.sh >> /home/iotadmin/backup.log 2>&1
 ```
 
-### **Step 3: System Cleanup and Maintenance**
+## Step 3 – System Cleanup and Maintenance
 
 #### 3.1 Create System Cleanup Script
 ```bash
@@ -838,7 +838,7 @@ main
 chmod +x /home/iotadmin/system-cleanup.sh
 ```
 
-### **Step 4: Performance Tuning**
+## Step 4 – Performance Tuning
 
 #### 4.1 Optimize System Settings
 ```bash
@@ -1150,3 +1150,12 @@ Please help create maintenance scripts and automation for production environment
 ---
 
 **🎉 Phase 4 Complete! Your system is now optimized for production use.**
+
+## Use in Cursor – Compose production audit
+```text
+Act as a production readiness auditor for docker-compose.yml.
+- Check for: restart policies (unless-stopped), healthchecks per service, explicit resource limits/reservations, pinned image versions, named volumes, least-privilege users, and exposed ports mapping.
+- Suggest concrete edits with YAML snippets for any missing item.
+- Include security recommendations (read-only root filesystem where possible, no-new-privileges, drop capabilities) and log rotation.
+- Output a short diff-like summary I can paste back into the file.
+```

@@ -32,7 +32,7 @@ This comprehensive deployment strategy provides step-by-step instructions for de
 - **Network**: 1Gbps
 
 #### **Mikrus Server Features**
-- **Operating System**: Ubuntu 22.04 LTS (latest stable version)
+- **Operating System**: Ubuntu 24.04 LTS (latest stable version)
 - **Docker Support**: Pre-installed Docker and Docker Compose
 - **SSH Access**: Secure shell access for remote management
 - **Backup System**: Automatic daily backups included
@@ -423,7 +423,7 @@ docker network inspect iot-network
 #### **Phase 1 - Setup:**
 ```
 I need to set up a secure Mikrus VPS environment for my renewable energy IoT monitoring system.
-VPS specs: 2GB RAM, 25GB storage, 2 cores, Ubuntu 22.04.
+VPS specs: 2GB RAM, 25GB storage, 2 cores, Ubuntu 24.04.
 Please help configure security, Docker, and monitoring tools for optimal performance on Mikrus servers.
 ```
 
@@ -543,4 +543,13 @@ After completing the deployment:
 
 ---
 
-*This deployment strategy is designed specifically for Mikrus VPS servers with Ubuntu 22.04 LTS. The strategy is optimized for Windows users connecting from a Windows PC environment.*
+*This deployment strategy is designed specifically for Mikrus VPS servers with Ubuntu 24.04 LTS. The strategy is optimized for Windows users connecting from a Windows PC environment.*
+
+## Use in Cursor – Quick start validation
+```text
+Be my assistant to validate readiness across phases 1–2:
+- List the five most critical checks to run now and produce Windows PowerShell and remote bash commands for each.
+- Verify ports 1883, 1880, 8086, 3000 are listening, containers are healthy, and disk/memory are within limits.
+- If any check fails, output the exact remediation command.
+Keep it concise and copy-pasteable.
+```

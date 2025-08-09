@@ -4,7 +4,7 @@
 
 ## 📋 Overview
 
-This phase focuses on setting up your Mikrus VPS with proper security, Docker installation, and environment preparation. The setup is optimized for Mikrus servers running Ubuntu 22.04 LTS and includes Windows-specific instructions for connecting from your Windows PC.
+This phase focuses on setting up your Mikrus VPS with proper security, Docker installation, and environment preparation. The setup is optimized for Mikrus servers running Ubuntu 24.04 LTS and includes Windows-specific instructions for connecting from your Windows PC.
 
 ### 🎯 What is a VPS?
 A VPS (Virtual Private Server) is like having your own computer that runs on the internet. Think of it as renting a small part of a big computer that's always connected to the internet. You can install programs on it, store files, and access it from anywhere - just like your home computer, but it's always running and accessible from the internet.
@@ -16,7 +16,7 @@ A VPS (Virtual Private Server) is like having your own computer that runs on the
 - **Location**: Finland - Where your server is physically located (affects internet speed and data privacy laws)
 - **Price**: 130.00zł/year - ZUT faktura
 - **Network**: 1Gbps - How fast your server can send and receive data over the internet
-- **Operating System**: Ubuntu 22.04 LTS - The latest stable version of Ubuntu Linux
+- **Operating System**: Ubuntu 24.04 LTS - The latest LTS release of Ubuntu Linux
 
 ### 🏗️ Mikrus Server Features
 - **Pre-installed Docker**: Docker and Docker Compose are already installed
@@ -55,7 +55,7 @@ A VPS (Virtual Private Server) is like having your own computer that runs on the
 
 ## 🚀 Step-by-Step Setup
 
-### **Step 1: Initial Server Access**
+## Step 1 – Initial Server Access
 
 #### **1.1 Get Your Server Information**
 After purchasing your Mikrus VPS, you'll receive:
@@ -121,7 +121,7 @@ lscpu
 
 ---
 
-### **Step 2: System Updates and Basic Setup**
+## Step 2 – System Updates and Basic Setup
 
 #### **2.1 Update System Packages**
 ```bash
@@ -158,7 +158,7 @@ systemctl status docker
 
 ---
 
-### **Step 3: Security Configuration**
+## Step 3 – Security Configuration
 
 #### **3.1 Create Non-Root User**
 ```bash
@@ -268,7 +268,7 @@ logpath = /var/log/auth.log
 
 ---
 
-### **Step 4: Docker Configuration**
+## Step 4 – Docker Configuration
 
 #### **4.1 Optimize Docker for Mikrus VPS**
 ```bash
@@ -314,7 +314,7 @@ sudo systemctl status docker
 
 ---
 
-### **Step 5: Environment Setup**
+## Step 5 – Environment Setup
 
 #### **5.1 Create Project Directory**
 ```bash
@@ -374,7 +374,7 @@ REACT_APP_API_URL=http://your-server-ip:3001
 
 ---
 
-### **Step 6: System Optimization**
+## Step 6 – System Optimization
 
 #### **6.1 Configure Swap Memory**
 ```bash
@@ -429,7 +429,7 @@ sudo reboot
 
 ---
 
-### **Step 7: Monitoring Setup**
+## Step 7 – Monitoring Setup
 
 #### **7.1 Install Monitoring Tools**
 ```bash
@@ -481,7 +481,7 @@ chmod +x ~/monitor.sh
 
 ---
 
-### **Step 8: Testing and Validation**
+## Step 8 – Testing and Validation
 
 #### **8.1 Test Docker Functionality**
 ```bash
@@ -530,7 +530,7 @@ htop
 
 ---
 
-### **Step 9: Performance Baseline**
+## Step 9 – Performance Baseline
 
 #### **9.1 Establish Performance Baseline**
 ```bash
@@ -637,7 +637,7 @@ sudo ufw allow [port-number]
 #### **✅ Server Access:**
 - [ ] Successfully connected to Mikrus VPS via SSH from Windows - You can log into your server from your Windows computer
 - [ ] Verified server specifications match Mikrus 3.0 - Your server has the right amount of RAM, CPU, and storage
-- [ ] Confirmed Ubuntu 22.04 LTS installation - Your server is running the latest stable version of Ubuntu
+- [ ] Confirmed Ubuntu 24.04 LTS installation - Your server is running the latest LTS version of Ubuntu
 
 #### **✅ System Updates:**
 - [ ] Updated all system packages - Your server has the latest security updates
@@ -684,7 +684,7 @@ sudo ufw allow [port-number]
 
 #### **For Server Setup Issues:**
 ```
-I'm setting up a Mikrus VPS (Ubuntu 22.04, 2GB RAM, 25GB storage) for my renewable energy IoT monitoring system.
+I'm setting up a Mikrus VPS (Ubuntu 24.04, 2GB RAM, 25GB storage) for my renewable energy IoT monitoring system.
 I'm connecting from Windows using [Windows Terminal/PuTTY/WSL].
 I'm having trouble with [specific issue].
 Please help me resolve this issue and continue with the setup.
@@ -692,7 +692,7 @@ Please help me resolve this issue and continue with the setup.
 
 #### **For Security Configuration:**
 ```
-I need to secure my Mikrus VPS running Ubuntu 22.04.
+I need to secure my Mikrus VPS running Ubuntu 24.04.
 I want to configure SSH keys, firewall (UFW), and Fail2ban.
 I'm connecting from a Windows PC.
 Please help me implement proper security measures for my IoT monitoring system.
@@ -730,4 +730,16 @@ After completing Phase 1:
 
 ---
 
-*This setup is optimized for Mikrus VPS servers with Ubuntu 22.04 LTS and Windows users connecting from a Windows PC environment.*
+*This setup is optimized for Mikrus VPS servers with Ubuntu 24.04 LTS and Windows users connecting from a Windows PC environment.*
+
+## Use in Cursor – Environment and connectivity validation
+```text
+You are helping me validate my setup for Mikrus (Ubuntu 24.04) from Windows PowerShell.
+Goals:
+- On Windows PowerShell, print versions: $PSVersionTable.PSVersion, git --version, docker --version, docker compose version.
+- Test outbound SSH to <VPS_IP> on port 2222: Test-NetConnection -ComputerName <VPS_IP> -Port 2222.
+- Generate commands to create an SSH config entry named "mikrus" using $HOME\ .ssh\ id_rsa and port 2222.
+- Provide remote bash checks to verify OS, memory, disk, CPU and Docker service on VPS.
+- For each command, show expected output and what to do if the check fails.
+Deliver results grouped by: Windows PowerShell vs Remote VPS bash.
+```
