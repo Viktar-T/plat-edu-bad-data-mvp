@@ -2,6 +2,34 @@
 
 This step prepares the application repository on the VPS, creates the `.env` file with safe defaults, and validates the Compose configuration.
 
+**Note**: If Docker is not installed on your Mikrus VPS, you'll need to install it first. Run these commands:
+
+```bash
+# Install Docker using the official installation script
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Start and enable Docker service
+systemctl start docker
+systemctl enable docker
+
+# Verify Docker installation
+docker --version
+docker-compose --version
+
+# Test Docker with a simple container
+docker run hello-world
+```
+
+**Alternative Installation (if official script fails):**
+```bash
+# Using apt package manager
+apt update
+apt install -y docker.io docker-compose
+systemctl start docker
+systemctl enable docker
+```
+
 ## Step 1 – Clone the repository (VPS)
 
 ```bash

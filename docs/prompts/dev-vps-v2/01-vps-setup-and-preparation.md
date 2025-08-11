@@ -7,6 +7,12 @@ This step prepares your Windows environment, grants SSH access to your Mikrus VP
 - Windows 10/11 with PowerShell
 - SSH key pair (you will create one if needed)
 
+### Your Specific Server Details
+- **Server Hostname**: `robert108.mikrus.xyz`
+- **Username**: `root`
+- **SSH Port**: `10108` (custom port)
+- **Connection Command**: `ssh root@robert108.mikrus.xyz -p10108`
+
 ## Step 1 – Validate local environment (Windows)
 
 ```powershell
@@ -35,7 +41,11 @@ Expected: The public key contents (starts with `ssh-ed25519`). Keep it handy.
 Obtain your hostname/IP and username from Mikrus.
 
 ```powershell
+# Generic command:
 ssh -o StrictHostKeyChecking=no <MIKRUS_USER>@<MIKRUS_HOST>
+
+# Your specific connection:
+ssh -o StrictHostKeyChecking=no root@robert108.mikrus.xyz -p10108
 ```
 Expected: You are connected to the VPS shell.
 
@@ -80,7 +90,7 @@ Expected: Password login disabled; root SSH disabled. Confirm you can login as `
 sudo apt-get install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
-sudo ufw allow 22/tcp
+sudo ufw allow 10108/tcp
 # Allow application ports (adjust later as needed)
 sudo ufw allow 1883/tcp   # Mosquitto
 sudo ufw allow 1880/tcp   # Node-RED
