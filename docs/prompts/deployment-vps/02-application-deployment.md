@@ -709,16 +709,7 @@ curl -f http://localhost:3002         # React Frontend
 ```
 
 #### **5.4 Test Web Applications**
-```bash
-# Test Express API
-curl http://your-server-ip:3001/api/health
-
-# Test React Frontend
-curl http://your-server-ip:3002
-
-# Test API endpoints
-curl http://your-server-ip:3001/api/data
-```
+Express API and React Frontend are currently under development and not deployed. Skip these tests for now.
 
 ---
 
@@ -757,12 +748,12 @@ echo "MQTT Broker: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:188
 echo "InfluxDB: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8086/health || echo "DOWN")"
 echo "Node-RED: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:1880 || echo "DOWN")"
 echo "Grafana: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health || echo "DOWN")"
-echo "Express API: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/health || echo "DOWN")"
-echo "React Frontend: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:3002 || echo "DOWN")"
+echo "Express API: SKIPPED (under development)"
+echo "React Frontend: SKIPPED (under development)"
 echo ""
 
 echo "=== Network Connections ==="
-netstat -tlnp | grep -E ":(1883|8086|1880|3000|3001|3002)"
+netstat -tlnp | grep -E ":(1883|8086|1880|3000)"
 echo ""
 
 echo "=== Top Processes by Memory ==="
@@ -809,11 +800,7 @@ curl -f http://localhost:1880
 # Test Grafana connectivity
 curl -f http://localhost:3000/api/health
 
-# Test Express API connectivity
-curl -f http://localhost:3001/health
-
-# Test React frontend connectivity
-curl -f http://localhost:3002
+# Express API and React frontend tests skipped (under development)
 ```
 
 #### **7.2 Web Interface Access Tests**
