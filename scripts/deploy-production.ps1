@@ -32,11 +32,24 @@ function Write-ColorOutput {
     Write-Host $Message -ForegroundColor $Color
 }
 
+# Ensure .env.production exists (fallback to env.example)
+function Ensure-EnvProductionExists {
+    if (-not (Test-Path ".env.production")) {
+        if (Test-Path "env.example") {
+            Write-ColorOutput "Creating .env.production from env.example..." $Yellow
+            Copy-Item "env.example" ".env.production"
+            Write-ColorOutput "Created .env.production (review and adjust for production)." $Green
+        } else {
+            Write-ColorOutput "❌ Missing .env.production and env.example; cannot proceed." $Red
+            exit 1
+        }
+    }
+}
+
 # Function to check if required files exist
 function Test-RequiredFiles {
     $requiredFiles = @(
         "docker-compose.yml",
-        ".env.production",
         "nginx/nginx.conf"
     )
     
@@ -54,6 +67,9 @@ function Test-RequiredFiles {
 function Prepare-Deployment {
     Write-ColorOutput "Preparing production deployment package..." $Green
     
+    # Ensure env file exists
+    Ensure-EnvProductionExists
+
     # Create deployment directory
     $deploymentDir = "deployment"
     if (Test-Path $deploymentDir) {
@@ -76,6 +92,8 @@ function Prepare-Deployment {
     Write-ColorOutput "Copying Nginx configuration..." $Yellow
     New-Item -ItemType Directory -Path "$deploymentDir/nginx" -Force | Out-Null
     Copy-Item "nginx/nginx.conf" "$deploymentDir/nginx/"
+    # Ensure ssl directory exists to satisfy bind mount
+    New-Item -ItemType Directory -Path "$deploymentDir/nginx/ssl" -Force | Out-Null
     
     # Copy service configurations
     $serviceDirs = @("mosquitto", "influxdb", "node-red", "grafana")
@@ -86,11 +104,7 @@ function Prepare-Deployment {
         }
     }
     
-    # Copy web application files
-    if (Test-Path "web-app-for-testing") {
-        Write-ColorOutput "Copying web application files..." $Yellow
-        Copy-Item -Recurse "web-app-for-testing" "$deploymentDir/"
-    }
+    # Do not copy experimental web application files (Express/React not deployed)
     
     # Create deployment script
     Write-ColorOutput "Creating deployment script..." $Yellow
@@ -100,7 +114,7 @@ function Prepare-Deployment {
 # Production Deployment Script for Mikrus VPS
 # =============================================================================
 
-echo "🚀 Starting production deployment..."
+echo "Starting production deployment..."
 
 # Stop any existing containers
 echo "Stopping existing containers..."
@@ -122,19 +136,17 @@ sleep 30
 echo "Checking service status..."
 docker-compose ps
 
-echo "✅ Production deployment completed!"
+echo "Production deployment completed."
 echo ""
-echo "🌐 Access URLs:"
-echo "  📊 Grafana Dashboard:    http://$VpsHost:20108/grafana"
-echo "  🔧 Node-RED Editor:      http://$VpsHost:20108/nodered"
-echo "  🗄️  InfluxDB Admin:       http://$VpsHost:20108/influxdb"
-echo "  ⚡ Express Backend API:  http://$VpsHost:20108/api"
-echo "  🎨 React Frontend:       http://$VpsHost:20108/app"
-echo "  🏠 Default Homepage:     http://$VpsHost:20108/"
+echo "Access URLs:"
+echo "  Grafana Dashboard:    http://$VpsHost:20108/grafana"
+echo "  Node-RED Editor:      http://$VpsHost:20108/nodered"
+echo "  InfluxDB Admin:       http://$VpsHost:20108/influxdb"
+echo "  Default Homepage:     http://$VpsHost:20108/"
 echo ""
-echo "📡 MQTT Broker: $VpsHost:40098"
+echo "MQTT Broker: $VpsHost:40098"
 echo ""
-echo "🔑 Default Credentials:"
+echo "Default Credentials:"
 echo "  Grafana:     admin / admin"
 echo "  Node-RED:    admin / adminpassword"
 echo "  InfluxDB:    admin / admin_password_123"
@@ -158,7 +170,6 @@ This package contains all files needed to deploy the Renewable Energy IoT Monito
 - `influxdb/` - InfluxDB configuration
 - `node-red/` - Node-RED configuration
 - `grafana/` - Grafana configuration
-- `web-app-for-testing/` - Web application files
 - `deploy.sh` - Deployment script
 
 ## Deployment Steps:
@@ -171,8 +182,6 @@ This package contains all files needed to deploy the Renewable Energy IoT Monito
 - Grafana Dashboard: http://robert108.mikrus.xyz:20108/grafana
 - Node-RED Editor: http://robert108.mikrus.xyz:20108/nodered
 - InfluxDB Admin: http://robert108.mikrus.xyz:20108/influxdb
-- Express Backend API: http://robert108.mikrus.xyz:20108/api
-- React Frontend: http://robert108.mikrus.xyz:20108/app
 - Default Homepage: http://robert108.mikrus.xyz:20108/
 
 ## MQTT Broker:

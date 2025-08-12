@@ -1,70 +1,183 @@
-## Step 2 - Docker Compose and Repo Setup
+# 🧩 Step 2 – Docker Compose and Repository Setup
 
-Goal: prepare application files on the VPS for deployment using Docker Compose and Nginx path-based routing.
+Goal: Prepare the application on the VPS, ensure Docker Compose configuration is correct, and choose a deployment track (Manual or CI/CD).
 
-### 2.1 Recommended: use the deployment script (Windows PowerShell)
-
-```powershell
-./scripts/deploy-production.ps1 -Full
-```
-
-This packages the deployment folder, transfers it to the VPS, and runs the remote deploy script.
-
-### 2.2 Manual alternative (on VPS)
-
-```bash
-ssh viktar@<HOST> -p 10108
-mkdir -p ~/renewable-energy-iot && cd ~/renewable-energy-iot
-git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git repo
-cd repo
-mkdir -p ~/deployment && cd ~/deployment
-cp ~/renewable-energy-iot/repo/docker-compose.yml .
-cp ~/renewable-energy-iot/repo/nginx/nginx.conf ./nginx.conf -v
-cp ~/renewable-energy-iot/repo/.env.production .env
-```
-
-Expected:
-- `~/deployment` contains docker-compose.yml, nginx.conf, and .env
-
-### 2.3 Verify compose and env
-
-```bash
-docker-compose -f docker-compose.yml config | head -n 120 | cat
-docker-compose -f docker-compose.yml pull --ignore-pull-failures
-test -f .env && echo OK: .env present || echo Missing: .env
-```
-
-Key points:
-- Services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx reverse proxy
-- Nginx publishes 20108:80 and 30108:443
-- Only Nginx has public ports; backends are routed by path: /grafana, /nodered, /influxdb
-- MQTT uses Mikrus TCP port 40098
-- Express/React are not deployed in production
-
-### 2.4 Volumes and persistence
-
-```bash
-ls -la ./influxdb ./grafana ./node-red ./mosquitto | cat || true
-```
-
-Ensure directories are writable and mapped to volumes in compose.
-
-### 2.5 Nginx path routes
-
-Confirm nginx.conf has routes for /grafana, /nodered, /influxdb and default redirect / -> /grafana/.
+Mikrus specifics:
+- Web: `20108` (HTTP) and `30108` (HTTPS future) via Nginx path-based routing (`/grafana`, `/nodered`, `/influxdb`)
+- MQTT: `40098/tcp`
+- Services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx (Express/React not deployed now)
 
 ---
 
-### Use in Cursor - audit compose and env
+## Step 1 – Clone the repository on the VPS (recommended)
 
-```markdown
-Ask Cursor to:
-- Open docker-compose.yml and verify:
-  - Nginx publishes 20108:80 and 30108:443
-  - No public ports on Grafana, Node-RED, InfluxDB (use expose only)
-  - Mosquitto publishes 40098:1883
-- Confirm Express/React services are absent in production
-- Check .env.production exists and contains non-secret placeholders only
+```bash
+# From your home directory on the VPS
+cd ~
+
+# Clone the repository
+git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
+
+cd plat-edu-bad-data-mvp
+
+# Verify expected files are present
+ls -la
+```
+
+Expected output (abridged):
+```
+docker-compose.yml
+influxdb/
+mosquitto/
+node-red/
+grafana/
+scripts/
+```
+
+Why: This places the project under your user, making updates via `git pull` easy.
+
+---
+
+## Step 2 – Set permissions (if needed)
+
+```bash
+# Ensure your user (e.g., viktar) owns the repo directory
+sudo chown -R $USER:$USER ~/plat-edu-bad-data-mvp
+```
+
+Expected result: No output on success. Ownership updated.
+
+---
+
+## Step 3 – Environment files are handled by scripts (no manual .env on VPS)
+
+- Local development: `scripts/dev-local.ps1` creates `.env.local` and materializes `.env`.
+- Production: `scripts/deploy-production.ps1` uses `.env.production` during packaging/deploy.
+
+Do not manually create `.env` on the VPS unless you know you must diverge. The scripts manage consistent variables and safe defaults.
+
+---
+
+## Step 4 – Verify Docker Compose configuration
+
+```bash
+# Validate and render the compose file for review
+docker compose config | sed -n '1,120p'
+```
+
+Check for:
+- Only required services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx
+- Named volumes for persistence
+- `restart: unless-stopped`
+- Healthchecks where applicable
+- Networks: single shared network is fine for MVP
+
+Tip: Express/React services should not be present for production yet.
+
+---
+
+## Step 5 – Deployment Tracks
+
+### A) Manual Deployment (PowerShell driven)
+
+Run locally on Windows from project root:
+
+```powershell
+# Prepare production bundle (includes env handling)
+./scripts/deploy-production.ps1 -Prepare
+
+# Deploy end-to-end to VPS
+./scripts/deploy-production.ps1 -Full
+```
+
+Expected result:
+- Bundle built locally and transferred to the VPS
+- On VPS: `docker compose up -d` executed
+- Services accessible via Nginx path routes
+
+Verify on VPS:
+
+```bash
+cd ~/plat-edu-bad-data-mvp
+docker compose ps | cat
+```
+
+### B) Alternate: Direct Git on VPS
+
+```bash
+cd ~/plat-edu-bad-data-mvp
+
+# Pull latest changes when updating
+git pull --ff-only
+
+# Start services
+docker compose up -d
+```
+
+Expected result: Containers start and remain healthy.
+
+---
+
+## Step 6 – CI/CD Pipeline (GitHub Actions)
+
+Example workflow to SSH into the VPS, pull changes, and (re)start services.
+
+```yaml
+name: Deploy to Mikrus VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no -p 10108 viktar@${{ secrets.VPS_HOST }} "\
+            set -e; \
+            cd ~/plat-edu-bad-data-mvp; \
+            git pull --ff-only; \
+            docker compose pull; \
+            docker compose up -d; \
+            docker compose ps \
+          "
+```
+
+Required repository secrets:
+- `VPS_HOST` – example: `robert108.mikrus.xyz`
+- `VPS_SSH_KEY` – private key for user (e.g., viktar)
+
+Notes:
+- Do not store plaintext passwords/tokens in workflows
+- Prefer image pull + restart; pin images by tag or digest for reproducibility
+
+---
+
+## ✅ Validation
+
+```bash
+# On the VPS
+docker compose ps | cat
+docker compose logs --tail=50 | sed -n '1,120p'
+```
+
+You should see healthy/starting states and recent logs for all services.
+
+---
+
+## 🧩 Use in Cursor (prompt)
+```text
+Using the repo at ~/plat-edu-bad-data-mvp on the VPS, verify that docker-compose.yml contains only Mosquitto, Node-RED, InfluxDB 2.x, Grafana, and Nginx. Ensure volumes, restart policies, and healthchecks exist. If issues are found, propose exact edits.
 ```
 
 

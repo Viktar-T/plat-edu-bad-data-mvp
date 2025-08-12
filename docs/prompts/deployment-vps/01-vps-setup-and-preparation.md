@@ -38,7 +38,7 @@ VPS setup is like preparing a new computer for your specific needs. Think of it 
 ssh viktar@robert108.mikrus.xyz -p10108
 
 # Connect to your server (as root user)
-ssh root@robert108.mikrus.xyz -p 10108
+ssh root@robert108.mikrus.xyz -p10108
 
 # Or with host key verification disabled (first time only)
 ssh -o StrictHostKeyChecking=no viktar@robert108.mikrus.xyz -p10108
@@ -56,9 +56,9 @@ ssh -o StrictHostKeyChecking=no viktar@robert108.mikrus.xyz -p10108
 ssh viktar@robert108.mikrus.xyz -p10108
 
 # Connect to your server (as root user)
-ssh root@robert108.mikrus.xyz -p 10108
+ssh root@robert108.mikrus.xyz -p10108
 
-# viktar<-->root
+# Switch between users
 su viktar
 
 # First time connection (accept host key)
@@ -316,7 +316,7 @@ Your Mikrus VPS uses a **path-based routing approach** with Nginx reverse proxy,
 **URL Structure (current):**
 ```
 http://robert108.mikrus.xyz:20108/grafana     -> Grafana Dashboard
-http://robert108.mikrus.xyz:20108/nodered     -> Node-RED Editor  
+http://robert108.mikrus.xyz:20108/nodered     -> Node-RED Editor
 http://robert108.mikrus.xyz:20108/influxdb    -> InfluxDB Admin
 http://robert108.mikrus.xyz:20108/            -> Redirects to /grafana/
 ```
@@ -325,9 +325,7 @@ Note: Express Backend API (/api) and React Frontend (/app) are under development
 
 **Firewall Configuration:**
 ```bash
-# Enable UFW firewall
-sudo ufw enable
-
+# Allow rules first to avoid SSH lockout when enabling the firewall
 # Allow SSH (your custom port)
 sudo ufw allow 10108/tcp
 
@@ -339,6 +337,9 @@ sudo ufw allow 30108/tcp
 
 # Allow MQTT (IoT device communication)
 sudo ufw allow 40098/tcp
+
+# Enable UFW firewall
+sudo ufw enable
 
 # Check firewall status
 sudo ufw status numbered
@@ -416,7 +417,7 @@ sudo fail2ban-client status
 sudo fail2ban-client status sshd
 ```
 
-**Alternative method if you still get permission errors:**
+**Alternative method if you get permission errors:**
 ```bash
 # Check if fail2ban directory exists
 sudo ls -la /etc/fail2ban/
@@ -559,12 +560,11 @@ ulimits:
 
 **No manual environment setup required!** Your scripts handle everything automatically.
 
-
 ---
 
-## Step 7 – Validation and Testing
+## Step 6 – Validation and Testing
 
-#### **7.1 Test Docker Installation**
+#### **6.1 Test Docker Installation**
 ```bash
 # Test Docker
 docker --version
@@ -574,7 +574,7 @@ docker-compose --version
 docker run hello-world
 ```
 
-#### **7.2 Test Network Connectivity**
+#### **6.2 Test Network Connectivity**
 ```bash
 # Test internet connectivity
 ping -c 4 google.com
@@ -586,7 +586,7 @@ nslookup robert108.mikrus.xyz
 sudo netstat -tlnp
 ```
 
-#### **7.3 Test Firewall Configuration**
+#### **6.3 Test Firewall Configuration**
 ```bash
 # Check firewall status
 sudo ufw status numbered
@@ -595,7 +595,7 @@ sudo ufw status numbered
 # Use nmap or telnet to test ports
 ```
 
-#### **7.4 System Health Check**
+#### **6.4 System Health Check**
 ```bash
 # Check system resources
 htop
@@ -631,7 +631,7 @@ sudo systemctl status fail2ban
 - [ ] ✅ System resources verified
 
 ### **Environment Setup**
-- [ ] ✅ Environment variables configured
+- [ ] ✅ Environment variables configured (handled automatically)
 - [ ] ✅ Project directory structure created
 - [ ] ✅ Path-based routing strategy implemented
 
@@ -646,8 +646,6 @@ sudo systemctl status fail2ban
 ## 🎯 Next Steps
 
 ### **Ready for Phase 2: Application Deployment**
-
-
 
 ### **Access Your Services (After Deployment)**
 Once deployed, you'll access your services at:
@@ -670,6 +668,8 @@ Planned (not yet deployed):
 - **Node-RED**: `admin` / `adminpassword`
 - **InfluxDB**: `admin` / `admin_password_123`
 - **MQTT**: `admin` / `admin_password_456`
+
+**⚠️ Security Note:** Change these default passwords immediately after deployment!
 
 ### **Development Workflow**
 For local development, use the provided scripts:
@@ -708,19 +708,21 @@ nslookup [domain]       # DNS resolution
 ```
 
 ### **Security Best Practices**
-- ✅ Change default passwords immediately
-- ✅ Use SSH keys instead of passwords
-- ✅ Keep system packages updated
-- ✅ Monitor system logs regularly
-- ✅ Use firewall to restrict access
+- ✅ Change default passwords immediately after deployment
+- ✅ Use SSH keys instead of passwords for better security
+- ✅ Keep system packages updated regularly
+- ✅ Monitor system logs for suspicious activity
+- ✅ Use firewall to restrict access to necessary ports only
 - ✅ Enable fail2ban for intrusion prevention
+- ✅ Regularly backup configuration files and data
 
 ### **Performance Optimization**
-- ✅ Configure appropriate swap memory
-- ✅ Optimize kernel parameters
-- ✅ Monitor resource usage
-- ✅ Use Docker resource limits
-- ✅ Implement proper logging rotation
+- ✅ Configure appropriate swap memory for your workload
+- ✅ Optimize kernel parameters for IoT data processing
+- ✅ Monitor resource usage with htop and system tools
+- ✅ Use Docker resource limits to prevent resource exhaustion
+- ✅ Implement proper logging rotation to manage disk space
+- ✅ Use time-series database best practices for InfluxDB
 
 ---
 
@@ -783,10 +785,21 @@ nslookup robert108.mikrus.xyz
 ### **Getting Help**
 - Check system logs: `sudo journalctl -xe`
 - Check service logs: `sudo systemctl status [service]`
-- Review configuration files
+- Review configuration files for syntax errors
 - Test connectivity step by step
-- Consult Mikrus documentation
+- Consult Mikrus documentation and support
+- Check Docker container logs: `docker logs [container_name]`
 
 ---
 
 **🎉 Congratulations!** Your Mikrus VPS is now prepared for the renewable energy IoT monitoring system deployment. The path-based routing setup with Nginx reverse proxy provides a professional, efficient, and scalable solution that maximizes your Mikrus port usage.
+
+**📋 Summary of What You've Accomplished:**
+- ✅ Secured SSH access with custom port and fail2ban protection
+- ✅ Configured firewall with optimized port strategy
+- ✅ Installed and configured Docker for containerized deployment
+- ✅ Optimized system performance for IoT data processing
+- ✅ Set up path-based routing for efficient port usage
+- ✅ Prepared environment for automated deployment scripts
+
+**🚀 You're now ready to proceed to Phase 2: Application Deployment!**

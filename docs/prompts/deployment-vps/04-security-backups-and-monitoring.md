@@ -1,96 +1,107 @@
-## Step 4 - Security, Backups, and Monitoring
+# 🔐 Step 4 – Security, Backups, and Monitoring
 
-Goal: apply essential hardening, configure basic backups, and monitor the stack.
+Goal: Apply essential hardening, set safe defaults, and implement backups and basic monitoring practices.
 
-### 4.1 SSH hardening (on VPS)
-
-```bash
-sudo nano /etc/ssh/sshd_config
-# Port 10108
-# PermitRootLogin prohibit-password
-# PasswordAuthentication no   # after setting up keys
-# AllowUsers viktar
-# MaxAuthTries 3
-# ClientAliveInterval 300
-# ClientAliveCountMax 2
-sudo systemctl restart ssh
-```
-
-### 4.2 UFW rules
-
-```bash
-sudo ufw enable
-sudo ufw allow 10108/tcp     # SSH
-sudo ufw allow 20108/tcp     # HTTP via Nginx
-sudo ufw allow 30108/tcp     # HTTPS (future)
-sudo ufw allow 40098/tcp     # MQTT
-sudo ufw status numbered
-```
-
-Notes:
-- Mikrus blocks standard 80/443 externally; use 20108/30108.
-- Include IPv6 rules if enabled.
-
-### 4.3 Fail2ban jail
-
-```bash
-sudo apt install -y fail2ban
-sudo systemctl enable --now fail2ban
-sudo bash -c 'cat >/etc/fail2ban/jail.local' <<'JAIL'
-[sshd]
-enabled = true
-port = 10108,22
-filter = sshd
-logpath = /var/log/auth.log
-maxretry = 3
-bantime = 3600
-findtime = 600
-JAIL
-sudo systemctl restart fail2ban
-sudo fail2ban-client status sshd
-```
-
-### 4.4 Service hardening notes
-
-- Mosquitto: passwords + ACLs; disable anonymous.
-- Grafana: change admin password; restrict signups.
-- InfluxDB: use tokens; disable profiling in prod.
-- Nginx: keep rate-limit and security headers; websocket headers for Node-RED.
-
-### 4.5 Backups (volumes)
-
-```bash
-BACKUP_DIR=~/backups/$(date +%F)
-mkdir -p "$BACKUP_DIR"
-cp ~/deployment/.env "$BACKUP_DIR/" || true
-cp -r ~/deployment/nginx "$BACKUP_DIR/" || true
-cp -r ~/deployment/influxdb "$BACKUP_DIR/" || true
-cp -r ~/deployment/grafana "$BACKUP_DIR/" || true
-cp -r ~/deployment/node-red "$BACKUP_DIR/" || true
-cp -r ~/deployment/mosquitto "$BACKUP_DIR/" || true
-ls -la "$BACKUP_DIR" | cat
-```
-
-Schedule with cron:
-```bash
-(crontab -l 2>/dev/null; echo "30 2 * * * /bin/bash ~/backup-iot.sh") | crontab -
-```
-
-### 4.6 Monitoring basics
-
-- Use Grafana dashboards for system metrics (optional: add node-exporter stack later).
-- Watch `docker stats` for resource spikes.
-- Tail Nginx and service logs during changes.
+Mikrus specifics:
+- Use ports `20108` (HTTP) and `30108` (future HTTPS) with Nginx path-based routing
+- MQTT on `40098/tcp`
 
 ---
 
-### Use in Cursor - security audit
+## Step 1 – SSH and firewall recap
 
-```markdown
-Ask Cursor to:
-- Inspect UFW rules and Fail2ban status, summarize open ports and active jails
-- Review Mosquitto config for allow_anonymous and ACL presence
-- Verify Grafana admin password rotation steps are documented
+Already applied in Step 1:
+- SSH custom port `10108`, fail2ban jail for `10108,22`
+- UFW allow: `10108/tcp`, `20108/tcp`, `30108/tcp`, `40098/tcp` (+ IPv6)
+
+Validate:
+```bash
+sudo ufw status numbered | sed -n '1,120p'
+sudo fail2ban-client status sshd | sed -n '1,80p'
+```
+
+---
+
+## Step 2 – Mosquitto hardening
+
+Passwords and ACLs:
+```bash
+# Create/update MQTT password file (inside repo paths if bind-mounted)
+sudo mosquitto_passwd -c /mosquitto/config/passwd admin
+
+# Example ACL file (restrict topics by user)
+sudo tee /mosquitto/config/acl >/dev/null <<'EOF'
+user admin
+topic readwrite devices/#
+EOF
+```
+
+Restart Mosquitto:
+```bash
+docker compose restart mosquitto
+```
+
+Expected: Mosquitto reloads and accepts admin auth on allowed topics.
+
+---
+
+## Step 3 – Grafana admin and data source
+
+Change admin password on first login (or via env vars for provisioning). In production, avoid default `admin/admin`.
+
+Verify data source points to InfluxDB at `http://influxdb:8086` with correct org/bucket/token.
+
+---
+
+## Step 4 – InfluxDB tokens and retention
+
+Use scoped tokens for writes vs. reads. Rotate tokens periodically.
+
+Retention policies: consider a shorter retention for noisy measurements and longer for aggregated data.
+
+---
+
+## Step 5 – Backups
+
+Snapshot volumes for persistence. From VPS:
+
+```bash
+cd ~/plat-edu-bad-data-mvp
+
+# Create a dated backup archive (adjust volume paths if using bind mounts)
+sudo tar -czf backup-$(date +%Y%m%d).tar.gz \
+  influxdb/ grafana/ mosquitto/ node-red/
+
+ls -lh backup-*.tar.gz | tail -n 1
+```
+
+Expected: A `.tar.gz` with configuration and data directories.
+
+Restore test (separate environment recommended): extract archive and point services to restored volumes.
+
+Scheduling: configure `cron` to run the backup daily/weekly and copy off-server (e.g., S3, remote SCP).
+
+---
+
+## Step 6 – Basic monitoring
+
+- Enable healthchecks in Compose where possible
+- Use Grafana alerts (optional) for key panels
+- Periodically review `docker compose logs` for anomalies
+
+---
+
+## Step 7 – CI/CD secrets hygiene
+
+- Store secrets in repository or organization secrets (GitHub)
+- Avoid plaintext secrets in workflow YAML
+- Limit token scopes; audit Actions permissions
+
+---
+
+## 🧩 Use in Cursor (prompt)
+```text
+Review Mosquitto ACL and password configuration. Suggest improvements to restrict topics per user and enforce least privilege for common device roles.
 ```
 
 

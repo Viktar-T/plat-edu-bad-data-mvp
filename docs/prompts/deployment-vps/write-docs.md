@@ -13,7 +13,6 @@ Global writing requirements
 - Use clear, numbered step sections with headings: `## Step 1 – ...`.
 - For every command, explain what it does and expected output.
 - Prefer Windows PowerShell syntax and paths when applicable.
-- Include ready-to-use AI prompts for Cursor IDE where it helps automate or verify steps.
 - Add explanation. Keep the language intermediate friendly but technically accurate.
 - Use descriptive anchor links when referencing external docs.
 - Where choices exist, provide a “recommended default.”
@@ -23,6 +22,10 @@ Global writing requirements
 - Reflect Mikrus specifics: standard ports 80/443 are not available; use Mikrus defaults `20108` (HTTP) and `30108` (HTTPS) via Nginx reverse proxy with path-based routing (`/grafana`, `/nodered`, `/influxdb`).
 - Document IoT port usage: MQTT uses custom Mikrus TCP port `40098`.
 - Current deployment excludes Express/React; only Mosquitto, Node-RED, InfluxDB 2.x, Grafana, and Nginx are deployed.
+
+- Always provide two deployment tracks with clear, step-by-step instructions:
+  - For Manual Deployments: use the existing PowerShell scripts (`scripts/dev-local.ps1`, `scripts/deploy-production.ps1`) and include a direct GitHub‑clone alternative on the VPS. Show exact commands, expected results, and verification checks.
+  - For CI/CD Pipeline: include a GitHub Actions workflow example (YAML), required repository secrets, branch triggers, and the VPS side steps (`git pull`, `docker-compose` lifecycle). Explain rollback, versioning by commit SHA, and environment secrets handling. Do not include real secrets.
 
 Repository context (read-only)
 - Root has `docker-compose.yml`, service directories: `influxdb`, `mosquitto`, `node-red`, `grafana`; Node-RED flows under `node-red/flows`; Grafana dashboards under `grafana/dashboards`.
@@ -51,7 +54,9 @@ Deliverable structure and content requirements
     - Local development: standard ports (1883 MQTT, 9001 WS, 8086 InfluxDB, 1880 Node-RED, 3000 Grafana).
     - Production: Nginx reverse proxy on `20108`/`30108` with path-based routing; MQTT on `40098`.
   - Persistence volumes for all stateful services.
-  - Cursor prompts to generate `.env`, audit ports/volumes, and check compose file.
+  - Two subsections with full procedures:
+    - For Manual Deployments: packaging with `deploy-production.ps1`, transferring to VPS, and deploying; plus an alternate path using direct `git clone` on VPS with minimal steps.
+    - For CI/CD Pipeline: repository layout expectations, creating a GitHub Actions workflow to SSH into the VPS and run `git pull` + `docker-compose` commands, required secrets, and safety checks.
 
 3) `docs/prompts/deployment-vps/03-deployment-and-operations.md`
 - Goal: Deploy and operate the stack.
@@ -61,7 +66,9 @@ Deliverable structure and content requirements
   - Start/stop/restart flows; enabling auto-start on reboot.
   - Quick sanity tests: access Grafana `/grafana`, Node-RED `/nodered`, InfluxDB `/influxdb` via `http://<HOST>:20108/...`; verify Mosquitto on port `40098`.
   - Note: Express/React are currently not deployed; Nginx default route redirects to `/grafana/`.
-  - Cursor prompts to stream logs, collect diagnostics, and generate an operations checklist.
+  - Two subsections:
+    - For Manual Deployments: exact operational commands (`docker-compose` lifecycle, logs, updates) and verification steps.
+    - For CI/CD Pipeline: how to trigger deployments on push/merge, how to confirm success from CI logs, and a rollback procedure using previous commit SHA.
 
 4) `docs/prompts/deployment-vps/04-security-backups-and-monitoring.md`
 - Goal: Apply essential security hardening and backups.
@@ -70,8 +77,8 @@ Deliverable structure and content requirements
   - Secure defaults for Mosquitto (ACLs, passwords), Grafana admin password management, InfluxDB token handling.
   - Backup strategy: volumes and configuration for InfluxDB, Grafana, Node-RED, Mosquitto; scheduled backups and restore testing.
   - Reverse proxy and TLS guidance (Nginx) with recommended defaults; path-based routing and CORS where needed.
-  - Cursor prompts to audit security (ports, users, ACLs) and to validate backup integrity.
   - UFW baseline: allow `10108/tcp` (SSH), `20108/tcp` (HTTP via Nginx), `30108/tcp` (HTTPS future), `40098/tcp` (MQTT); include IPv6 equivalents. Fail2ban jail for ports `10108,22`.
+  - For CI/CD Pipeline: describe storing secrets in repository secrets, avoiding plaintext in workflows, and auditing actions permissions.
 
 5) `docs/prompts/deployment-vps/05-validation-testing-and-troubleshooting.md`
 - Goal: Validate end-to-end data flow and fix common issues.
@@ -79,23 +86,16 @@ Deliverable structure and content requirements
   - Test MQTT publish/subscribe, Node-RED flow checks, InfluxDB write/read queries, Grafana dashboard validation.
   - Common problems and fixes (ports in use, permission issues, missing volumes, healthcheck failures).
   - Performance sanity checks and simple load tests; how to collect evidence when opening an issue.
-  - Cursor prompts to generate test payloads, Influx queries, and to run a config audit.
+  - Two approaches:
+    - For Manual Deployments: shell commands to validate services, endpoints, and data paths.
+    - For CI/CD Pipeline: add workflow steps to run endpoint checks post-deploy and surface failures in CI logs.
 
-AI prompts to include within the docs
-- Provide short “Use in Cursor” blocks that the reader can paste to:
-  - Validate environment (versions, ports open, ssh connectivity).
-  - Generate initial `.env.local` from `env.example` (local) and verify `.env.production` (production) are present.
-  - Inspect docker logs for health signals.
-  - Produce test MQTT payloads and Influx queries.
-  - Run a config audit (ports, volumes, healthchecks, restart policies).
-  - Verify kernel parameter values applied (selected `sysctl` keys only) and audit UFW port rules.
 
 Quality bar (acceptance criteria)
 - README plus the five step files exist and are complete, self-contained, and consistent.
 - Headings follow `## Step N – …` style; each command has a purpose and expected result.
 - Commands favor Windows PowerShell for local steps; bash on VPS for remote steps.
 - Paths match repo reality: `docs/prompts/deployment-vps/...`.
-- Includes AI prompts where needed in files to delegate task/step to AI.
 - Beginner-to-intermediate friendly, but technically correct; no dead links; URLs use descriptive anchors.
 - No unresolved TODOs; placeholders are used consistently and explained; never include real secrets.
 - Internal links resolve.

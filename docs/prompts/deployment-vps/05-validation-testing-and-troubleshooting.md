@@ -1,73 +1,109 @@
-## Step 5 - Validation, Testing, and Troubleshooting
+# 🧪 Step 5 – Validation, Testing, and Troubleshooting
 
-Goal: validate end-to-end data flow and resolve common issues.
+Goal: Validate end-to-end data flow and resolve common issues. Include performance sanity checks and evidence collection.
 
-### 5.1 Quick endpoint checks (bash)
-
-```bash
-curl -I http://<HOST>:20108/grafana | head -n1
-curl -I http://<HOST>:20108/nodered | head -n1
-curl -I http://<HOST>:20108/influxdb | head -n1
-```
-
-Expect HTTP 200/302 responses.
-
-### 5.2 MQTT broker test
-
-```bash
-sudo apt update && sudo apt install -y mosquitto-clients
-mosquitto_sub -h <HOST> -p 40098 -t "test/topic" -u <MQTT_USER> -P <MQTT_PASS> -v &
-sleep 1
-mosquitto_pub -h <HOST> -p 40098 -t "test/topic" -m "hello" -u <MQTT_USER> -P <MQTT_PASS>
-```
-
-Expect subscriber output to show the published message.
-
-### 5.3 InfluxDB write/read sanity
-
-```bash
-curl -s -i -XPOST "http://<HOST>:20108/influxdb/api/v2/write?org=<ORG>&bucket=<BUCKET>&precision=s" \
-  --header "Authorization: Token <TOKEN>" \
-  --data-binary "demo,source=smoke value=1 $(date +%s)"
-
-curl -s -XPOST "http://<HOST>:20108/influxdb/api/v2/query?org=<ORG>" \
-  --header "Authorization: Token <TOKEN>" \
-  --header "Accept: application/csv" \
-  --header 'Content-type: application/vnd.flux' \
-  --data 'from(bucket:"<BUCKET>") |> range(start:-10m) |> filter(fn:(r)=> r._measurement=="demo")' | head -n 20
-```
-
-Expect recent rows with measurement `demo`.
-
-### 5.4 Node-RED UI check
-
-Open `http://<HOST>:20108/nodered` and confirm flows load and deploy.
-
-### 5.5 Common issues and fixes
-
-- Nothing on 20108: ensure Nginx is running and published; check UFW.
-- 502/504 from Nginx: target service unhealthy; check `docker-compose logs`.
-- MQTT connect fails: confirm 40098 open, credentials correct; check Mosquitto logs.
-- InfluxDB auth errors: verify token/org/bucket; check service logs.
-- Volume permission errors: verify ownership and mapping paths.
-
-### 5.6 Performance sanity checks
-
-```bash
-docker stats --no-stream
-sudo netstat -tlnp | grep -E ':(10108|20108|30108|40098)'
-```
+Mikrus specifics:
+- Web via Nginx path-based routing on `20108`
+- MQTT on `40098/tcp`
 
 ---
 
-### Use in Cursor - validation pack
+## Step 1 – MQTT publish/subscribe
 
-```markdown
-Ask Cursor to:
-- Generate a single block to curl-check /grafana, /nodered, /influxdb
-- Produce a mosquitto_pub/sub test with placeholders for creds
-- Emit a Flux query to validate a measurement exists and return last 5 rows
-- Scan recent logs for errors: `docker-compose logs --tail 200 | rg -i "(error|fail|warn)"`
+From your local machine (ports must be open on VPS firewall):
+
+```bash
+# Subscribe
+mosquitto_sub -h <HOST> -p 40098 -u admin -P <MQTT_PASSWORD> -t devices/# -v
+
+# In another shell, publish a test message
+mosquitto_pub -h <HOST> -p 40098 -u admin -P <MQTT_PASSWORD> -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
+```
+
+Expected: Subscriber prints the published JSON.
+
+---
+
+## Step 2 – Node-RED flow check
+
+Open `http://<HOST>:20108/nodered` and confirm:
+- Flows are deployed
+- MQTT input nodes are connected
+- Debug nodes print incoming messages
+
+---
+
+## Step 3 – InfluxDB write/read
+
+Example write via HTTP API (from VPS):
+
+```bash
+curl -i -X POST "http://localhost:8086/api/v2/write?org=<ORG>&bucket=<BUCKET>&precision=ns" \
+  --header "Authorization: Token <INFLUXDB_TOKEN>" \
+  --data-binary "test_measurement,device_id=test value=1i"
+```
+
+Expected: `HTTP/1.1 204 No Content`.
+
+Query (Flux):
+
+```bash
+curl -s -G "http://localhost:8086/api/v2/query?org=<ORG>" \
+  --header "Authorization: Token <INFLUXDB_TOKEN>" \
+  --header "Accept: application/csv" \
+  --data-urlencode 'query=from(bucket:"<BUCKET>") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == "test_measurement")' | sed -n '1,80p'
+```
+
+Expected: CSV rows containing `test_measurement`.
+
+---
+
+## Step 4 – Grafana dashboards
+
+Open `http://<HOST>:20108/grafana` and verify:
+- InfluxDB datasource is healthy
+- Core dashboards load without errors
+- Panels show recent data (e.g., last 15m)
+
+---
+
+## Step 5 – Performance sanity checks
+
+```bash
+htop | sed -n '1,40p'
+df -h | sed -n '1,80p'
+free -h | sed -n '1,80p'
+docker stats --no-stream | sed -n '1,120p'
+```
+
+Expected: CPU/memory within VPS limits, sufficient disk space, container usage reasonable.
+
+---
+
+## Step 6 – Common problems and fixes
+
+- Ports blocked: verify UFW allows `10108`, `20108`, `30108`, `40098`
+- Containers restarting: inspect logs and healthchecks, fix config typos
+- Permission denied on volumes: ensure correct ownership/paths
+- DNS/resolution issues: test `nslookup`/`ping` from VPS
+
+---
+
+## Step 7 – Evidence collection when opening an issue
+
+```bash
+docker compose ps | cat
+docker compose logs --tail=200 | sed -n '1,200p'
+sudo journalctl -xe | sed -n '1,120p'
+```
+
+Attach outputs, describe steps to reproduce, include commit SHA.
+
+---
+
+## 🧩 Use in Cursor (prompt)
+```text
+Run end-to-end checks: MQTT pub/sub, Node-RED MQTT nodes connected, InfluxDB write/read returns success, Grafana dashboards load. If any step fails, capture logs and propose a minimal fix.
 ```
 
 
