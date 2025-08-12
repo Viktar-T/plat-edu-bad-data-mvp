@@ -51,10 +51,21 @@ Expected result: No output on success. Ownership updated.
 
 ## Step 3 – Environment files are handled by scripts (no manual .env on VPS)
 
+**📝 Information Only - No Commands to Run**
+
 - Local development: `scripts/dev-local.ps1` creates `.env.local` and materializes `.env`.
 - Production: `scripts/deploy-production.ps1` uses `.env.production` during packaging/deploy.
 
-Do not manually create `.env` on the VPS unless you know you must diverge. The scripts manage consistent variables and safe defaults.
+**Important**: Do not manually create `.env` on the VPS unless you know you must diverge. The scripts manage consistent variables and safe defaults.
+
+**Validation**: You can verify this by checking that no `.env` file exists on the VPS:
+
+```bash
+# Check for any .env files (should not exist on VPS)
+ls -la | grep "\.env" || echo "No .env files found (correct)"
+```
+
+Expected output: `No .env files found (correct)`
 
 ---
 
