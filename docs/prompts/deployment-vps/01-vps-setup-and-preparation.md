@@ -27,18 +27,21 @@ VPS setup is like preparing a new computer for your specific needs. Think of it 
 **Server Information:**
 - **Hostname**: `robert108.mikrus.xyz`
 - **SSH Port**: `10108`
-- **SSH Command**: `ssh root@robert108.mikrus.xyz -p10108`
+- **SSH Command**: `ssh viktar@robert108.mikrus.xyz -p10108`
 - **Default HTTP Port**: `20108`
 - **Default HTTPS Port**: `30108`
 - **Custom IoT Ports**: `40098-40102`
 
 **Connection Details:**
 ```bash
-# Connect to your server
-ssh root@robert108.mikrus.xyz -p10108
+# Connect to your server (as viktar user)
+ssh viktar@robert108.mikrus.xyz -p10108
+
+# Connect to your server (as root user)
+ssh root@robert108.mikrus.xyz -p 10108
 
 # Or with host key verification disabled (first time only)
-ssh -o StrictHostKeyChecking=no root@robert108.mikrus.xyz -p10108
+ssh -o StrictHostKeyChecking=no viktar@robert108.mikrus.xyz -p10108
 ```
 
 ---
@@ -49,11 +52,17 @@ ssh -o StrictHostKeyChecking=no root@robert108.mikrus.xyz -p10108
 
 #### **1.1 Connect to Your VPS**
 ```bash
-# Connect to your Mikrus VPS
-ssh root@robert108.mikrus.xyz -p10108
+# Connect to your server (as viktar user)
+ssh viktar@robert108.mikrus.xyz -p10108
+
+# Connect to your server (as root user)
+ssh root@robert108.mikrus.xyz -p 10108
+
+# viktar<-->root
+su viktar
 
 # First time connection (accept host key)
-ssh -o StrictHostKeyChecking=no root@robert108.mikrus.xyz -p10108
+ssh -o StrictHostKeyChecking=no viktar@robert108.mikrus.xyz -p10108
 ```
 
 **Expected Output:**
@@ -62,7 +71,7 @@ The authenticity of host '[robert108.mikrus.xyz]:10108' can't be established.
 ED25519 key fingerprint is SHA256:gNoTnODLfmt4B0zsz5kfyrIEcKnRP839HNJh1L5L+is.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
 Warning: Permanently added '[robert108.mikrus.xyz]:10108' to the list of known hosts.
-root@robert108.mikrus.xyz's password: [Enter your password]
+viktar@robert108.mikrus.xyz's password: [Enter your password]
 ```
 
 **What this means:** You're connecting to your server for the first time. The system is asking if you trust this server (like when you connect to a new WiFi network).
@@ -78,8 +87,8 @@ pwd
 **Expected Output:**
 ```
 robert108
-root
-/root
+viktar
+/home/viktar
 ```
 
 #### **1.3 Check System Resources**
@@ -92,9 +101,9 @@ cat /proc/cpuinfo | grep "model name" | head -1
 
 **What this means:** You're checking how much memory, disk space, and what type of processor your server has. This helps you understand what your server can handle.
 
-#### **1.4 Change Root Password (Recommended)**
+#### **1.4 Change User Password (Recommended)**
 ```bash
-# Change the root password
+# Change the user password
 passwd
 ```
 
@@ -115,22 +124,26 @@ passwd
 #### **2.1 Update System Packages**
 ```bash
 # Update package list
-apt update
+sudo apt update
 
 # Upgrade installed packages
-apt upgrade -y
+sudo apt upgrade -y
 
 # Clean up package cache
-apt autoremove -y
-apt autoclean
+sudo apt autoremove -y
+sudo apt autoclean
 ```
 
 **What this means:** You're updating your server's software to the latest versions, like updating apps on your phone. This includes security updates and bug fixes.
 
+**Package Cache Cleanup Explained:**
+- **`sudo apt autoremove -y`**: Removes packages that were automatically installed as dependencies but are no longer needed (like removing empty boxes after unpacking)
+- **`sudo apt autoclean`**: Removes old package files from the cache directory to free up disk space (like clearing your browser cache)
+
 #### **2.2 Install Essential Tools**
 ```bash
 # Install essential packages
-apt install -y curl wget git htop nano vim ufw fail2ban
+sudo apt install -y curl wget git htop nano vim ufw fail2ban
 ```
 
 **Package Explanations:**
@@ -158,14 +171,14 @@ if ! command -v docker &> /dev/null; then
     
     # Download and run Docker installation script
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    sudo sh get-docker.sh
     
-    # Add root user to docker group
-    usermod -aG docker root
+    # Add viktar user to docker group
+    sudo usermod -aG docker viktar
     
     # Start and enable Docker service
-    systemctl start docker
-    systemctl enable docker
+    sudo systemctl start docker
+    sudo systemctl enable docker
     
     echo "Docker installation completed!"
 else
@@ -180,14 +193,14 @@ docker-compose --version
 **Alternative Installation Method (if official script fails):**
 ```bash
 # Install Docker using apt
-apt install -y docker.io docker-compose
+sudo apt install -y docker.io docker-compose
 
 # Start and enable Docker service
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
-# Add root user to docker group
-usermod -aG docker root
+# Add viktar user to docker group
+sudo usermod -aG docker viktar
 
 # Verify installation
 docker --version
@@ -230,16 +243,16 @@ SSH keys are like a special key card for your server:
 ssh-keygen -t ed25519 -C "your_email@example.com"
 
 # Copy public key to server
-ssh-copy-id -p 10108 root@robert108.mikrus.xyz
+ssh-copy-id -p 10108 viktar@robert108.mikrus.xyz
 
 # Test key-based login
-ssh -p 10108 root@robert108.mikrus.xyz
+ssh -p 10108 viktar@robert108.mikrus.xyz
 ```
 
 **SSH Configuration:**
 ```bash
 # Edit SSH configuration
-nano /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config
 ```
 
 **Update these settings:**
@@ -254,7 +267,7 @@ PermitRootLogin prohibit-password
 PasswordAuthentication no
 
 # Allow only specific users (if you create a non-root user)
-AllowUsers root
+AllowUsers viktar
 
 # Limit login attempts
 MaxAuthTries 3
@@ -267,25 +280,19 @@ ClientAliveCountMax 2
 **Restart SSH service:**
 ```bash
 # Restart SSH service to apply changes
-systemctl restart ssh
+sudo systemctl restart ssh
 
 # Test SSH connection (in a new terminal)
-ssh root@robert108.mikrus.xyz -p10108
+ssh viktar@robert108.mikrus.xyz -p10108
 ```
 
-### **3.3 Create Non-Root User (Recommended)**
+### **3.3 Create Non-Root User (Already Done)**
 ```bash
-# Create a new user
-adduser viktar
-
-# Add user to sudo group
-usermod -aG sudo viktar
-
-# Add user to docker group
-usermod -aG docker viktar
+# Verify current user and sudo access
+whoami
+sudo whoami
 
 # Test sudo access
-su - viktar
 sudo whoami
 ```
 
@@ -319,22 +326,22 @@ Note: Express Backend API (/api) and React Frontend (/app) are under development
 **Firewall Configuration:**
 ```bash
 # Enable UFW firewall
-ufw enable
+sudo ufw enable
 
 # Allow SSH (your custom port)
-ufw allow 10108/tcp
+sudo ufw allow 10108/tcp
 
 # Allow HTTP web services (Nginx reverse proxy)
-ufw allow 20108/tcp
+sudo ufw allow 20108/tcp
 
 # Allow HTTPS (for future SSL)
-ufw allow 30108/tcp
+sudo ufw allow 30108/tcp
 
 # Allow MQTT (IoT device communication)
-ufw allow 40098/tcp
+sudo ufw allow 40098/tcp
 
 # Check firewall status
-ufw status numbered
+sudo ufw status numbered
 ```
 
 **Expected Firewall Status Output:**
@@ -373,15 +380,25 @@ Status: active
 
 ### **3.5 Configure Fail2ban**
 ```bash
-# Configure Fail2ban for SSH protection
-nano /etc/fail2ban/jail.local
+# First, ensure Fail2ban is properly installed and initialized
+sudo apt install -y fail2ban
+
+# Start and enable Fail2ban service (this creates necessary directories)
+sudo systemctl start fail2ban
+sudo systemctl enable fail2ban
+
+# Verify Fail2ban is running
+sudo systemctl status fail2ban
+
+# Now configure Fail2ban for SSH protection
+sudo nano /etc/fail2ban/jail.local
 ```
 
 **Add this configuration:**
 ```ini
 [sshd]
 enabled = true
-port = 10108
+port = 10108,22
 filter = sshd
 logpath = /var/log/auth.log
 maxretry = 3
@@ -389,15 +406,30 @@ bantime = 3600
 findtime = 600
 ```
 
-**Start and enable Fail2ban:**
+**Restart Fail2ban to apply configuration:**
 ```bash
-# Start Fail2ban service
-systemctl start fail2ban
-systemctl enable fail2ban
+# Restart Fail2ban to load new configuration
+sudo systemctl restart fail2ban
 
 # Check Fail2ban status
-fail2ban-client status
-fail2ban-client status sshd
+sudo fail2ban-client status
+sudo fail2ban-client status sshd
+```
+
+**Alternative method if you still get permission errors:**
+```bash
+# Check if fail2ban directory exists
+sudo ls -la /etc/fail2ban/
+
+# If directory doesn't exist, create it
+sudo mkdir -p /etc/fail2ban
+
+# Set proper permissions
+sudo chown -R root:root /etc/fail2ban
+sudo chmod 755 /etc/fail2ban
+
+# Then try editing the configuration again
+sudo nano /etc/fail2ban/jail.local
 ```
 
 **What this means:** Fail2ban monitors login attempts and automatically blocks IP addresses that try to guess passwords too many times. It's like having a security guard that locks out suspicious visitors.
@@ -411,16 +443,17 @@ fail2ban-client status sshd
 # Check current swap
 free -h
 
-# Create swap file (if needed)
-if [ ! -f /swapfile ]; then
-    fallocate -l 2G /swapfile
-    chmod 600 /swapfile
-    mkswap /swapfile
-    swapon /swapfile
-    
-    # Make swap permanent
-    echo '/swapfile none swap sw 0 0' >> /etc/fstab
-fi
+# Create swap file (if needed) - Single-line format (easier to copy-paste)
+if [ ! -f /swapfile ]; then sudo fallocate -l 2G /swapfile; sudo chmod 600 /swapfile; sudo mkswap /swapfile; sudo swapon /swapfile; echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab; fi
+
+# Alternative: Multi-line format (easier to read)
+# if [ ! -f /swapfile ]; then
+#     sudo fallocate -l 2G /swapfile
+#     sudo chmod 600 /swapfile
+#     sudo mkswap /swapfile
+#     sudo swapon /swapfile
+#     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+# fi
 
 # Verify swap
 free -h
@@ -431,21 +464,22 @@ free -h
 #### **4.2 Optimize Kernel Parameters**
 ```bash
 # Edit sysctl configuration
-nano /etc/sysctl.conf
+sudo nano /etc/sysctl.conf
 ```
 
 **Add these optimizations:**
 ```bash
-# Network optimizations
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
+# Network optimizations (TCP buffers)
 net.ipv4.tcp_rmem = 4096 87380 16777216
 net.ipv4.tcp_wmem = 4096 65536 16777216
 
-# File descriptor limits
-fs.file-max = 2097152
+# Network security and ephemeral ports
+net.ipv4.ip_local_port_range = 1024 65000
+net.ipv4.tcp_syncookies = 1
 
-# Memory management
+# Note: Some parameters may be read-only or not available on all systems
+# These will be applied if available, ignored if not:
+fs.file-max = 2097152
 vm.swappiness = 10
 vm.dirty_ratio = 15
 vm.dirty_background_ratio = 5
@@ -454,160 +488,77 @@ vm.dirty_background_ratio = 5
 **Apply changes:**
 ```bash
 # Apply sysctl changes
-sysctl -p
+sudo sysctl -p
 ```
 
 **What this means:** These settings optimize how your server handles network connections, file operations, and memory management. It's like tuning a car for better performance.
 
+**Kernel Parameter Optimizations Explained:**
+
+**Network Optimizations:**
+- **`net.ipv4.tcp_rmem = 4096 87380 16777216`**: TCP receive buffer sizes (min, default, max) - optimizes TCP connections
+- **`net.ipv4.tcp_wmem = 4096 65536 16777216`**: TCP send buffer sizes (min, default, max) - optimizes TCP data sending
+- **`net.ipv4.ip_local_port_range = 1024 65000`**: Wider ephemeral port range for many outbound connections
+- **`net.ipv4.tcp_syncookies = 1`**: Enables SYN cookies to mitigate SYN flood attacks
+
+**File System Optimizations:**
+- **`fs.file-max = 2097152`**: Maximum number of open files (2 million) - prevents "too many open files" errors
+
+**Memory Management Optimizations:**
+- **`vm.swappiness = 10`**: How aggressively to use swap (0-100, lower = less swap usage) - keeps more data in RAM
+- **`vm.dirty_ratio = 15`**: Percentage of memory that can be dirty before forcing writes - balances performance and data safety
+- **`vm.dirty_background_ratio = 5`**: Percentage of memory that can be dirty before background writes start - prevents memory buildup
+
+**Benefits for Your IoT System:**
+- **Better Network Performance**: Handles multiple IoT device connections efficiently
+- **Improved Data Processing**: Faster file operations for time-series data
+- **Memory Efficiency**: Optimized RAM usage for database operations
+- **System Stability**: Prevents common resource exhaustion issues
+
+**Verify applied values (optional):**
+```bash
+sudo sysctl net.ipv4.tcp_rmem net.ipv4.tcp_wmem \
+  net.ipv4.ip_local_port_range net.ipv4.tcp_syncookies
+```
+
+**Optional: Modern TCP congestion control (BBR)**
+BBR can improve throughput and latency on many networks. Check support before enabling:
+```bash
+sysctl net.ipv4.tcp_available_congestion_control
+lsmod | grep bbr || true
+```
+If `bbr` is available, you can add the following to `/etc/sysctl.conf` and re-apply:
+```bash
+net.core.default_qdisc = fq
+net.ipv4.tcp_congestion_control = bbr
+```
+Then verify:
+```bash
+sysctl net.ipv4.tcp_congestion_control
+```
+
+**Note on per-service limits:**
+Some parameters like `fs.file-max`, `vm.swappiness`, etc. may be read-only on your system. If you encounter "too many open files" errors in services, you can raise per-process limits in Docker Compose:
+```yaml
+ulimits:
+  nofile:
+    soft: 1048576
+    hard: 1048576
+```
+
 ---
+
+
 
 ## Step 5 – Environment Variables Setup
 
-#### **5.1 Create Environment File**
-```bash
-# Create environment file
-nano .env
-```
+**✅ Environment variables are handled automatically by your deployment scripts:**
 
-**Production Environment Configuration:**
-```bash
-# =============================================================================
-# PRODUCTION ENVIRONMENT VARIABLES
-# Renewable Energy IoT Monitoring System - Mikrus VPS
-# =============================================================================
+- **Local Development**: `scripts/dev-local.ps1` creates `.env.local` from `env.example`
+- **Production Deployment**: `scripts/deploy-production.ps1` uses `.env.production`
 
-# Server Configuration
-SERVER_IP=robert108.mikrus.xyz
-SERVER_PORT=10108
+**No manual environment setup required!** Your scripts handle everything automatically.
 
-# MQTT Configuration (Custom Port for Mikrus VPS)
-MQTT_PORT=40098          # Custom port instead of 1883
-MQTT_ADMIN_USER=admin
-MQTT_ADMIN_PASSWORD=admin_password_456
-
-# InfluxDB Configuration (Custom Port for Mikrus VPS)
-INFLUXDB_PORT=40100      # Custom port instead of 8086
-INFLUXDB_ADMIN_USER=admin
-INFLUXDB_ADMIN_PASSWORD=admin_password_123
-INFLUXDB_ADMIN_TOKEN=renewable_energy_admin_token_123
-INFLUXDB_ORG=renewable_energy_org
-INFLUXDB_BUCKET=renewable_energy
-INFLUXDB_RETENTION=7d
-
-# Node-RED Configuration (Custom Port for Mikrus VPS)
-NODE_RED_PORT=40099      # Custom port instead of 1880
-NODE_RED_USERNAME=admin
-NODE_RED_PASSWORD=adminpassword
-NODE_RED_OPTIONS=--max-old-space-size=256
-
-# Grafana Configuration (Custom Port for Mikrus VPS)
-GRAFANA_PORT=40101       # Custom port instead of 3000
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=admin
-GF_SERVER_ROOT_URL=http://robert108.mikrus.xyz:40101
-GF_SERVER_MAX_CONCURRENT_REQUESTS=100
-GF_SERVER_MAX_CONCURRENT_REQUESTS_PER_USER=10
-
-# Web Application Configuration (Custom Port for Mikrus VPS)
-EXPRESS_PORT=40102       # Custom port instead of 3001
-REACT_APP_API_URL=http://robert108.mikrus.xyz:20113
-
-# HTTP/HTTPS Configuration (Using Default Mikrus Ports)
-HTTP_PORT=20108          # Default Mikrus HTTP port
-HTTPS_PORT=30108         # Default Mikrus HTTPS port
-
-# Nginx Reverse Proxy Configuration
-NGINX_HTTP_PORT=20108    # Nginx HTTP port (Mikrus default)
-NGINX_HTTPS_PORT=30108   # Nginx HTTPS port (Mikrus default)
-
-# Network Configuration
-DOCKER_NETWORK_NAME=iot-network
-DOCKER_NETWORK_SUBNET=172.20.0.0/16
-
-# Security Settings
-SSL_ENABLED=false
-API_RATE_LIMIT=1000
-API_RATE_LIMIT_WINDOW=1m
-
-# Performance Settings
-HEALTH_CHECK_INTERVAL=30s
-HEALTH_CHECK_TIMEOUT=10s
-HEALTH_CHECK_RETRIES=3
-
-# Logging Settings
-LOG_LEVEL=info
-LOG_MAX_SIZE=100m
-LOG_MAX_FILES=5
-```
-
-**Environment Variables Explained:**
-Think of environment variables like the settings on your phone:
-- **Phone Settings**: Control how your phone behaves (brightness, volume, WiFi)
-- **Environment Variables**: Control how your applications behave (database connection, passwords, URLs)
-
-**Key Variables for Your IoT System:**
-
-| Variable | Purpose | Value | Notes |
-|----------|---------|-------|-------|
-| **SERVER_IP** | Your server's address | robert108.mikrus.xyz | Your Mikrus hostname |
-| **MQTT_PORT** | MQTT broker port | 40098 | IoT device communication |
-| **NGINX_HTTP_PORT** | Web services port | 20108 | All web apps via proxy |
-| **NGINX_HTTPS_PORT** | Secure web port | 30108 | Future SSL setup |
-| **INFLUXDB_PORT** | Database port | 40100 | Data storage |
-| **GRAFANA_PORT** | Dashboard port | 40101 | Data visualization |
-| **EXPRESS_PORT** | Web app port | 40102 | Custom application |
-
-**Path-Based Routing Benefits:**
-- **Single Entry Point**: All web services accessible via port 20108
-- **Professional URLs**: Clean, organized structure
-- **Port Efficiency**: Saves 4 Mikrus ports
-- **SSL Ready**: Easy to add HTTPS for all services
-- **Scalable**: Easy to add new services
-
----
-
-## Step 6 – Project Directory Structure
-
-#### **6.1 Create Project Directory**
-```bash
-# Create project directory
-mkdir -p /root/renewable-energy-iot
-cd /root/renewable-energy-iot
-
-# Create subdirectories
-mkdir -p {mosquitto,influxdb,node-red,grafana,nginx,web-app-for-testing}/{config,data,logs}
-```
-
-**Directory Structure:**
-```
-/root/renewable-energy-iot/
-├── docker-compose.yml          # Main deployment configuration
-├── .env                        # Environment variables
-├── mosquitto/                  # MQTT broker configuration
-│   ├── config/                 # MQTT configuration files
-│   ├── data/                   # MQTT data storage
-│   └── logs/                   # MQTT log files
-├── influxdb/                   # Time-series database
-│   ├── config/                 # InfluxDB configuration
-│   ├── data/                   # Database files
-│   └── logs/                   # Database logs
-├── node-red/                   # Data processing flows
-│   ├── config/                 # Node-RED configuration
-│   ├── data/                   # Flow data
-│   └── logs/                   # Processing logs
-├── grafana/                    # Data visualization
-│   ├── config/                 # Grafana configuration
-│   ├── data/                   # Dashboard data
-│   └── logs/                   # Visualization logs
-├── nginx/                      # Reverse proxy configuration
-│   ├── nginx.conf              # Nginx configuration
-│   └── ssl/                    # SSL certificates (future)
-└── web-app-for-testing/        # Custom web application
-    ├── backend/                # Express.js backend
-    └── frontend/               # React frontend
-```
-
-**What this means:** This is like organizing your house into different rooms. Each service has its own space with its own files and settings.
 
 ---
 
@@ -632,13 +583,13 @@ ping -c 4 google.com
 nslookup robert108.mikrus.xyz
 
 # Check open ports
-netstat -tlnp
+sudo netstat -tlnp
 ```
 
 #### **7.3 Test Firewall Configuration**
 ```bash
 # Check firewall status
-ufw status numbered
+sudo ufw status numbered
 
 # Test port accessibility (from your local machine)
 # Use nmap or telnet to test ports
@@ -652,9 +603,9 @@ df -h
 free -h
 
 # Check service status
-systemctl status docker
-systemctl status ssh
-systemctl status fail2ban
+sudo systemctl status docker
+sudo systemctl status ssh
+sudo systemctl status fail2ban
 ```
 
 ---
@@ -663,7 +614,7 @@ systemctl status fail2ban
 
 ### **Server Setup**
 - [ ] ✅ SSH connection established
-- [ ] ✅ Root password changed
+- [ ] ✅ User password changed
 - [ ] ✅ System packages updated
 - [ ] ✅ Essential tools installed
 - [ ] ✅ Docker installed and configured
@@ -672,7 +623,7 @@ systemctl status fail2ban
 - [ ] ✅ SSH security configured
 - [ ] ✅ Firewall (UFW) configured with path-based routing
 - [ ] ✅ Fail2ban installed and configured
-- [ ] ✅ Non-root user created (optional)
+- [ ] ✅ Non-root user created and configured
 
 ### **System Optimization**
 - [ ] ✅ Swap memory configured
@@ -695,13 +646,8 @@ systemctl status fail2ban
 ## 🎯 Next Steps
 
 ### **Ready for Phase 2: Application Deployment**
-Your VPS is now prepared for deploying the renewable energy IoT monitoring system. The next phase will cover:
 
-1. **File Transfer**: Upload project files to VPS
-2. **Docker Compose**: Deploy all services with path-based routing
-3. **Service Configuration**: Configure each component
-4. **Testing**: Verify all services are working
-5. **Monitoring**: Set up health checks and logging
+
 
 ### **Access Your Services (After Deployment)**
 Once deployed, you'll access your services at:
@@ -748,7 +694,7 @@ For local development, use the provided scripts:
 htop                    # System monitoring
 df -h                   # Disk usage
 free -h                 # Memory usage
-systemctl status        # Service status
+sudo systemctl status   # Service status
 
 # Docker management
 docker ps               # Running containers
@@ -756,7 +702,7 @@ docker logs [container] # Container logs
 docker-compose logs     # All service logs
 
 # Network troubleshooting
-netstat -tlnp           # Open ports
+sudo netstat -tlnp      # Open ports
 ping [host]             # Network connectivity
 nslookup [domain]       # DNS resolution
 ```
@@ -785,41 +731,41 @@ nslookup [domain]       # DNS resolution
 **SSH Connection Problems:**
 ```bash
 # Check SSH service status
-systemctl status ssh
+sudo systemctl status ssh
 
 # Check SSH configuration
-nano /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config
 
 # Restart SSH service
-systemctl restart ssh
+sudo systemctl restart ssh
 ```
 
 **Docker Issues:**
 ```bash
 # Check Docker service
-systemctl status docker
+sudo systemctl status docker
 
 # Restart Docker
-systemctl restart docker
+sudo systemctl restart docker
 
 # Check Docker daemon logs
-journalctl -u docker
+sudo journalctl -u docker
 ```
 
 **Firewall Problems:**
 ```bash
 # Check UFW status
-ufw status numbered
+sudo ufw status numbered
 
 # Reset UFW (if needed)
-ufw reset
+sudo ufw reset
 
 # Reconfigure firewall
-ufw enable
-ufw allow 10108/tcp
-ufw allow 20108/tcp
-ufw allow 30108/tcp
-ufw allow 40098/tcp
+sudo ufw enable
+sudo ufw allow 10108/tcp
+sudo ufw allow 20108/tcp
+sudo ufw allow 30108/tcp
+sudo ufw allow 40098/tcp
 ```
 
 **Network Issues:**
@@ -835,8 +781,8 @@ nslookup robert108.mikrus.xyz
 ```
 
 ### **Getting Help**
-- Check system logs: `journalctl -xe`
-- Check service logs: `systemctl status [service]`
+- Check system logs: `sudo journalctl -xe`
+- Check service logs: `sudo systemctl status [service]`
 - Review configuration files
 - Test connectivity step by step
 - Consult Mikrus documentation
