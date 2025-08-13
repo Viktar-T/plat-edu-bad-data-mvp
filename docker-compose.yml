@@ -175,12 +175,12 @@ services:
       - iot-network
 
   # Nginx Reverse Proxy
-  nginx:
+    nginx:
     image: nginx:alpine
     container_name: iot-nginx
     ports:
       - "${NGINX_HTTP_PORT:-20108}:80"    # HTTP (Mikrus port 20108)
-      - "${NGINX_HTTPS_PORT:-30108}:443"  # HTTPS (Mikrus port 30108)
+      # - "${NGINX_HTTPS_PORT:-30108}:443"  # HTTPS (Mikrus port 30108) - DISABLED UNTIL SSL CERTIFICATES ARE CONFIGURED
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro  # For SSL certificates (optional)
