@@ -4,7 +4,8 @@ Goal: Apply essential hardening, set safe defaults, and implement backups and ba
 
 Mikrus specifics:
 - Use ports `20108` (HTTP) and `30108` (future HTTPS) with Nginx path-based routing
-- MQTT on `40098/tcp`
+- MQTT on `1883/tcp` (exposed directly)
+- **Current VPS**: robert108.mikrus.xyz
 
 ---
 
@@ -19,6 +20,12 @@ Validate:
 sudo ufw status numbered | sed -n '1,120p'
 sudo fail2ban-client status sshd | sed -n '1,80p'
 ```
+
+**Your current UFW status should show:**
+- `10108/tcp` (SSH)
+- `20108/tcp` (HTTP)
+- `30108/tcp` (HTTPS future)
+- `1883/tcp` (MQTT)
 
 ---
 
@@ -38,7 +45,7 @@ EOF
 
 Restart Mosquitto:
 ```bash
-docker compose restart mosquitto
+docker-compose restart mosquitto
 ```
 
 Expected: Mosquitto reloads and accepts admin auth on allowed topics.
@@ -66,7 +73,7 @@ Retention policies: consider a shorter retention for noisy measurements and long
 Snapshot volumes for persistence. From VPS:
 
 ```bash
-cd ~/plat-edu-bad-data-mvp
+cd /root/renewable-energy-iot
 
 # Create a dated backup archive (adjust volume paths if using bind mounts)
 sudo tar -czf backup-$(date +%Y%m%d).tar.gz \
@@ -87,7 +94,7 @@ Scheduling: configure `cron` to run the backup daily/weekly and copy off-server 
 
 - Enable healthchecks in Compose where possible
 - Use Grafana alerts (optional) for key panels
-- Periodically review `docker compose logs` for anomalies
+- Periodically review `docker-compose logs` for anomalies
 
 ---
 

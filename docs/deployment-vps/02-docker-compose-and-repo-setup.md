@@ -4,7 +4,8 @@ Goal: Choose your deployment approach and set up the application on the VPS.
 
 Mikrus specifics:
 - Web: `20108` (HTTP) and `30108` (HTTPS future) via Nginx path-based routing (`/grafana`, `/nodered`, `/influxdb`)
-- MQTT: `40098/tcp`
+- MQTT: `1883/tcp` (exposed directly)
+- **Current VPS**: robert108.mikrus.xyz
 - Services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx (Express/React not deployed now)
 
 ---
@@ -19,6 +20,7 @@ Mikrus specifics:
                     ▼                               ▼
     ┌─────────────────────────┐    ┌─────────────────────────┐
     │     PATH A              │    │     PATH B              │
+    │   (works well)          │    │     ()              │
     │  PowerShell Script      │    │   Direct Git            │
     │  (No VPS setup needed)  │    │  (Requires VPS setup)   │
     └─────────────────────────┘    └─────────────────────────┘
@@ -74,7 +76,7 @@ Run locally on Windows from project root:
 
 # Deploy on VPS
 # - Connects to VPS via SSH
-# - Runs: docker compose pull && docker compose up -d && docker compose ps
+# - Runs: docker-compose pull && docker-compose up -d && docker-compose ps
 # - Shows container status after deployment
 ./scripts/deploy-production.ps1 -Deploy -VpsUser root -VpsHost robert108.mikrus.xyz -VpsPort 10108
 
@@ -82,13 +84,69 @@ Run locally on Windows from project root:
 ./scripts/deploy-production.ps1 -Full
 ```
 
+### ✅ Current VPS Status (robert108.mikrus.xyz)
+
+**Successfully Deployed Services:**
+- ✅ **InfluxDB**: Running and healthy (port 8086 internal)
+- ✅ **Mosquitto**: Running and healthy (ports 1883, 9001 exposed)
+- ✅ **Node-RED**: Running and healthy (port 1880 internal)
+- ✅ **Grafana**: Running and healthy (port 3000 internal)
+- ✅ **Nginx**: Running (port 20108 exposed for web access)
+
+**Access URLs:**
+- **Grafana Dashboard**: `http://robert108.mikrus.xyz:20108/grafana/`
+- **Node-RED Editor**: `http://robert108.mikrus.xyz:20108/nodered/`
+- **InfluxDB Admin**: `http://robert108.mikrus.xyz:20108/influxdb/`
+- **MQTT Broker**: `robert108.mikrus.xyz:1883`
+- **MQTT WebSocket**: `robert108.mikrus.xyz:9001`
+
+**Default Credentials:**
+- **Grafana**: `admin` / `admin`
+- **Node-RED**: `admin` / `adminpassword`
+- **InfluxDB**: `admin` / `admin_password_123`
+- **MQTT**: `admin` / `admin_password_456`
+
+### 🚨 Issues Encountered and Resolved
+
+**1. Docker Compose Not Installed**
+- **Issue**: `docker: 'compose' is not a docker command`
+- **Solution**: Updated `scripts/deploy-production.ps1` to automatically install Docker Compose if missing
+- **Fix**: Added Docker Compose installation check and fallback to `docker-compose` command
+
+**2. Permission Issues with Grafana and Node-RED**
+- **Issue**: Services restarting due to permission denied errors
+- **Solution**: Fixed data directory permissions
+- **Fix**: 
+  ```bash
+  sudo chown -R 472:472 grafana/data
+  sudo chown -R 1000:1000 node-red/data
+  ```
+
+**3. Nginx Container Name Mismatch**
+- **Issue**: Nginx couldn't reach services due to wrong container names in configuration
+- **Solution**: Updated Nginx upstream definitions
+- **Fix**: Changed container names in `nginx/nginx.conf`:
+  - `grafana:3000` → `iot-grafana:3000`
+  - `node-red:1880` → `iot-node-red:1880`
+  - `influxdb:8086` → `iot-influxdb2:8086`
+
+**4. SSL Configuration Issues**
+- **Issue**: Nginx failing due to SSL certificate configuration
+- **Solution**: Temporarily disabled HTTPS server block
+- **Fix**: Commented out HTTPS configuration until SSL certificates are configured
+
+**5. Docker Compose YAML Syntax Errors**
+- **Issue**: Invalid YAML due to indentation problems
+- **Solution**: Fixed indentation in docker-compose.yml
+- **Fix**: Corrected nginx service indentation and commented out HTTPS port mapping
+
 ### Step 2: Verify Deployment
 
 ```bash
 # SSH as root to check deployment
 ssh root@robert108.mikrus.xyz -p10108
 cd /root/renewable-energy-iot
-docker compose ps | cat
+docker-compose ps | cat
 ```
 
 **Location**: `/root/renewable-energy-iot` (separate deployment directory)
@@ -152,7 +210,7 @@ Check for:
 cd ~/plat-edu-bad-data-mvp
 
 # Start services
-docker compose up -d
+docker-compose up -d
 ```
 
 ### Step 5: Verify Deployment
@@ -165,7 +223,7 @@ docker compose ps | cat
 ```
 
 **Location**: `/home/viktar/plat-edu-bad-data-mvp` (Git repository directly)
-**Updates**: `git pull --ff-only` then `docker compose up -d`
+**Updates**: `git pull --ff-only` then `docker-compose up -d`
 
 ---
 
@@ -231,9 +289,9 @@ jobs:
             set -e; \
             cd ~/plat-edu-bad-data-mvp; \
             git pull --ff-only; \
-            docker compose pull; \
-            docker compose up -d; \
-            docker compose ps \
+            docker-compose pull; \
+            docker-compose up -d; \
+            docker-compose ps \
           "
 ```
 
@@ -247,10 +305,10 @@ Required repository secrets:
 
 ```bash
 # Check container status
-docker compose ps | cat
+docker-compose ps | cat
 
 # Check recent logs
-docker compose logs --tail=50 | sed -n '1,120p'
+docker-compose logs --tail=50 | sed -n '1,120p'
 ```
 
 You should see healthy/starting states and recent logs for all services.

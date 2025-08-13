@@ -30,7 +30,7 @@ VPS setup is like preparing a new computer for your specific needs. Think of it 
 - **SSH Command**: `ssh viktar@robert108.mikrus.xyz -p10108`
 - **Default HTTP Port**: `20108`
 - **Default HTTPS Port**: `30108`
-- **Custom IoT Ports**: `40098-40102`
+- **Custom IoT Ports**: `1883` (MQTT), `40098-40102` (additional IoT ports)
 
 **Connection Details:**
 ```bash
@@ -320,7 +320,7 @@ Your Mikrus VPS uses a **path-based routing approach** with Nginx reverse proxy,
 **Port Strategy:**
 - **SSH**: Port `10108` (your custom SSH port)
 - **Web Services**: Port `20108` (all web apps via Nginx proxy)
-- **MQTT**: Port `40098` (IoT device communication)
+- **MQTT**: Port `1883` (IoT device communication)
 - **HTTPS**: Port `30108` (for future SSL setup)
 
 **URL Structure (current):**
@@ -346,7 +346,7 @@ sudo ufw allow 20108/tcp
 sudo ufw allow 30108/tcp
 
 # Allow MQTT (IoT device communication)
-sudo ufw allow 40098/tcp
+sudo ufw allow 1883/tcp
 
 # Enable UFW firewall
 sudo ufw enable
@@ -365,12 +365,12 @@ Status: active
 [ 2] 10108/tcp                  ALLOW IN    Anywhere
 [ 3] 20108/tcp                  ALLOW IN    Anywhere
 [ 4] 30108/tcp                  ALLOW IN    Anywhere
-[ 5] 40098/tcp                  ALLOW IN    Anywhere
+[ 5] 1883/tcp                   ALLOW IN    Anywhere
 [ 6] 22 (v6)                    ALLOW IN    Anywhere (v6)
 [ 7] 10108/tcp (v6)             ALLOW IN    Anywhere (v6)
 [ 8] 20108/tcp (v6)             ALLOW IN    Anywhere (v6)
 [ 9] 30108/tcp (v6)             ALLOW IN    Anywhere (v6)
-[10] 40098/tcp (v6)             ALLOW IN    Anywhere (v6)
+[10] 1883/tcp (v6)              ALLOW IN    Anywhere (v6)
 ```
 
 **📝 Notes on Your Firewall Configuration:**
@@ -378,7 +378,7 @@ Status: active
 - **Port 10108**: Your custom SSH port (primary access method)
 - **Port 20108**: Nginx reverse proxy for all web services
 - **Port 30108**: HTTPS port for future SSL setup
-- **Port 40098**: MQTT broker for IoT device communication
+- **Port 1883**: MQTT broker for IoT device communication
 - **IPv6 Support**: All ports are also open for IPv6 (modern networking)
 - **Port Efficiency**: Only 4 ports needed instead of 8+ with separate ports
 
@@ -671,7 +671,7 @@ Planned (not yet deployed):
 - React Frontend at `/app`
 
 **📡 IoT Services:**
-- **MQTT Broker**: `robert108.mikrus.xyz:40098`
+- **MQTT Broker**: `robert108.mikrus.xyz:1883`
 
 **🔑 Default Credentials:**
 - **Grafana**: `admin` / `admin`
@@ -777,7 +777,7 @@ sudo ufw enable
 sudo ufw allow 10108/tcp
 sudo ufw allow 20108/tcp
 sudo ufw allow 30108/tcp
-sudo ufw allow 40098/tcp
+sudo ufw allow 1883/tcp
 ```
 
 **Network Issues:**

@@ -4,7 +4,8 @@ Goal: Validate end-to-end data flow and resolve common issues. Include performan
 
 Mikrus specifics:
 - Web via Nginx path-based routing on `20108`
-- MQTT on `40098/tcp`
+- MQTT on `1883/tcp` (exposed directly)
+- **Current VPS**: robert108.mikrus.xyz
 
 ---
 
@@ -13,23 +14,26 @@ Mikrus specifics:
 From your local machine (ports must be open on VPS firewall):
 
 ```bash
-# Subscribe
-mosquitto_sub -h <HOST> -p 40098 -u admin -P <MQTT_PASSWORD> -t devices/# -v
+# Subscribe (using your VPS details)
+mosquitto_sub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/# -v
 
 # In another shell, publish a test message
-mosquitto_pub -h <HOST> -p 40098 -u admin -P <MQTT_PASSWORD> -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
+mosquitto_pub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
 ```
 
 Expected: Subscriber prints the published JSON.
+
+**Note**: Your VPS uses port `1883` for MQTT (not `40098` as originally planned).
 
 ---
 
 ## Step 2 – Node-RED flow check
 
-Open `http://<HOST>:20108/nodered` and confirm:
+Open `http://robert108.mikrus.xyz:20108/nodered` and confirm:
 - Flows are deployed
 - MQTT input nodes are connected
 - Debug nodes print incoming messages
+- Login with: `admin` / `adminpassword`
 
 ---
 
@@ -60,10 +64,11 @@ Expected: CSV rows containing `test_measurement`.
 
 ## Step 4 – Grafana dashboards
 
-Open `http://<HOST>:20108/grafana` and verify:
+Open `http://robert108.mikrus.xyz:20108/grafana` and verify:
 - InfluxDB datasource is healthy
 - Core dashboards load without errors
 - Panels show recent data (e.g., last 15m)
+- Login with: `admin` / `admin`
 
 ---
 
@@ -82,18 +87,64 @@ Expected: CPU/memory within VPS limits, sufficient disk space, container usage r
 
 ## Step 6 – Common problems and fixes
 
-- Ports blocked: verify UFW allows `10108`, `20108`, `30108`, `40098`
-- Containers restarting: inspect logs and healthchecks, fix config typos
-- Permission denied on volumes: ensure correct ownership/paths
-- DNS/resolution issues: test `nslookup`/`ping` from VPS
+### Deployment Issues (Path A - PowerShell)
+
+**Docker Compose Not Found:**
+```bash
+# Error: docker: 'compose' is not a docker command
+# Solution: The deployment script now automatically installs Docker Compose
+# If manual installation needed:
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+```
+
+**Permission Issues (Grafana/Node-RED restarting):**
+```bash
+# Error: Permission denied on /var/lib/grafana/plugins
+# Solution: Fix data directory permissions
+sudo chown -R 472:472 grafana/data
+sudo chown -R 1000:1000 node-red/data
+```
+
+**Nginx Container Name Mismatch:**
+```bash
+# Error: 404 Not Found when accessing /grafana/
+# Solution: Update nginx/nginx.conf upstream definitions
+# Change container names:
+# grafana:3000 → iot-grafana:3000
+# node-red:1880 → iot-node-red:1880
+# influxdb:8086 → iot-influxdb2:8086
+```
+
+**SSL Configuration Issues:**
+```bash
+# Error: nginx: [emerg] no "ssl_certificate" is defined
+# Solution: Comment out HTTPS server block in nginx/nginx.conf
+# Until SSL certificates are configured
+```
+
+**Docker Compose YAML Errors:**
+```bash
+# Error: The Compose file './docker-compose.yml' is invalid
+# Solution: Fix indentation and comment out HTTPS port mapping
+# Ensure nginx service is properly indented
+```
+
+### General Issues
+
+- **Ports blocked**: verify UFW allows `10108`, `20108`, `30108`, `1883`
+- **Containers restarting**: inspect logs and healthchecks, fix config typos
+- **Permission denied on volumes**: ensure correct ownership/paths
+- **DNS/resolution issues**: test `nslookup`/`ping` from VPS
 
 ---
 
 ## Step 7 – Evidence collection when opening an issue
 
 ```bash
-docker compose ps | cat
-docker compose logs --tail=200 | sed -n '1,200p'
+docker-compose ps | cat
+docker-compose logs --tail=200 | sed -n '1,200p'
+```
 sudo journalctl -xe | sed -n '1,120p'
 ```
 

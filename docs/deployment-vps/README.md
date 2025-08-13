@@ -20,9 +20,12 @@ Expected result:
 - Services are started via Docker Compose on the VPS
 
 Then access services:
-- Grafana: `http://<HOST>:20108/grafana`
-- Node-RED: `http://<HOST>:20108/nodered`
-- InfluxDB: `http://<HOST>:20108/influxdb`
+- Grafana: `http://robert108.mikrus.xyz:20108/grafana`
+- Node-RED: `http://robert108.mikrus.xyz:20108/nodered`
+- InfluxDB: `http://robert108.mikrus.xyz:20108/influxdb`
+- MQTT: `robert108.mikrus.xyz:1883`
+
+**Status**: ✅ Successfully deployed and running
 
 ## 📄 Files in this folder
 
@@ -30,7 +33,7 @@ Then access services:
   - Prepare VPS: users, SSH, firewall, Fail2ban, Docker, kernel tuning. Status: ✅ Completed.
 
 - [02-docker-compose-and-repo-setup.md](./02-docker-compose-and-repo-setup.md)
-  - Get the application onto the VPS; repository cloning; Docker Compose configuration; environment files via scripts; manual and CI/CD setup.
+  - Get the application onto the VPS; repository cloning; Docker Compose configuration; environment files via scripts; manual and CI/CD setup. Status: ✅ Completed (Path A - PowerShell).
 
 - [03-deployment-and-operations.md](./03-deployment-and-operations.md)
   - Start, stop, and verify containers; logs and health; sanity checks; operational commands for manual and CI/CD flows.
@@ -43,8 +46,9 @@ Then access services:
 
 ## 🧭 Mikrus specifics
 - Standard ports 80/443 are blocked. Use 20108 (HTTP) and 30108 (HTTPS) behind Nginx path-based routing.
-- MQTT runs on 40098/TCP.
+- MQTT runs on 1883/TCP (exposed directly, not through Nginx).
 - Current production scope: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, and Nginx. Express/React are excluded for now.
+- **Current VPS**: robert108.mikrus.xyz (successfully deployed)
 
 ## 🧩 Use in Cursor (prompt)
 ```text
