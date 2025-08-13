@@ -175,7 +175,7 @@ services:
       - iot-network
 
   # Nginx Reverse Proxy
-    nginx:
+  nginx:
     image: nginx:alpine
     container_name: iot-nginx
     ports:
