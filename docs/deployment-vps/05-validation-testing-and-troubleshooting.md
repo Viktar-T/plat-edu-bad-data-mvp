@@ -11,7 +11,7 @@ Mikrus specifics:
 
 ## Step 1 – MQTT publish/subscribe
 
-From your local machine (ports must be open on VPS firewall):
+### From Linux/macOS (bash):
 
 ```bash
 # Subscribe (using your VPS details)
@@ -21,7 +21,30 @@ mosquitto_sub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t 
 mosquitto_pub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
 ```
 
-Expected: Subscriber prints the published JSON.
+### From Windows PowerShell:
+
+If you have mosquitto-clients installed on Windows:
+```powershell
+# Subscribe
+mosquitto_sub.exe -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/# -v
+
+# Publish (in another PowerShell window)
+mosquitto_pub.exe -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
+```
+
+### Alternative: Test MQTT connectivity only:
+
+```powershell
+# Test if MQTT port is reachable
+Test-NetConnection -ComputerName robert108.mikrus.xyz -Port 1883
+
+# Or using telnet (if available)
+telnet robert108.mikrus.xyz 1883
+```
+
+**Expected**: 
+- Subscriber prints the published JSON
+- Connectivity test shows port is open
 
 **Note**: Your VPS uses port `1883` for MQTT (not `40098` as originally planned).
 
@@ -39,26 +62,77 @@ Open `http://robert108.mikrus.xyz:20108/nodered` and confirm:
 
 ## Step 3 – InfluxDB write/read
 
-Example write via HTTP API (from VPS):
+### From VPS (Linux/bash):
 
 ```bash
-curl -i -X POST "http://localhost:8086/api/v2/write?org=<ORG>&bucket=<BUCKET>&precision=ns" \
-  --header "Authorization: Token <INFLUXDB_TOKEN>" \
+# Write test data
+curl -i -X POST "http://localhost:8086/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" \
+  --header "Authorization: Token renewable_energy_admin_token_123" \
   --data-binary "test_measurement,device_id=test value=1i"
-```
 
-Expected: `HTTP/1.1 204 No Content`.
-
-Query (Flux):
-
-```bash
-curl -s -G "http://localhost:8086/api/v2/query?org=<ORG>" \
-  --header "Authorization: Token <INFLUXDB_TOKEN>" \
+# Query test data
+curl -s -G "http://localhost:8086/api/v2/query?org=renewable_energy_org" \
+  --header "Authorization: Token renewable_energy_admin_token_123" \
   --header "Accept: application/csv" \
-  --data-urlencode 'query=from(bucket:"<BUCKET>") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == "test_measurement")' | sed -n '1,80p'
+  --data-urlencode 'query=from(bucket:"renewable_energy") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == "test_measurement")' | sed -n '1,80p'
 ```
 
-Expected: CSV rows containing `test_measurement`.
+### From Windows PowerShell:
+
+```powershell
+# Write test data
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" `
+  -Method POST `
+  -Headers @{"Authorization"="Token renewable_energy_admin_token_123"} `
+  -Body "test_measurement,device_id=test value=1i"
+
+# Query test data
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/query?org=renewable_energy_org" `
+  -Method POST `
+  -Headers @{
+    "Authorization"="Token renewable_energy_admin_token_123"
+    "Accept"="application/csv"
+    "Content-Type"="application/vnd.flux"
+  } `
+  -Body 'from(bucket:"renewable_energy") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == "test_measurement")'
+```
+
+### Using curl on Windows (if available):
+
+```cmd
+# Write test data
+curl -i -X POST "http://robert108.mikrus.xyz:20108/influxdb/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" ^
+  -H "Authorization: Token renewable_energy_admin_token_123" ^
+  -d "test_measurement,device_id=test value=1i"
+
+# Query test data
+curl -s -G "http://robert108.mikrus.xyz:20108/influxdb/api/v2/query?org=renewable_energy_org" ^
+  -H "Authorization: Token renewable_energy_admin_token_123" ^
+  -H "Accept: application/csv" ^
+  -d "query=from(bucket:\"renewable_energy\") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == \"test_measurement\")"
+```
+
+**Expected Results:**
+- Write: `HTTP/1.1 204 No Content`
+- Query: CSV rows containing `test_measurement`
+
+**Your Actual InfluxDB Credentials:**
+- **Organization**: `renewable_energy_org`
+- **Bucket**: `renewable_energy`
+- **Token**: `renewable_energy_admin_token_123`
+
+**Working PowerShell Example:**
+```powershell
+# Write test data
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" -Method POST -Headers @{"Authorization"="Token renewable_energy_admin_token_123"} -Body "test_measurement,device_id=test value=1i"
+
+# Query test data
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/query?org=renewable_energy_org" -Method POST -Headers @{"Authorization"="Token renewable_energy_admin_token_123"; "Accept"="application/csv"; "Content-Type"="application/vnd.flux"} -Body 'from(bucket:"renewable_energy") |> range(start: -15m) |> filter(fn:(r)=> r._measurement == "test_measurement")'
+```
+
+**Note**: These are the default credentials from your VPS deployment. For production, you should change these to more secure values.
+
+**⚠️ Important**: All examples above now use your actual VPS credentials. You can copy and paste these commands directly without replacing any placeholder values.
 
 ---
 
@@ -144,7 +218,6 @@ sudo chown -R 1000:1000 node-red/data
 ```bash
 docker-compose ps | cat
 docker-compose logs --tail=200 | sed -n '1,200p'
-```
 sudo journalctl -xe | sed -n '1,120p'
 ```
 
