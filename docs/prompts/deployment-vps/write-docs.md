@@ -61,7 +61,7 @@ Deliverable structure and content requirements
 3) `docs/prompts/deployment-vps/03-deployment-and-operations.md`
 - Goal: Deploy and operate the stack.
 - Include:
-  - Pulling/building images, starting services with `docker compose up -d`, verifying status with `docker compose ps` and healthchecks.
+  - Pulling/building images, starting services with `docker-compose up -d`, verifying status with `docker-compose ps` and healthchecks.
   - Viewing logs, tailing logs, and filtering by service; common healthy vs. unhealthy signals.
   - Start/stop/restart flows; enabling auto-start on reboot.
   - Quick sanity tests: access Grafana `/grafana`, Node-RED `/nodered`, InfluxDB `/influxdb` via `http://<HOST>:20108/...`; verify Mosquitto on port `40098`.
