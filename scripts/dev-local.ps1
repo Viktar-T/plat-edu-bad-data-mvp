@@ -40,8 +40,7 @@ function Test-RequiredFiles {
     $requiredFiles = @(
         "docker-compose.local.yml",
         ".env.local",
-        "nginx/nginx.local.conf",
-        "node-red/settings.local.js"
+        "nginx/nginx.local.conf"
     )
 
     $missingFiles = @()

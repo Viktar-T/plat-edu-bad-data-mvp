@@ -111,7 +111,7 @@ services:
       - "1880"
     volumes:
       - ./node-red/data:/data
-      - ./node-red/settings.local.js:/data/settings.js
+      - ./node-red/settings.js:/data/settings.js
       - ./node-red/package.json:/data/package.json
       - ./node-red/startup.sh:/startup.sh
     environment:
@@ -205,7 +205,7 @@ services:
       influxdb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
