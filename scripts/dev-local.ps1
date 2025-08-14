@@ -39,7 +39,9 @@ function Test-Docker {
 function Test-RequiredFiles {
     $requiredFiles = @(
         "docker-compose.local.yml",
-        ".env.local"
+        ".env.local",
+        "nginx/nginx.local.conf",
+        "node-red/settings.local.js"
     )
 
     $missingFiles = @()
@@ -112,11 +114,10 @@ function Show-AccessInfo {
     Write-ColorOutput "" $Cyan
     Write-ColorOutput "Local Development Access URLs:" $Cyan
     Write-ColorOutput "================================================" $Cyan
-    Write-ColorOutput "  Grafana Dashboard:    http://localhost:3000" $Yellow
-    Write-ColorOutput "  Node-RED Editor:      http://localhost:1880" $Yellow
-    Write-ColorOutput "  InfluxDB Admin:       http://localhost:8086" $Yellow
-    Write-ColorOutput "  Express Backend API:  http://localhost:3001" $Yellow
-    Write-ColorOutput "  React Frontend:       http://localhost:3002" $Yellow
+    Write-ColorOutput "  Grafana Dashboard:    http://localhost:8080/grafana/" $Yellow
+    Write-ColorOutput "  Node-RED Editor:      http://localhost:8080/nodered/" $Yellow
+    Write-ColorOutput "  InfluxDB Admin:       http://localhost:8080/influxdb/" $Yellow
+    Write-ColorOutput "  Nginx Health:         http://localhost:8080/health" $Yellow
     Write-ColorOutput "  MQTT Broker:          localhost:1883" $Yellow
     Write-ColorOutput "  MQTT WebSocket:       localhost:9001" $Yellow
     Write-ColorOutput "================================================" $Cyan

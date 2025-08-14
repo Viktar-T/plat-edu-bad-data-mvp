@@ -46,10 +46,12 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 # Start local development environment
 .\scripts\dev-local.ps1
 
-# Access your services:
-# - Grafana: http://localhost:3000
-# - Node-RED: http://localhost:1880
-# - InfluxDB: http://localhost:8086
+# Access your services via Nginx reverse proxy:
+# - Grafana:  http://localhost:8080/grafana/
+# - Node-RED: http://localhost:8080/nodered/
+# - InfluxDB: http://localhost:8080/influxdb/
+# - Health:   http://localhost:8080/health
+# MQTT remains direct: 1883 (TCP), 9001 (WS)
 # (Express API and React App under development, not started)
 ```
 
@@ -131,11 +133,12 @@ GF_SERVER_ROOT_URL=http://robert108.mikrus.xyz:20108/grafana
 
 ### **Local Development URLs**
 ```
-http://localhost:3000          # Grafana Dashboard
-http://localhost:1880          # Node-RED Editor
-http://localhost:8086          # InfluxDB Admin
-# (Express/React under development, not running locally)
-localhost:1883                 # MQTT Broker
+http://localhost:8080/grafana/     # Grafana Dashboard (via Nginx)
+http://localhost:8080/nodered/     # Node-RED Editor (via Nginx)
+http://localhost:8080/influxdb/    # InfluxDB Admin (via Nginx)
+http://localhost:8080/health       # Nginx health endpoint
+localhost:1883                     # MQTT Broker (direct)
+localhost:9001                     # MQTT WebSocket (direct)
 ```
 
 ### **Production URLs (Path-Based Routing)**
@@ -274,10 +277,11 @@ location /grafana/ {
 
 ### **Health Check Endpoints**
 ```
-http://robert108.mikrus.xyz:20108/health    # Nginx health check
-http://localhost:3000/api/health            # Grafana health
-http://localhost:1880                       # Node-RED health
-http://localhost:8086/health                # InfluxDB health
+http://robert108.mikrus.xyz:20108/health    # Nginx health (production)
+http://localhost:8080/health                # Nginx health (local)
+http://localhost:8080/grafana/api/health    # Grafana health (via Nginx)
+http://localhost:8080/nodered/              # Node-RED health (via Nginx)
+http://localhost:8080/influxdb/health       # InfluxDB health (via Nginx)
 # Express API health: n/a (under development)
 ```
 
