@@ -1,17 +1,17 @@
 # 🚀 Renewable Energy IoT Monitoring System - Dual Development/Deployment Setup
 
-> **Professional IoT monitoring system with path-based routing and dual environment support**
+> **Professional IoT monitoring system with separate ports and dual environment support**
 
 ## 📋 Overview
 
-This project implements a comprehensive renewable energy IoT monitoring system with **dual environment support** and **path-based routing** using Nginx reverse proxy. The system saves 4 Mikrus VPS ports while providing a professional, scalable architecture.
+This project implements a comprehensive renewable energy IoT monitoring system with **dual environment support** and **separate ports** for each service. The system provides direct access to each service without nginx dependency, offering a simpler and more straightforward architecture.
 
 ### 🎯 Key Features
 - **Dual Environment**: Local development + Production deployment
-- **Path-Based Routing**: Single port for all web services via Nginx
-- **Port Efficiency**: Uses only 4 Mikrus ports instead of 8+
-- **Professional URLs**: Clean, organized URL structure
-- **SSL Ready**: Easy HTTPS implementation
+- **Separate Ports**: Direct access to each service on dedicated ports
+- **No Nginx Dependency**: Simpler architecture without reverse proxy
+- **Professional URLs**: Clean, direct service URLs
+- **SSL Ready**: Easy HTTPS implementation per service
 - **Scalable Architecture**: Easy to add new services
 
 ### 🏗️ System Architecture
@@ -21,19 +21,21 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 │                    MIKRUS VPS (Production)                  │
 ├─────────────────────────────────────────────────────────────┤
 │  Port 10108: SSH Access                                     │
-│  Port 20108: Nginx Reverse Proxy (All Web Services)        │
-│  Port 30108: HTTPS (Future SSL)                             │
 │  Port 40098: MQTT Broker (IoT Devices)                      │
+│  Port 40099: Grafana Dashboard                              │
+│  Port 40100: Node-RED Editor                                │
+│  Port 40101: InfluxDB Admin                                 │
+│  Port 40102: Reserved for future use                        │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    NGINX REVERSE PROXY                      │
-├─────────────────────────────────────────────────────────────┤
-│  /grafana     → Grafana Dashboard                           │
-│  /nodered     → Node-RED Editor                             │
-│  /influxdb    → InfluxDB Admin                              │
-│  /            → Redirects to /grafana/                      │
+│                    DIRECT SERVICE ACCESS                     │
+├─────────────────────────────────────────────────────────────┐
+│  Grafana:     http://robert108.mikrus.xyz:40099            │
+│  Node-RED:    http://robert108.mikrus.xyz:40100            │
+│  InfluxDB:    http://robert108.mikrus.xyz:40101            │
+│  MQTT:        robert108.mikrus.xyz:40098                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,9 +61,10 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 .\scripts\deploy-production.ps1 -Full
 
 # Access your services:
-# - Grafana: http://robert108.mikrus.xyz:20108/grafana
-# - Node-RED: http://robert108.mikrus.xyz:20108/nodered
-# - InfluxDB: http://robert108.mikrus.xyz:20108/influxdb
+# - Grafana: http://robert108.mikrus.xyz:40099
+# - Node-RED: http://robert108.mikrus.xyz:40100
+# - InfluxDB: http://robert108.mikrus.xyz:40101
+# - MQTT: robert108.mikrus.xyz:40098
 # (Express API and React App under development, not deployed)
 ```
 
@@ -76,8 +79,6 @@ plat-edu-bad-data-mvp/
 ├── 📄 .env.local                      # Local environment variables
 ├── 📄 .env.production                 # Production environment variables
 ├── 📄 env.example                     # Environment template
-├── 📁 nginx/
-│   └── 📄 nginx.conf                  # Nginx reverse proxy config
 ├── 📁 scripts/
 │   ├── 📄 dev-local.ps1               # Local development script
 │   └── 📄 deploy-production.ps1       # Production deployment script
@@ -115,14 +116,14 @@ GF_SERVER_ROOT_URL=http://localhost:3000
 SERVER_IP=robert108.mikrus.xyz
 SERVER_PORT=10108
 
-# Mikrus custom ports with path-based routing
+# Mikrus custom ports - separate ports for each service
 MQTT_PORT=40098                    # MQTT broker
-NGINX_HTTP_PORT=20108              # Nginx reverse proxy
-NGINX_HTTPS_PORT=30108             # HTTPS (future)
+GRAFANA_PORT=40099                 # Grafana dashboard
+NODE_RED_PORT=40100                # Node-RED editor
+INFLUXDB_PORT=40101                # InfluxDB admin
 
 # Production URLs
-GF_SERVER_ROOT_URL=http://robert108.mikrus.xyz:20108/grafana
-##
+GF_SERVER_ROOT_URL=http://robert108.mikrus.xyz:40099
 ```
 
 ---
@@ -138,13 +139,12 @@ http://localhost:8086          # InfluxDB Admin
 localhost:1883                 # MQTT Broker
 ```
 
-### **Production URLs (Path-Based Routing)**
+### **Production URLs (Separate Ports)**
 ```
-http://robert108.mikrus.xyz:20108/grafana     # Grafana Dashboard
-http://robert108.mikrus.xyz:20108/nodered     # Node-RED Editor
-http://robert108.mikrus.xyz:20108/influxdb    # InfluxDB Admin
-http://robert108.mikrus.xyz:20108/            # Default Homepage
-robert108.mikrus.xyz:40098                    # MQTT Broker
+http://robert108.mikrus.xyz:40099     # Grafana Dashboard
+http://robert108.mikrus.xyz:40100     # Node-RED Editor
+http://robert108.mikrus.xyz:40101     # InfluxDB Admin
+robert108.mikrus.xyz:40098            # MQTT Broker
 ```
 
 ---
@@ -213,40 +213,36 @@ Port 40098: MQTT
 Total: 6 ports used
 ```
 
-### **Path-Based Routing Approach**
+### **Separate Ports Approach (Current)**
 ```
-Port 20108: Nginx (All web services)
-Port 40098: MQTT
-Total: 2 ports used
-Savings: 4 ports saved! 🎉
+Port 40098: MQTT Broker
+Port 40099: Grafana Dashboard
+Port 40100: Node-RED Editor
+Port 40101: InfluxDB Admin
+Port 40102: Reserved for future use
+Total: 4 ports used
+Benefits: No nginx dependency, direct access, simpler configuration
 ```
 
 ---
 
-## 🔧 Nginx Reverse Proxy Configuration
+## 🔧 Direct Service Access Configuration
 
-The Nginx configuration (`nginx/nginx.conf`) provides:
+The system now provides direct access to each service without nginx dependency:
 
-- **Path-based routing** for all web services
-- **WebSocket support** for real-time features
-- **CORS headers** for API access
-- **Rate limiting** for security
-- **Gzip compression** for performance
-- **Security headers** for protection
-- **Health check endpoint** for monitoring
+- **Direct port access** for each service
+- **Simplified architecture** without reverse proxy
+- **Easier troubleshooting** with direct service access
+- **Individual service management** and monitoring
+- **Direct WebSocket support** for real-time features
+- **Service-specific security** and configuration
 
-### **Key Features:**
-```nginx
-# Grafana routing
-location /grafana/ {
-    proxy_pass http://grafana_backend/;
-    # WebSocket support
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-}
-
-# (API routing removed while backend is under development)
+### **Service Ports:**
+```
+Grafana:     Port 40099 (Dashboard)
+Node-RED:    Port 40100 (Flow Editor)
+InfluxDB:    Port 40101 (Admin Interface)
+MQTT:        Port 40098 (IoT Broker)
 ```
 
 ---
@@ -274,10 +270,9 @@ location /grafana/ {
 
 ### **Health Check Endpoints**
 ```
-http://robert108.mikrus.xyz:20108/health    # Nginx health check
-http://localhost:3000/api/health            # Grafana health
-http://localhost:1880                       # Node-RED health
-http://localhost:8086/health                # InfluxDB health
+http://robert108.mikrus.xyz:40099/api/health    # Grafana health
+http://robert108.mikrus.xyz:40100               # Node-RED health
+http://robert108.mikrus.xyz:40101/health        # InfluxDB health
 # Express API health: n/a (under development)
 ```
 
@@ -298,7 +293,9 @@ healthcheck:
 
 ### **Firewall Configuration**
 - ✅ SSH access on custom port (10108)
-- ✅ Web services via Nginx proxy (20108)
+- ✅ Grafana dashboard access (40099)
+- ✅ Node-RED editor access (40100)
+- ✅ InfluxDB admin access (40101)
 - ✅ MQTT broker access (40098)
 - ✅ IPv6 support enabled
 - ✅ Fail2ban intrusion prevention
@@ -327,11 +324,11 @@ limit_req_zone $binary_remote_addr zone=general:10m rate=30r/s;
 - ✅ Resource limits for stability
 - ✅ Volume mounts for data persistence
 
-### **Nginx Optimizations**
-- ✅ Gzip compression for faster loading
-- ✅ Connection pooling for efficiency
-- ✅ Timeout configurations for reliability
-- ✅ Buffer optimizations for performance
+### **Service Optimizations**
+- ✅ Individual service monitoring and health checks
+- ✅ Service-specific resource allocation
+- ✅ Direct connection handling for each service
+- ✅ Optimized container configurations
 
 ### **System Optimizations**
 - ✅ Swap memory configuration
@@ -377,14 +374,15 @@ ping robert108.mikrus.xyz
 # Check ports
 netstat -tlnp
 
-# Test MQTT
-mosquitto_pub -h robert108.mikrus.xyz -p 40098 -t test -m "hello"
+# Test individual services
+curl http://robert108.mikrus.xyz:40099/api/health  # Grafana
+curl http://robert108.mikrus.xyz:40100             # Node-RED
+curl http://robert108.mikrus.xyz:40101/health      # InfluxDB
+mosquitto_pub -h robert108.mikrus.xyz -p 40098 -t test -m "hello"  # MQTT
 ```
 
 ### **Log Locations**
 ```
-/var/log/nginx/access.log    # Nginx access logs
-/var/log/nginx/error.log     # Nginx error logs
 ./mosquitto/log/             # MQTT logs
 ./influxdb/logs/             # InfluxDB logs
 ./node-red/logs/             # Node-RED logs
@@ -396,11 +394,12 @@ mosquitto_pub -h robert108.mikrus.xyz -p 40098 -t test -m "hello"
 ## 🔄 Future Enhancements
 
 ### **SSL/HTTPS Implementation**
-```nginx
-# Future SSL configuration
-ssl_certificate /etc/nginx/ssl/cert.pem;
-ssl_certificate_key /etc/nginx/ssl/key.pem;
-ssl_protocols TLSv1.2 TLSv1.3;
+```bash
+# Future SSL configuration per service
+# Each service can have its own SSL certificate
+# Grafana: SSL on port 40099
+# Node-RED: SSL on port 40100
+# InfluxDB: SSL on port 40101
 ```
 
 ### **Additional Services**
@@ -482,11 +481,11 @@ nslookup [domain]
 
 ## 🎉 Benefits of This Setup
 
-### **Port Efficiency**
-- ✅ **4 ports saved** on Mikrus VPS
-- ✅ **Professional URL structure**
-- ✅ **Easy to remember URLs**
-- ✅ **Scalable architecture**
+### **Architecture Benefits**
+- ✅ **No nginx dependency** - simpler setup
+- ✅ **Direct service access** - easier troubleshooting
+- ✅ **Individual service management** - better control
+- ✅ **Scalable architecture** - easy to add services
 
 ### **Development Experience**
 - ✅ **Dual environment support**
@@ -502,4 +501,4 @@ nslookup [domain]
 
 ---
 
-**🚀 Ready to deploy your renewable energy IoT monitoring system with professional path-based routing!**
+**🚀 Ready to deploy your renewable energy IoT monitoring system with direct service access!**

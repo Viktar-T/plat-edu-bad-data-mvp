@@ -16,7 +16,6 @@ param(
 function Test-RequiredFiles {
     $required = @(
         "docker-compose.yml",
-        "nginx/nginx.conf",
         "mosquitto/",
         "influxdb/",
         "node-red/",
@@ -70,11 +69,10 @@ function Transfer-ToVps {
     $remoteDir = Get-RemoteDir
 
     Write-Host "Creating remote directory..." -ForegroundColor Yellow
-    & ssh -p $VpsPort "$VpsUser@$VpsHost" "mkdir -p $remoteDir/nginx $remoteDir/mosquitto $remoteDir/influxdb $remoteDir/node-red $remoteDir/grafana"
+    & ssh -p $VpsPort "$VpsUser@$VpsHost" "mkdir -p $remoteDir/mosquitto $remoteDir/influxdb $remoteDir/node-red $remoteDir/grafana"
 
     Write-Host "Transferring compose and service configurations..." -ForegroundColor Yellow
     & scp -P $VpsPort docker-compose.yml             "${VpsUser}@${VpsHost}:$remoteDir/"
-    & scp -P $VpsPort -r nginx/*                     "${VpsUser}@${VpsHost}:$remoteDir/nginx/"
     & scp -P $VpsPort -r mosquitto/*                 "${VpsUser}@${VpsHost}:$remoteDir/mosquitto/"
     & scp -P $VpsPort -r influxdb/*                  "${VpsUser}@${VpsHost}:$remoteDir/influxdb/"
     & scp -P $VpsPort -r node-red/*                  "${VpsUser}@${VpsHost}:$remoteDir/node-red/"
