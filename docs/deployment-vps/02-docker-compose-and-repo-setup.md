@@ -3,10 +3,13 @@
 Goal: Choose your deployment approach and set up the application on the VPS.
 
 Mikrus specifics:
-- Web: `20108` (HTTP) and `30108` (HTTPS future) via Nginx path-based routing (`/grafana`, `/nodered`, `/influxdb`)
-- MQTT: `1883/tcp` (exposed directly)
+- **Direct Port Access**: Each service runs on its own dedicated port (no nginx required)
+- **MQTT**: Port 40098 (exposed directly)
+- **Grafana**: Port 40099 (exposed directly)
+- **Node-RED**: Port 40100 (exposed directly)
+- **InfluxDB**: Port 40101 (exposed directly)
 - **Current VPS**: robert108.mikrus.xyz
-- Services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx (Express/React not deployed now)
+- **Services**: Mosquitto, Node-RED, InfluxDB 2.x, Grafana (Express/React not deployed now)
 
 ---
 
@@ -20,7 +23,7 @@ Mikrus specifics:
                     ▼                               ▼
     ┌─────────────────────────┐    ┌─────────────────────────┐
     │     PATH A              │    │     PATH B              │
-    │   (works well)          │    │     ()              │
+    │   (works well)          │    │   (✅ IMPLEMENTED)      │
     │  PowerShell Script      │    │   Direct Git            │
     │  (No VPS setup needed)  │    │  (Requires VPS setup)   │
     └─────────────────────────┘    └─────────────────────────┘
@@ -34,7 +37,7 @@ Mikrus specifics:
     │ 2. Transfer files:      │    │    sudo chown -R ...    │
     │    ./deploy-production.ps1   │                        │
     │    -Transfer            │    │ 3. Start services:     │
-    │                        │    │    docker compose up -d │
+    │                        │    │    docker-compose up -d │
     │ 3. Deploy on VPS:       │    │                        │
     │    ./deploy-production.ps1   │ Location:               │
     │    -Deploy              │    │ /home/viktar/plat-edu-bad-data-mvp │
@@ -63,7 +66,7 @@ Run locally on Windows from project root:
 
 ```powershell
 # Prepare production bundle (includes env handling)
-# - Validates required files exist (docker-compose.yml, nginx/, mosquitto/, etc.)
+# - Validates required files exist (docker-compose.yml, mosquitto/, influxdb/, etc.)
 # - Creates .env.production from env.example if missing
 # - Checks file permissions and structure
 ./scripts/deploy-production.ps1 -Prepare
@@ -87,18 +90,16 @@ Run locally on Windows from project root:
 ### ✅ Current VPS Status (robert108.mikrus.xyz)
 
 **Successfully Deployed Services:**
-- ✅ **InfluxDB**: Running and healthy (port 8086 internal)
-- ✅ **Mosquitto**: Running and healthy (ports 1883, 9001 exposed)
-- ✅ **Node-RED**: Running and healthy (port 1880 internal)
-- ✅ **Grafana**: Running and healthy (port 3000 internal)
-- ✅ **Nginx**: Running (port 20108 exposed for web access)
+- ✅ **InfluxDB**: Running and healthy (port 40101 external)
+- ✅ **Mosquitto**: Running and healthy (port 40098 external)
+- ✅ **Node-RED**: Running and healthy (port 40100 external)
+- ✅ **Grafana**: Running and healthy (port 40099 external)
 
-**Access URLs:**
-- **Grafana Dashboard**: `http://robert108.mikrus.xyz:20108/grafana/`
-- **Node-RED Editor**: `http://robert108.mikrus.xyz:20108/nodered/`
-- **InfluxDB Admin**: `http://robert108.mikrus.xyz:20108/influxdb/`
-- **MQTT Broker**: `robert108.mikrus.xyz:1883`
-- **MQTT WebSocket**: `robert108.mikrus.xyz:9001`
+**Access URLs (Direct Port Access):**
+- **Grafana Dashboard**: `http://robert108.mikrus.xyz:40099`
+- **Node-RED Editor**: `http://robert108.mikrus.xyz:40100`
+- **InfluxDB Admin**: `http://robert108.mikrus.xyz:40101`
+- **MQTT Broker**: `robert108.mikrus.xyz:40098`
 
 **Default Credentials:**
 - **Grafana**: `admin` / `admin`
@@ -108,10 +109,11 @@ Run locally on Windows from project root:
 
 ### 🚨 Issues Encountered and Resolved
 
-**1. Docker Compose Not Installed**
-- **Issue**: `docker: 'compose' is not a docker command`
-- **Solution**: Updated `scripts/deploy-production.ps1` to automatically install Docker Compose if missing
-- **Fix**: Added Docker Compose installation check and fallback to `docker-compose` command
+**1. Docker Compose Command Differences**
+- **Issue**: `docker: 'compose' is not a docker command` (newer Docker versions)
+- **Solution**: Use `docker-compose` (legacy) instead of `docker compose` (newer)
+- **Fix**: Updated documentation to use `docker-compose` consistently
+- **Note**: Some systems have `docker-compose` (legacy), others have `docker compose` (newer)
 
 **2. Permission Issues with Grafana and Node-RED**
 - **Issue**: Services restarting due to permission denied errors
@@ -146,7 +148,7 @@ Run locally on Windows from project root:
 # SSH as root to check deployment
 ssh root@robert108.mikrus.xyz -p10108
 cd /root/renewable-energy-iot
-docker-compose ps | cat
+sudo docker-compose ps | cat
 ```
 
 **Location**: `/root/renewable-energy-iot` (separate deployment directory)
@@ -154,11 +156,18 @@ docker-compose ps | cat
 
 ---
 
-## Path B: Direct Git Deployment (Advanced)
+## Path B: Direct Git Deployment (Advanced) ✅ IMPLEMENTED
 
-**⚠️ Requires VPS setup** - Clone repository on VPS and manage directly.
+**✅ Successfully implemented** - Repository cloned and services deployed on VPS.
 
-### Step 1: Clone Repository on VPS
+### ✅ Current Implementation Status
+
+**Repository Location**: `/home/viktar/plat-edu-bad-data-mvp`
+**User**: `viktar`
+**Status**: ✅ Repository cloned successfully
+**Next Step**: Start services
+
+### Step 1: Clone Repository on VPS ✅ COMPLETED
 
 ```bash
 # From your home directory on the VPS
@@ -171,9 +180,10 @@ cd plat-edu-bad-data-mvp
 
 # Verify expected files are present
 ls -la
+tree -ah -L 2
 ```
 
-Expected output (abridged):
+**✅ Expected output (verified):**
 ```
 docker-compose.yml
 influxdb/
@@ -181,9 +191,12 @@ mosquitto/
 node-red/
 grafana/
 scripts/
+docs/
+tests/
+web-app-for-testing/
 ```
 
-### Step 2: Set Permissions
+### Step 2: Set Permissions ✅ COMPLETED
 
 ```bash
 # Ensure your user (e.g., viktar) owns the repo directory
@@ -193,33 +206,158 @@ sudo chown -R $USER:$USER ~/plat-edu-bad-data-mvp
 ### Step 3: Verify Docker Compose Configuration
 
 ```bash
+# Check Docker version and available commands
+sudo docker -v
+sudo docker-compose -v
+
 # Validate and render the compose file for review
-docker compose config | sed -n '1,120p'
+sudo docker-compose config
 ```
 
+**Important Note**: Use `docker-compose` (legacy) instead of `docker compose` (newer) based on your system. All Docker commands require `sudo` on this VPS setup.
+
 Check for:
-- Only required services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana, Nginx
-- Named volumes for persistence
-- `restart: unless-stopped`
-- Healthchecks where applicable
-- Networks: single shared network is fine for MVP
+- ✅ Only required services: Mosquitto, Node-RED, InfluxDB 2.x, Grafana
+- ✅ Named volumes for persistence
+- ✅ `restart: unless-stopped`
+- ✅ Healthchecks where applicable
+- ✅ Networks: single shared network is fine for MVP
 
 ### Step 4: Start Services
 
 ```bash
 cd ~/plat-edu-bad-data-mvp
 
+# Check available disk space first
+df -h
+
+# Check Docker disk usage
+sudo docker system df
+
 # Start services
-docker-compose up -d
+sudo docker-compose up -d
+
+# Monitor startup process
+sudo docker-compose logs -f
 ```
 
 ### Step 5: Verify Deployment
 
 ```bash
-# SSH as viktar to check deployment
-ssh viktar@robert108.mikrus.xyz -p10108
+# Check container status
+sudo docker-compose ps
+
+# Check individual service logs
+sudo docker-compose logs mosquitto --tail=10
+sudo docker-compose logs influxdb --tail=10
+sudo docker-compose logs node-red --tail=10
+sudo docker-compose logs grafana --tail=10
+```
+
+**Expected Services:**
+- **iot-mosquitto** (MQTT broker) - port 40098
+- **iot-influxdb2** (InfluxDB 2.x) - port 40101
+- **iot-node-red** (Node-RED) - port 40100
+- **iot-grafana** (Grafana) - port 40099
+
+### Step 6: Access Your Services
+
+Once services are running, access at:
+
+- **Grafana Dashboard**: `http://robert108.mikrus.xyz:40099`
+  - Username: `admin`
+  - Password: `admin`
+
+- **Node-RED Editor**: `http://robert108.mikrus.xyz:40100`
+  - Username: `admin`
+  - Password: `adminpassword`
+
+- **InfluxDB Admin**: `http://robert108.mikrus.xyz:40101`
+  - Username: `admin`
+  - Password: `admin_password_123`
+
+- **MQTT Broker**: `robert108.mikrus.xyz:40098`
+
+### Step 7: Future Updates
+
+```bash
+# Navigate to your project directory
 cd ~/plat-edu-bad-data-mvp
-docker compose ps | cat
+
+# Pull latest changes
+git pull --ff-only
+
+# Restart services with new configuration
+sudo docker-compose up -d
+
+# Check status
+sudo docker-compose ps
+```
+
+### 🚨 Troubleshooting Commands
+
+```bash
+# Check if Docker is running
+sudo systemctl status docker
+
+# Check available disk space
+df -h
+
+# Check Docker disk usage
+sudo docker system df
+
+# View detailed logs for a specific service
+sudo docker-compose logs -f [service-name]
+
+# Restart a specific service
+sudo docker-compose restart [service-name]
+
+# Stop all services
+sudo docker-compose down
+
+# Stop and remove volumes (⚠️ will delete data)
+sudo docker-compose down -v
+
+# Check for port conflicts
+sudo netstat -tlnp | grep -E "(40098|40099|40100|40101)"
+```
+
+### 🔧 Docker Permission Issues
+
+**Issue**: `permission denied while trying to connect to the Docker daemon socket`
+
+**Solution 1: Add user to docker group (Recommended)**
+```bash
+# Add your user to the docker group
+sudo usermod -aG docker $USER
+
+# Log out and back in, or run this command to apply changes
+newgrp docker
+
+# Verify you can run Docker without sudo
+docker ps
+```
+
+**Note**: For this VPS setup, we're using `sudo` with all Docker commands for simplicity.
+
+**Solution 2: Use sudo (Current Setup)**
+```bash
+# Run Docker commands with sudo
+sudo docker system df
+sudo docker-compose up -d
+sudo docker-compose ps
+```
+
+**Solution 3: Fix Docker daemon permissions**
+```bash
+# Check Docker daemon status
+sudo systemctl status docker
+
+# Restart Docker daemon if needed
+sudo systemctl restart docker
+
+# Check if user is in docker group
+groups $USER
 ```
 
 **Location**: `/home/viktar/plat-edu-bad-data-mvp` (Git repository directly)
@@ -255,6 +393,7 @@ Expected output: `No .env files found (correct)`
 | **Updates** | Re-run PowerShell script | `git pull --ff-only` |
 | **Complexity** | 🟢 Beginner-friendly | 🟡 Requires VPS knowledge |
 | **Automation** | 🟢 Fully automated | 🟡 Manual steps |
+| **Status** | ✅ Working | ✅ Implemented |
 
 **Recommendation**: Use **Path A** if you're new to VPS deployment, **Path B** if you prefer direct control.
 
@@ -305,10 +444,10 @@ Required repository secrets:
 
 ```bash
 # Check container status
-docker-compose ps | cat
+sudo docker-compose ps | cat
 
 # Check recent logs
-docker-compose logs --tail=50 | sed -n '1,120p'
+sudo docker-compose logs --tail=50 | sed -n '1,120p'
 ```
 
 You should see healthy/starting states and recent logs for all services.
@@ -317,7 +456,7 @@ You should see healthy/starting states and recent logs for all services.
 
 ## 🧩 Use in Cursor (prompt)
 ```text
-Using the repo at ~/plat-edu-bad-data-mvp on the VPS, verify that docker-compose.yml contains only Mosquitto, Node-RED, InfluxDB 2.x, Grafana, and Nginx. Ensure volumes, restart policies, and healthchecks exist. If issues are found, propose exact edits.
+Using the repo at ~/plat-edu-bad-data-mvp on the VPS, verify that docker-compose.yml contains only Mosquitto, Node-RED, InfluxDB 2.x, and Grafana. Ensure volumes, restart policies, and healthchecks exist. If issues are found, propose exact edits.
 ```
 
 

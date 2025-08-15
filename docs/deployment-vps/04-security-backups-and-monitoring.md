@@ -3,8 +3,11 @@
 Goal: Apply essential hardening, set safe defaults, and implement backups and basic monitoring practices.
 
 Mikrus specifics:
-- Use ports `20108` (HTTP) and `30108` (future HTTPS) with Nginx path-based routing
-- MQTT on `1883/tcp` (exposed directly)
+- **Direct Port Access**: Each service runs on its own dedicated port (no nginx required)
+- **MQTT**: Port 40098 (exposed directly)
+- **Grafana**: Port 40099 (exposed directly)
+- **Node-RED**: Port 40100 (exposed directly)
+- **InfluxDB**: Port 40101 (exposed directly)
 - **Current VPS**: robert108.mikrus.xyz
 
 ---
@@ -13,7 +16,7 @@ Mikrus specifics:
 
 Already applied in Step 1:
 - SSH custom port `10108`, fail2ban jail for `10108,22`
-- UFW allow: `10108/tcp`, `20108/tcp`, `30108/tcp`, `40098/tcp` (+ IPv6)
+- UFW allow: `10108/tcp`, `40098/tcp`, `40099/tcp`, `40100/tcp`, `40101/tcp` (+ IPv6)
 
 Validate:
 ```bash
@@ -23,9 +26,10 @@ sudo fail2ban-client status sshd | sed -n '1,80p'
 
 **Your current UFW status should show:**
 - `10108/tcp` (SSH)
-- `20108/tcp` (HTTP)
-- `30108/tcp` (HTTPS future)
-- `1883/tcp` (MQTT)
+- `40098/tcp` (MQTT)
+- `40099/tcp` (Grafana)
+- `40100/tcp` (Node-RED)
+- `40101/tcp` (InfluxDB)
 
 ---
 

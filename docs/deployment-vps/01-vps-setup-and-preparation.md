@@ -4,10 +4,10 @@
 
 ## 📋 Overview
 
-This phase covers the complete setup and preparation of your Mikrus VPS server for deploying the renewable energy IoT monitoring system. The setup includes server security, Docker installation, firewall configuration, and environment preparation optimized for Mikrus VPS specifications.
+This phase covers the complete setup and preparation of your Mikrus VPS server for deploying the renewable energy IoT monitoring system. The setup includes server security, Docker installation, firewall configuration, and environment preparation optimized for Mikrus VPS specifications with direct port access.
 
 ### 🎯 What is VPS Setup and Preparation?
-VPS setup is like preparing a new computer for your specific needs. Think of it like setting up a new phone - you need to install the operating system, set up security, install the apps you need, and configure everything to work together. In this case, we're setting up a server that will run your renewable energy monitoring system.
+VPS setup is like preparing a new computer for your specific needs. Think of it like setting up a new phone - you need to install the operating system, set up security, install the apps you need, and configure everything to work together. In this case, we're setting up a server that will run your renewable energy monitoring system with direct access to each service.
 
 ### ✅ Prerequisites
 - ✅ Mikrus VPS account and server access
@@ -28,9 +28,8 @@ VPS setup is like preparing a new computer for your specific needs. Think of it 
 - **Hostname**: `robert108.mikrus.xyz`
 - **SSH Port**: `10108`
 - **SSH Command**: `ssh viktar@robert108.mikrus.xyz -p10108`
-- **Default HTTP Port**: `20108`
-- **Default HTTPS Port**: `30108`
-- **Custom IoT Ports**: `1883` (MQTT), `40098-40102` (additional IoT ports)
+- **Service Ports**: Direct access on dedicated ports
+- **Custom IoT Ports**: `40098` (MQTT), `40099` (Grafana), `40100` (Node-RED), `40101` (InfluxDB)
 
 **Connection Details:**
 ```bash
@@ -311,27 +310,27 @@ sudo whoami
 - **Audit Trail**: Better logging of who did what
 - **Best Practice**: Industry standard for server management
 
-### **3.4 Configure Firewall (UFW) - Path-Based Routing Setup**
+### **3.4 Configure Firewall (UFW) - Direct Port Access Setup**
 
-**Important: Mikrus VPS Port Strategy with Nginx Reverse Proxy**
+**Important: Mikrus VPS Port Strategy with Direct Service Access**
 
-Your Mikrus VPS uses a **path-based routing approach** with Nginx reverse proxy, which saves 4 ports and provides a more professional setup:
+Your Mikrus VPS uses a **direct port access approach** for each service, providing simpler architecture and easier troubleshooting:
 
 **Port Strategy:**
 - **SSH**: Port `10108` (your custom SSH port)
-- **Web Services**: Port `20108` (all web apps via Nginx proxy)
-- **MQTT**: Port `1883` (IoT device communication)
-- **HTTPS**: Port `30108` (for future SSL setup)
+- **MQTT**: Port `40098` (IoT device communication)
+- **Grafana**: Port `40099` (dashboard access)
+- **Node-RED**: Port `40100` (flow editor)
+- **InfluxDB**: Port `40101` (database admin)
+- **Reserved**: Port `40102` (for future use)
 
 **URL Structure (current):**
 ```
-http://robert108.mikrus.xyz:20108/grafana     -> Grafana Dashboard
-http://robert108.mikrus.xyz:20108/nodered     -> Node-RED Editor
-http://robert108.mikrus.xyz:20108/influxdb    -> InfluxDB Admin
-http://robert108.mikrus.xyz:20108/            -> Redirects to /grafana/
+http://robert108.mikrus.xyz:40099     -> Grafana Dashboard
+http://robert108.mikrus.xyz:40100     -> Node-RED Editor
+http://robert108.mikrus.xyz:40101     -> InfluxDB Admin
+robert108.mikrus.xyz:40098            -> MQTT Broker
 ```
-
-Note: Express Backend API (/api) and React Frontend (/app) are under development and not deployed yet.
 
 **Firewall Configuration:**
 ```bash
@@ -339,14 +338,17 @@ Note: Express Backend API (/api) and React Frontend (/app) are under development
 # Allow SSH (your custom port)
 sudo ufw allow 10108/tcp
 
-# Allow HTTP web services (Nginx reverse proxy)
-sudo ufw allow 20108/tcp
-
-# Allow HTTPS (for future SSL)
-sudo ufw allow 30108/tcp
-
 # Allow MQTT (IoT device communication)
-sudo ufw allow 1883/tcp
+sudo ufw allow 40098/tcp
+
+# Allow Grafana (dashboard access)
+sudo ufw allow 40099/tcp
+
+# Allow Node-RED (flow editor)
+sudo ufw allow 40100/tcp
+
+# Allow InfluxDB (database admin)
+sudo ufw allow 40101/tcp
 
 # Enable UFW firewall
 sudo ufw enable
@@ -363,31 +365,33 @@ Status: active
      --                         ------      ----
 [ 1] 22                         ALLOW IN    Anywhere
 [ 2] 10108/tcp                  ALLOW IN    Anywhere
-[ 3] 20108/tcp                  ALLOW IN    Anywhere
-[ 4] 30108/tcp                  ALLOW IN    Anywhere
-[ 5] 1883/tcp                   ALLOW IN    Anywhere
-[ 6] 22 (v6)                    ALLOW IN    Anywhere (v6)
-[ 7] 10108/tcp (v6)             ALLOW IN    Anywhere (v6)
-[ 8] 20108/tcp (v6)             ALLOW IN    Anywhere (v6)
-[ 9] 30108/tcp (v6)             ALLOW IN    Anywhere (v6)
-[10] 1883/tcp (v6)              ALLOW IN    Anywhere (v6)
+[ 3] 40098/tcp                  ALLOW IN    Anywhere
+[ 4] 40099/tcp                  ALLOW IN    Anywhere
+[ 5] 40100/tcp                  ALLOW IN    Anywhere
+[ 6] 40101/tcp                  ALLOW IN    Anywhere
+[ 7] 22 (v6)                    ALLOW IN    Anywhere (v6)
+[ 8] 10108/tcp (v6)             ALLOW IN    Anywhere (v6)
+[ 9] 40098/tcp (v6)             ALLOW IN    Anywhere (v6)
+[10] 40099/tcp (v6)             ALLOW IN    Anywhere (v6)
+[11] 40100/tcp (v6)             ALLOW IN    Anywhere (v6)
+[12] 40101/tcp (v6)             ALLOW IN    Anywhere (v6)
 ```
 
 **📝 Notes on Your Firewall Configuration:**
 - **Port 22**: Standard SSH port is also open (normal for Mikrus VPS)
 - **Port 10108**: Your custom SSH port (primary access method)
-- **Port 20108**: Nginx reverse proxy for all web services
-- **Port 30108**: HTTPS port for future SSL setup
-- **Port 1883**: MQTT broker for IoT device communication
+- **Port 40098**: MQTT broker for IoT device communication
+- **Port 40099**: Grafana dashboard for data visualization
+- **Port 40100**: Node-RED editor for flow programming
+- **Port 40101**: InfluxDB admin for database management
 - **IPv6 Support**: All ports are also open for IPv6 (modern networking)
-- **Port Efficiency**: Only 4 ports needed instead of 8+ with separate ports
 
-**Benefits of Path-Based Routing:**
-1. **Port Efficiency**: Uses only 1 Mikrus port for all web services
-2. **Professional URLs**: Clean, organized URL structure
-3. **Better Security**: Single entry point for all web traffic
-4. **SSL Ready**: Easy to add HTTPS for all services
-5. **Scalable**: Easy to add new services
+**Benefits of Direct Port Access:**
+1. **Simpler Architecture**: No nginx dependency required
+2. **Easier Troubleshooting**: Direct access to each service
+3. **Individual Service Management**: Better control over each service
+4. **Scalable**: Easy to add new services on dedicated ports
+5. **Direct WebSocket Support**: Better real-time features
 
 ### **3.5 Configure Fail2ban**
 ```bash
@@ -631,7 +635,7 @@ sudo systemctl status fail2ban
 
 ### **Security Configuration**
 - [ ] ✅ SSH security configured
-- [ ] ✅ Firewall (UFW) configured with path-based routing
+- [ ] ✅ Firewall (UFW) configured with direct port access
 - [ ] ✅ Fail2ban installed and configured
 - [ ] ✅ Non-root user created and configured
 
@@ -643,7 +647,7 @@ sudo systemctl status fail2ban
 ### **Environment Setup**
 - [ ] ✅ Environment variables configured (handled automatically)
 - [ ] ✅ Project directory structure created
-- [ ] ✅ Path-based routing strategy implemented
+- [ ] ✅ Direct port access strategy implemented
 
 ### **Validation**
 - [ ] ✅ Docker functionality tested
@@ -660,18 +664,13 @@ sudo systemctl status fail2ban
 ### **Access Your Services (After Deployment)**
 Once deployed, you'll access your services at:
 
-**🌐 Web Services (via Nginx Reverse Proxy):**
-- **Grafana Dashboard**: `http://robert108.mikrus.xyz:20108/grafana`
-- **Node-RED Editor**: `http://robert108.mikrus.xyz:20108/nodered`
-- **InfluxDB Admin**: `http://robert108.mikrus.xyz:20108/influxdb`
-- **Default Homepage** (redirects): `http://robert108.mikrus.xyz:20108/` → `/grafana/`
-
-Planned (not yet deployed):
-- Express Backend API at `/api`
-- React Frontend at `/app`
+**🌐 Web Services (Direct Port Access):**
+- **Grafana Dashboard**: `http://robert108.mikrus.xyz:40099`
+- **Node-RED Editor**: `http://robert108.mikrus.xyz:40100`
+- **InfluxDB Admin**: `http://robert108.mikrus.xyz:40101`
 
 **📡 IoT Services:**
-- **MQTT Broker**: `robert108.mikrus.xyz:1883`
+- **MQTT Broker**: `robert108.mikrus.xyz:40098`
 
 **🔑 Default Credentials:**
 - **Grafana**: `admin` / `admin`
@@ -775,9 +774,10 @@ sudo ufw reset
 # Reconfigure firewall
 sudo ufw enable
 sudo ufw allow 10108/tcp
-sudo ufw allow 20108/tcp
-sudo ufw allow 30108/tcp
-sudo ufw allow 1883/tcp
+sudo ufw allow 40098/tcp
+sudo ufw allow 40099/tcp
+sudo ufw allow 40100/tcp
+sudo ufw allow 40101/tcp
 ```
 
 **Network Issues:**
@@ -802,14 +802,14 @@ nslookup robert108.mikrus.xyz
 
 ---
 
-**🎉 Congratulations!** Your Mikrus VPS is now prepared for the renewable energy IoT monitoring system deployment. The path-based routing setup with Nginx reverse proxy provides a professional, efficient, and scalable solution that maximizes your Mikrus port usage.
+**🎉 Congratulations!** Your Mikrus VPS is now prepared for the renewable energy IoT monitoring system deployment. The direct port access setup provides a simple, efficient, and scalable solution with easy troubleshooting.
 
 **📋 Summary of What You've Accomplished:**
 - ✅ Secured SSH access with custom port and fail2ban protection
-- ✅ Configured firewall with optimized port strategy
+- ✅ Configured firewall with direct port access strategy
 - ✅ Installed and configured Docker for containerized deployment
 - ✅ Optimized system performance for IoT data processing
-- ✅ Set up path-based routing for efficient port usage
+- ✅ Set up direct port access for simple service management
 - ✅ Prepared environment for automated deployment scripts
 
 **🚀 You're now ready to proceed to Phase 2: Application Deployment!**

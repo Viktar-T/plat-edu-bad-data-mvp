@@ -3,8 +3,11 @@
 Goal: Validate end-to-end data flow and resolve common issues. Include performance sanity checks and evidence collection.
 
 Mikrus specifics:
-- Web via Nginx path-based routing on `20108`
-- MQTT on `1883/tcp` (exposed directly)
+- **Direct Port Access**: Each service runs on its own dedicated port (no nginx required)
+- **MQTT**: Port 40098 (exposed directly)
+- **Grafana**: Port 40099 (exposed directly)
+- **Node-RED**: Port 40100 (exposed directly)
+- **InfluxDB**: Port 40101 (exposed directly)
 - **Current VPS**: robert108.mikrus.xyz
 
 ---
@@ -15,10 +18,10 @@ Mikrus specifics:
 
 ```bash
 # Subscribe (using your VPS details)
-mosquitto_sub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/# -v
+mosquitto_sub -h robert108.mikrus.xyz -p 40098 -u admin -P admin_password_456 -t devices/# -v
 
 # In another shell, publish a test message
-mosquitto_pub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
+mosquitto_pub -h robert108.mikrus.xyz -p 40098 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
 ```
 
 ### From Windows PowerShell:
@@ -26,33 +29,33 @@ mosquitto_pub -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t 
 If you have mosquitto-clients installed on Windows:
 ```powershell
 # Subscribe
-mosquitto_sub.exe -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/# -v
+mosquitto_sub.exe -h robert108.mikrus.xyz -p 40098 -u admin -P admin_password_456 -t devices/# -v
 
 # Publish (in another PowerShell window)
-mosquitto_pub.exe -h robert108.mikrus.xyz -p 1883 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
+mosquitto_pub.exe -h robert108.mikrus.xyz -p 40098 -u admin -P admin_password_456 -t devices/test/health -m '{"ok":true,"ts":"2024-01-01T00:00:00Z"}'
 ```
 
 ### Alternative: Test MQTT connectivity only:
 
 ```powershell
 # Test if MQTT port is reachable
-Test-NetConnection -ComputerName robert108.mikrus.xyz -Port 1883
+Test-NetConnection -ComputerName robert108.mikrus.xyz -Port 40098
 
 # Or using telnet (if available)
-telnet robert108.mikrus.xyz 1883
+telnet robert108.mikrus.xyz 40098
 ```
 
 **Expected**: 
 - Subscriber prints the published JSON
 - Connectivity test shows port is open
 
-**Note**: Your VPS uses port `1883` for MQTT (not `40098` as originally planned).
+**Note**: Your VPS uses port `40098` for MQTT (direct port access).
 
 ---
 
 ## Step 2 – Node-RED flow check
 
-Open `http://robert108.mikrus.xyz:20108/nodered` and confirm:
+Open `http://robert108.mikrus.xyz:40100` and confirm:
 - Flows are deployed
 - MQTT input nodes are connected
 - Debug nodes print incoming messages
@@ -81,13 +84,13 @@ curl -s -G "http://localhost:8086/api/v2/query?org=renewable_energy_org" \
 
 ```powershell
 # Write test data
-Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" `
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:40101/api/v2/write?org=renewable_energy_org&bucket=renewable_energy&precision=ns" `
   -Method POST `
   -Headers @{"Authorization"="Token renewable_energy_admin_token_123"} `
   -Body "test_measurement,device_id=test value=1i"
 
 # Query test data
-Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:20108/influxdb/api/v2/query?org=renewable_energy_org" `
+Invoke-RestMethod -Uri "http://robert108.mikrus.xyz:40101/api/v2/query?org=renewable_energy_org" `
   -Method POST `
   -Headers @{
     "Authorization"="Token renewable_energy_admin_token_123"

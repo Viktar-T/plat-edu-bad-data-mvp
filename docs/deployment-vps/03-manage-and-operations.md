@@ -4,7 +4,7 @@
 
 ## 📋 Overview
 
-This guide provides detailed instructions for managing, monitoring, and operating your renewable energy IoT monitoring system on your Mikrus VPS server. The system includes MQTT broker, Node-RED data processing, InfluxDB time-series database, Grafana visualization, and Nginx reverse proxy with path-based routing.
+This guide provides detailed instructions for managing, monitoring, and operating your renewable energy IoT monitoring system on your Mikrus VPS server. The system includes MQTT broker, Node-RED data processing, InfluxDB time-series database, and Grafana visualization with direct port access.
 
 ### 🎯 What You'll Learn
 - How to verify all services are running correctly
@@ -26,9 +26,8 @@ This guide provides detailed instructions for managing, monitoring, and operatin
 - **Hostname**: `robert108.mikrus.xyz`
 - **SSH Port**: `10108`
 - **SSH Command**: `ssh viktar@robert108.mikrus.xyz -p10108`
-- **Default HTTP Port**: `20108`
-- **Default HTTPS Port**: `30108`
-- **Custom IoT Ports**: `1883` (MQTT), `40098-40102` (additional IoT ports)
+- **Service Ports**: Direct access on dedicated ports
+- **Custom IoT Ports**: `40098` (MQTT), `40099` (Grafana), `40100` (Node-RED), `40101` (InfluxDB)
 
 **Connection Details:**
 ```bash
@@ -69,11 +68,10 @@ docker-compose ps
 ```
 Name                    Command               State                    Ports
 --------------------------------------------------------------------------------
-iot-grafana            /run.sh                 Up       0.0.0.0:3000->3000/tcp
-iot-influxdb2          /entrypoint.sh          Up       0.0.0.0:8086->8086/tcp
-iot-mosquitto          /docker-entrypoint. ... Up       0.0.0.0:1883->1883/tcp
-iot-nginx              /docker-entrypoint. ... Up       0.0.0.0:20108->80/tcp
-iot-node-red           /usr/src/node-red/ ... Up       0.0.0.0:1880->1880/tcp
+iot-grafana            /run.sh                 Up       0.0.0.0:40099->3000/tcp
+iot-influxdb2          /entrypoint.sh          Up       0.0.0.0:40101->8086/tcp
+iot-mosquitto          /docker-entrypoint. ... Up       0.0.0.0:40098->1883/tcp
+iot-node-red           /usr/src/node-red/ ... Up       0.0.0.0:40100->1880/tcp
 ```
 
 **Status Indicators:**
