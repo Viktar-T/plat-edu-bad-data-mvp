@@ -24,9 +24,9 @@ node-red/settings.js
 docker-compose/data/
 
 # Environment files
-.env
-.env.local
-.env.production
+# .env
+# .env.local
+# .env.production
 
 # Logs
 *.log
