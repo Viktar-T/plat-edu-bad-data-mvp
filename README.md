@@ -33,6 +33,46 @@
 
 The system follows a **pipeline architecture** where data flows through multiple processing stages:
 
+### 🔄 Data Flow Pipeline
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB 2.x  │
+│   (Simulated)   │    │   (Mosquitto)   │    │   (Processing)  │    │   (Database)    │
+│                 │    │                 │    │                 │    │                 │
+│ • Photovoltaic  │    │ • Topic Routing │    │ • Data Validation│    │ • Time-series   │
+│ • Wind Turbine  │    │ • Authentication│    │ • Transformation│    │ • Measurements  │
+│ • Biogas Plant  │    │ • QoS Management│    │ • Aggregation   │    │ • Retention     │
+│ • Heat Boiler   │    │ • Message Retain│    │ • Error Handling│    │ • Flux Queries  │
+│ • Energy Storage│    │                 │    │ • Device Sim.   │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                   ┌─────────────────┐
+                                                                   │   Grafana       │
+                                                                   │ (Visualization) │
+                                                                   │                 │
+                                                                   │ • Dashboards    │
+                                                                   │ • Alerts        │
+                                                                   │ • Analytics     │
+                                                                   │ • Reports       │
+                                                                   └─────────────────┘
+```
+
+> **💡 Note**: IoT devices are currently **simulated within Node-RED** using realistic mathematical models. The system is designed to easily integrate with real IoT devices by replacing simulation nodes with actual device connections.
+
+### 🏭 FUXA SCADA Integration (Under Construction)
+
+**FUXA** is a web-based Process Visualization (SCADA/HMI/Dashboard) software that will provide industrial-style Human Machine Interface (HMI) capabilities to our renewable energy monitoring system. 
+
+- **🔗 Official Repository**: [FUXA by frangoteam](https://github.com/frangoteam/FUXA)
+- **🎯 Purpose**: Additional visualization layer alongside Grafana and the custom React web app
+- **🔧 Features**: Real-time monitoring, control interfaces, alarm management, and asset-specific dashboards
+- **📊 Integration**: Will connect via MQTT to provide operator control interfaces and real-time asset management
+- **🚧 Status**: Currently under development and integration planning
+
+> **📋 Note**: FUXA SCADA integration is planned as an additional visualization layer to complement the existing Grafana dashboards and custom React web application, providing industrial HMI capabilities for renewable energy asset management.
+
 ```mermaid
 graph LR
     A[IoT Devices<br/>Simulated] --> B[MQTT Broker<br/>Mosquitto]
