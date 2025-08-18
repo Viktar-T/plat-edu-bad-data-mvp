@@ -38,6 +38,8 @@ ssh viktar@robert108.mikrus.xyz -p10108
 
 # Connect to your server (as root user)
 ssh root@robert108.mikrus.xyz -p10108
+# Try with verbose output to see what's happening
+ssh -v root@robert108.mikrus.xyz -p10108
 
 # Or with host key verification disabled (first time only)
 ssh -o StrictHostKeyChecking=no viktar@robert108.mikrus.xyz -p10108
