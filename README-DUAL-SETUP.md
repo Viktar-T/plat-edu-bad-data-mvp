@@ -13,6 +13,10 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 - **Professional URLs**: Clean, direct service URLs
 - **SSL Ready**: Easy HTTPS implementation per service
 - **Scalable Architecture**: Easy to add new services
+- **Complete IoT Pipeline**: MQTT → Node-RED → InfluxDB → Grafana
+- **Device Simulation**: Realistic renewable energy device data simulation
+- **Comprehensive Dashboards**: 7 specialized Grafana dashboards
+- **Data Retention**: 30-day automatic data retention with cleanup
 
 ### 🏗️ System Architecture
 
@@ -39,6 +43,32 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### 🔄 Data Flow Pipeline
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB 2.x  │
+│   (Simulated)   │    │   (Mosquitto)   │    │   (Processing)  │    │   (Database)    │
+│                 │    │                 │    │                 │    │                 │
+│ • Photovoltaic  │    │ • Topic Routing │    │ • Data Validation│    │ • Time-series   │
+│ • Wind Turbine  │    │ • Authentication│    │ • Transformation│    │ • Measurements  │
+│ • Biogas Plant  │    │ • QoS Management│    │ • Aggregation   │    │ • Retention     │
+│ • Heat Boiler   │    │ • Message Retain│    │ • Error Handling│    │ • Flux Queries  │
+│ • Energy Storage│    │                 │    │ • Device Sim.   │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                                              │
+                                                                              ▼
+                                                                   ┌─────────────────┐
+                                                                   │   Grafana       │
+                                                                   │ (Visualization) │
+                                                                   │                 │
+                                                                   │ • 7 Dashboards  │
+                                                                   │ • Alerts        │
+                                                                   │ • Analytics     │
+                                                                   │ • Reports       │
+                                                                   └─────────────────┘
+```
+
 ---
 
 ## 🚀 Quick Start
@@ -52,20 +82,25 @@ This project implements a comprehensive renewable energy IoT monitoring system w
 # - Grafana: http://localhost:3000
 # - Node-RED: http://localhost:1880
 # - InfluxDB: http://localhost:8086
-# (Express API and React App under development, not started)
+# - MQTT: localhost:1883
 ```
 
 ### **Production Deployment (Mikrus VPS)**
-```powershell
-# Prepare and deploy to VPS
-.\scripts\deploy-production.ps1 -Full
+```bash
+# SSH to VPS and manage directly
+ssh viktar@robert108.mikrus.xyz -p10108
+cd ~/plat-edu-bad-data-mvp
+
+# Update and restart services
+git pull --ff-only
+cp .env.production .env
+sudo docker-compose up -d
 
 # Access your services:
 # - Grafana: http://robert108.mikrus.xyz:40099
 # - Node-RED: http://robert108.mikrus.xyz:40100
 # - InfluxDB: http://robert108.mikrus.xyz:40101
 # - MQTT: robert108.mikrus.xyz:40098
-# (Express API and React App under development, not deployed)
 ```
 
 ---
@@ -83,11 +118,38 @@ plat-edu-bad-data-mvp/
 │   ├── 📄 dev-local.ps1               # Local development script
 │   └── 📄 deploy-production.ps1       # Production deployment script
 ├── 📁 mosquitto/                      # MQTT broker configuration
+│   ├── 📁 config/                     # Mosquitto configuration
+│   ├── 📁 data/                       # MQTT data storage
+│   └── 📁 log/                        # MQTT logs
 ├── 📁 influxdb/                       # InfluxDB configuration
+│   ├── 📁 config/                     # InfluxDB configuration
+│   ├── 📁 data/                       # Time-series data
+│   └── 📁 backups/                    # Database backups
 ├── 📁 node-red/                       # Node-RED configuration
+│   ├── 📁 data/                       # Node-RED data
+│   └── 📁 flows/                      # IoT device simulation flows
+│       ├── 📄 v2.0-pv-simulation.json
+│       ├── 📄 v2.0-wind-turbine-simulation.json
+│       ├── 📄 v2.0-biogas-plant-simulation.json
+│       ├── 📄 v2.0-heat-boiler-simulation.json
+│       └── 📄 v2.0-energy-storage-simulation.json
 ├── 📁 grafana/                        # Grafana configuration
-├── 📁 web-app-for-testing/            # Custom web application
-└── 📁 docs/                           # Documentation
+│   ├── 📁 data/                       # Grafana data
+│   ├── 📁 dashboards/                 # 7 specialized dashboards
+│   │   ├── 📄 renewable-energy-overview.json
+│   │   ├── 📄 photovoltaic-monitoring.json
+│   │   ├── 📄 wind-turbine-analytics.json
+│   │   ├── 📄 biogas-plant-metrics.json
+│   │   ├── 📄 heat-boiler-monitoring.json
+│   │   ├── 📄 energy-storage-monitoring.json
+│   │   └── 📄 simple.json
+│   └── 📁 provisioning/               # Auto-provisioning config
+├── 📁 web-app-for-testing/            # Custom web application (Under Development)
+│   ├── 📁 backend/                    # Express.js backend (Basic)
+│   └── 📁 frontend/                   # React frontend (Basic)
+├── 📁 docs/                           # Comprehensive documentation
+│   └── 📁 deployment-vps/             # VPS deployment guides
+└── 📁 tests/                          # Testing framework
 ```
 
 ---
@@ -106,6 +168,7 @@ MQTT_WS_PORT=9001
 NODE_RED_PORT=1880
 INFLUXDB_PORT=8086
 GRAFANA_PORT=3000
+
 # Local URLs
 GF_SERVER_ROOT_URL=http://localhost:3000
 ```
@@ -135,7 +198,6 @@ GF_SERVER_ROOT_URL=http://robert108.mikrus.xyz:40099
 http://localhost:3000          # Grafana Dashboard
 http://localhost:1880          # Node-RED Editor
 http://localhost:8086          # InfluxDB Admin
-# (Express/React under development, not running locally)
 localhost:1883                 # MQTT Broker
 ```
 
@@ -173,18 +235,18 @@ robert108.mikrus.xyz:40098            # MQTT Broker
 ```
 
 ### **Production Deployment**
-```powershell
-# Prepare deployment package
-.\scripts\deploy-production.ps1 -Prepare
+```bash
+# SSH to VPS and manage directly
+ssh viktar@robert108.mikrus.xyz -p10108
+cd ~/plat-edu-bad-data-mvp
 
-# Transfer files to VPS
-.\scripts\deploy-production.ps1 -Transfer
+# Update and restart services
+git pull --ff-only
+cp .env.production .env
+sudo docker-compose up -d
 
-# Deploy on VPS
-.\scripts\deploy-production.ps1 -Deploy
-
-# Or run full process
-.\scripts\deploy-production.ps1 -Full
+# Check status
+sudo docker-compose ps
 ```
 
 ---
@@ -257,12 +319,12 @@ MQTT:        Port 40098 (IoT Broker)
 - ✅ Provides access information
 - ✅ Supports stop/start/restart/logs
 
-### **Production Deployment Script (`scripts/deploy-production.ps1`)**
-- ✅ Prepares deployment package
-- ✅ Transfers files to VPS
-- ✅ Deploys services on VPS
-- ✅ Provides deployment status
-- ✅ Creates deployment documentation
+### **Production Deployment (Direct Git)**
+- ✅ Direct Git repository on VPS
+- ✅ Manual Docker management
+- ✅ Direct service control
+- ✅ Git-based updates
+- ✅ Environment file management
 
 ---
 
@@ -273,7 +335,6 @@ MQTT:        Port 40098 (IoT Broker)
 http://robert108.mikrus.xyz:40099/api/health    # Grafana health
 http://robert108.mikrus.xyz:40100               # Node-RED health
 http://robert108.mikrus.xyz:40101/health        # InfluxDB health
-# Express API health: n/a (under development)
 ```
 
 ### **Docker Health Checks**
@@ -357,13 +418,18 @@ docker ps
 **Production Deployment:**
 ```bash
 # Check service status
-docker-compose ps
+sudo docker-compose ps
 
 # View logs
-docker-compose logs -f
+sudo docker-compose logs -f
 
 # Restart services
-docker-compose restart
+sudo docker-compose restart
+
+# Update services
+git pull --ff-only
+cp .env.production .env
+sudo docker-compose up -d
 ```
 
 **Network Issues:**
@@ -420,9 +486,10 @@ mosquitto_pub -h robert108.mikrus.xyz -p 40098 -t test -m "hello"  # MQTT
 ## 📚 Documentation
 
 ### **VPS Setup Documentation**
-- 📄 `docs/prompts/deployment-vps/01-vps-setup-and-preparation.md`
-- 📄 `docs/prompts/deployment-vps/02-application-deployment.md`
-- 📄 `docs/prompts/deployment-vps/03-data-migration-testing.md`
+- 📄 `docs/deployment-vps/01-vps-setup-and-preparation.md`
+- 📄 `docs/deployment-vps/02-docker-compose-and-repo-setup.md`
+- 📄 `docs/deployment-vps/03-manage-and-operations.md`
+- 📄 `docs/deployment-vps/06-maintanence-vps.md`
 
 ### **Development Documentation**
 - 📄 `docs/prompts/dev-vps-v2/01-vps-setup-and-preparation.md`
@@ -445,9 +512,10 @@ mosquitto_pub -h robert108.mikrus.xyz -p 40098 -t test -m "hello"  # MQTT
 ### **Deployment Process**
 1. Test changes locally first
 2. Update environment files if needed
-3. Run deployment script
-4. Verify production deployment
-5. Update documentation
+3. Push changes to Git repository
+4. SSH to VPS and update: `git pull --ff-only && cp .env.production .env && sudo docker-compose up -d`
+5. Verify production deployment
+6. Update documentation
 
 ---
 

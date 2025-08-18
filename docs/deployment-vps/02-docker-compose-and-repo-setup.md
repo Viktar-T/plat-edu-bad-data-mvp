@@ -13,79 +13,51 @@ Mikrus specifics:
 
 ---
 
-## 📊 Deployment Paths Overview
+## 📊 Deployment Path Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CHOOSE DEPLOYMENT PATH                            │
+│                        DIRECT GIT DEPLOYMENT (PATH B)                       │
 └─────────────────────────────────────────────────────────────────────────────┘
-                    │                               │
-                    ▼                               ▼
-    ┌─────────────────────────┐    ┌─────────────────────────┐
-    │     PATH A              │    │     PATH B              │
-    │   (works well)          │    │   (✅ IMPLEMENTED)      │
-    │  PowerShell Script      │    │   Direct Git            │
-    │  (No VPS setup needed)  │    │  (Requires VPS setup)   │
-    └─────────────────────────┘    └─────────────────────────┘
-                    │                               │
-                    ▼                               ▼
-    ┌─────────────────────────┐    ┌─────────────────────────┐
-    │ 1. Run locally:         │    │ 1. Clone repo on VPS:   │
-    │    ./deploy-production.ps1   │    git clone ...         │
-    │    -Prepare             │    │                        │
-    │                        │    │ 2. Set permissions:     │
-    │ 2. Transfer files:      │    │    sudo chown -R ...    │
-    │    ./deploy-production.ps1   │                        │
-    │    -Transfer            │    │ 3. Start services:     │
-    │                        │    │    docker-compose up -d │
-    │ 3. Deploy on VPS:       │    │                        │
-    │    ./deploy-production.ps1   │ Location:               │
-    │    -Deploy              │    │ /home/viktar/plat-edu-bad-data-mvp │
-    │                        │    │                        │
-    │ Location:               │    │ Updates:               │
-    │ /root/renewable-energy-iot   │ git pull --ff-only      │
-    │                        │    │                        │
-    │ Updates:                │    │                        │
-    │ Re-run PowerShell script│    │                        │
-    └─────────────────────────┘    └─────────────────────────┘
+                                    │
+                                    ▼
+                    ┌─────────────────────────┐
+                    │     PATH B              │
+                    │   (✅ IMPLEMENTED)      │
+                    │   Direct Git            │
+                    │  (Requires VPS setup)   │
+                    └─────────────────────────┘
+                                    │
+                                    ▼
+                    ┌─────────────────────────┐
+                    │ 1. Clone repo on VPS:   │
+                    │    git clone ...         │
+                    │                        │
+                    │ 2. Set permissions:     │
+                    │    sudo chown -R ...    │
+                    │                        │
+                    │ 3. Start services:     │
+                    │    docker-compose up -d │
+                    │                        │
+                    │ Location:               │
+                    │ /home/viktar/plat-edu-bad-data-mvp │
+                    │                        │
+                    │ Updates:               │
+                    │ git pull --ff-only      │
+                    │                        │
+                    └─────────────────────────┘
 ```
 
-**Key Differences:**
-- **Path A**: No VPS setup required, PowerShell handles everything from your local machine
-- **Path B**: Requires VPS setup (clone repo, set permissions), then direct Docker commands
+**Deployment Method:**
+- **Path B**: Direct Git deployment with VPS setup (clone repo, set permissions), then direct Docker commands
+- **Location**: `/home/viktar/plat-edu-bad-data-mvp`
+- **Updates**: `git pull --ff-only` then `docker-compose up -d`
 
 ---
 
-## Path A: PowerShell-Driven Deployment (Recommended for Beginners)
+## Path B: Direct Git Deployment (Implemented)
 
-**✅ No VPS setup required** - PowerShell script handles everything from your local Windows machine.
-
-### Step 1: Prepare and Deploy
-
-Run locally on Windows from project root:
-
-```powershell
-# Prepare production bundle (includes env handling)
-# - Validates required files exist (docker-compose.yml, mosquitto/, influxdb/, etc.)
-# - Creates .env.production from env.example if missing
-# - Checks file permissions and structure
-./scripts/deploy-production.ps1 -Prepare
-
-# Transfer files to VPS
-# - Creates remote directories on VPS (/root/renewable-energy-iot/...)
-# - Transfers docker-compose.yml, service configs, and .env.production
-# - Uses SCP to copy files directly to VPS
-./scripts/deploy-production.ps1 -Transfer -VpsUser root -VpsHost robert108.mikrus.xyz -VpsPort 10108
-
-# Deploy on VPS
-# - Connects to VPS via SSH
-# - Runs: docker-compose pull && docker-compose up -d && docker-compose ps
-# - Shows container status after deployment
-./scripts/deploy-production.ps1 -Deploy -VpsUser root -VpsHost robert108.mikrus.xyz -VpsPort 10108
-
-# OR Deploy end-to-end (all steps combined)
-./scripts/deploy-production.ps1 -Full
-```
+**✅ Direct Git deployment** - Clone repository on VPS and manage directly with Docker commands.
 
 ### ✅ Current VPS Status (robert108.mikrus.xyz)
 
@@ -234,6 +206,17 @@ df -h
 # Check Docker disk usage
 sudo docker system df
 
+# Copy production environment file
+cp .env.production .env
+
+# Fix Docker volume permissions (IMPORTANT for VPS deployment)
+echo "🔧 Fixing Docker volume permissions..."
+sudo chown -R 472:472 ./grafana/data ./grafana/plugins
+sudo chown -R 1000:1000 ./node-red/data
+sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
+sudo chown -R 472:472 ./influxdb/data
+sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
+
 # Start services
 sudo docker-compose up -d
 
@@ -286,6 +269,17 @@ cd ~/plat-edu-bad-data-mvp
 
 # Pull latest changes
 git pull --ff-only
+
+# Copy production environment file
+cp .env.production .env
+
+# Fix Docker volume permissions (IMPORTANT for VPS deployment)
+echo "🔧 Fixing Docker volume permissions..."
+sudo chown -R 472:472 ./grafana/data ./grafana/plugins
+sudo chown -R 1000:1000 ./node-red/data
+sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
+sudo chown -R 472:472 ./influxdb/data
+sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
 
 # Restart services with new configuration
 sudo docker-compose up -d
@@ -344,6 +338,76 @@ docker ps
 ```bash
 # Run Docker commands with sudo
 sudo docker system df
+cp .env.production .env
+sudo docker-compose up -d
+sudo docker-compose ps
+```
+
+**Solution 3: Fix Docker daemon permissions**
+```bash
+# Check Docker daemon status
+sudo systemctl status docker
+
+# Restart Docker daemon if needed
+sudo systemctl restart docker
+
+# Check if user is in docker group
+groups $USER
+```
+
+### 🔧 Container Permission Issues
+
+**Issue**: Grafana or Node-RED containers showing `Restarting` or `health: starting` status with permission errors in logs.
+
+**Symptoms**:
+- Grafana: `GF_PATHS_DATA='/var/lib/grafana' is not writable`
+- Node-RED: `npm error code EACCES` and `Your cache folder contains root-owned files`
+
+**Solution**: Fix Docker volume permissions
+```bash
+# Stop all containers first
+sudo docker-compose down
+
+# Fix permissions for all services
+sudo chown -R 472:472 ./grafana/data ./grafana/plugins
+sudo chown -R 1000:1000 ./node-red/data
+sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
+sudo chown -R 472:472 ./influxdb/data
+sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
+
+# Ensure correct environment file
+cp .env.production .env
+
+# Start services
+sudo docker-compose up -d
+
+# Check status
+sudo docker-compose ps
+```
+
+**Why this happens**: Docker containers run as specific users (Grafana=472, Node-RED=1000) but host directories are owned by your user (viktar). This is a common issue when deploying Docker containers on Linux systems.
+
+**Issue**: `permission denied while trying to connect to the Docker daemon socket`
+
+**Solution 1: Add user to docker group (Recommended)**
+```bash
+# Add your user to the docker group
+sudo usermod -aG docker $USER
+
+# Log out and back in, or run this command to apply changes
+newgrp docker
+
+# Verify you can run Docker without sudo
+docker ps
+```
+
+**Note**: For this VPS setup, we're using `sudo` with all Docker commands for simplicity.
+
+**Solution 2: Use sudo (Current Setup)**
+```bash
+# Run Docker commands with sudo
+sudo docker system df
+cp .env.production .env
 sudo docker-compose up -d
 sudo docker-compose ps
 ```
@@ -365,43 +429,46 @@ groups $USER
 
 ---
 
-## Environment Files (Both Paths)
+## Environment Files
 
 **📝 Information Only - No Manual Setup Required**
 
-- **Path A**: PowerShell script manages `.env.production` automatically
-- **Path B**: No `.env` file needed on VPS (uses defaults from docker-compose.yml)
+- **Path B**: Uses `.env.production` file for environment configuration
+- **Environment file**: Copied from `.env.production` to `.env` before starting services
 
-**Validation**: You can verify this by checking that no `.env` file exists on the VPS:
+**Validation**: You can verify the environment setup by checking:
 
 ```bash
-# Check for any .env files (should not exist on VPS)
-ls -la | grep "\.env" || echo "No .env files found (correct)"
+# Check for environment files
+ls -la | grep "\.env" || echo "No .env files found"
+
+# Check if .env.production exists
+ls -la .env.production || echo ".env.production not found"
 ```
 
-Expected output: `No .env files found (correct)`
+Expected output: Should show `.env.production` file exists.
 
 ---
 
-## Path Comparison Summary
+## Deployment Summary
 
-| Aspect | Path A (PowerShell) | Path B (Direct Git) |
-|--------|-------------------|-------------------|
-| **VPS Setup Required** | ❌ No | ✅ Yes (clone, permissions) |
-| **Local Machine Required** | ✅ Yes (Windows + PowerShell) | ❌ No |
-| **Deployment Location** | `/root/renewable-energy-iot` | `/home/viktar/plat-edu-bad-data-mvp` |
-| **Updates** | Re-run PowerShell script | `git pull --ff-only` |
-| **Complexity** | 🟢 Beginner-friendly | 🟡 Requires VPS knowledge |
-| **Automation** | 🟢 Fully automated | 🟡 Manual steps |
-| **Status** | ✅ Working | ✅ Implemented |
+| Aspect | Path B (Direct Git) |
+|--------|-------------------|
+| **VPS Setup Required** | ✅ Yes (clone, permissions) |
+| **Local Machine Required** | ❌ No |
+| **Deployment Location** | `/home/viktar/plat-edu-bad-data-mvp` |
+| **Updates** | `git pull --ff-only` |
+| **Complexity** | 🟡 Requires VPS knowledge |
+| **Automation** | 🟡 Manual steps |
+| **Status** | ✅ Implemented |
 
-**Recommendation**: Use **Path A** if you're new to VPS deployment, **Path B** if you prefer direct control.
+**Current Setup**: Using **Path B** (Direct Git Deployment) for direct control and management.
 
 ---
 
 ## CI/CD Pipeline (GitHub Actions)
 
-Example workflow for Path B (Direct Git):
+Example workflow for Direct Git Deployment:
 
 ```yaml
 name: Deploy to Mikrus VPS
@@ -428,6 +495,7 @@ jobs:
             set -e; \
             cd ~/plat-edu-bad-data-mvp; \
             git pull --ff-only; \
+            cp .env.production .env; \
             docker-compose pull; \
             docker-compose up -d; \
             docker-compose ps \
@@ -440,7 +508,7 @@ Required repository secrets:
 
 ---
 
-## ✅ Validation (Both Paths)
+## ✅ Validation
 
 ```bash
 # Check container status
