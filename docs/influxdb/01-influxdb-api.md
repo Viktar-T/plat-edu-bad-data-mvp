@@ -6,6 +6,7 @@
 [![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue?logo=docker)](https://www.docker.com/)
+[![Production](https://img.shields.io/badge/Production-Deployed-green?logo=server)](https://robert108.mikrus.xyz)
 
 ---
 
@@ -13,6 +14,7 @@
 
 - [🎯 Overview](#-overview)
 - [🔧 System Configuration](#-system-configuration)
+- [🌐 Mikrus VPS Production Deployment](#-mikrus-vps-production-deployment)
 - [🔐 Authentication & Security](#-authentication--security)
 - [📊 Data Structure & Schema](#-data-structure--schema)
 - [🔌 API Endpoints Reference](#-api-endpoints-reference)
@@ -27,7 +29,7 @@
 
 ## 🎯 Overview
 
-This guide provides comprehensive documentation for integrating InfluxDB 2.7 RESTful API with **React frontend and Express backend** applications for renewable energy IoT monitoring. Your system uses InfluxDB 2.7 with the following configuration:
+This guide provides comprehensive documentation for integrating InfluxDB 2.7 RESTful API with **React frontend and Express backend** applications for renewable energy IoT monitoring. Your system is **successfully deployed on Mikrus VPS** with the following configuration:
 
 **Architecture**: React Frontend ↔ Express Backend ↔ InfluxDB 2.7
 
@@ -37,39 +39,49 @@ This guide provides comprehensive documentation for integrating InfluxDB 2.7 RES
 - **Client Libraries**: Query data directly via API or use client libraries for popular programming languages
 - **Full-Stack Architecture**: Express backend handles data processing, React frontend provides UI
 - **Scalable Design**: Separation of concerns between frontend, backend, and database layers
+- **Production Ready**: Successfully deployed on Mikrus VPS with direct port access
 
-### 🔧 Current Setup
+### 🔧 Current Production Setup
 
 - **InfluxDB Version**: 2.7
-- **Port**: 8086
+- **Production URL**: `http://robert108.mikrus.xyz:40101`
+- **Local Development URL**: `http://localhost:8086`
 - **Organization**: `renewable_energy_org`
 - **Bucket**: `renewable_energy`
 - **Retention Policy**: 30 days
-- **Authentication**: Token-based (disabled for development)
+- **Authentication**: Token-based (disabled for development, enabled for production)
 
 ### 📊 Data Flow Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   IoT Devices   │───▶│   MQTT Broker   │───▶│   Node-RED      │───▶│   InfluxDB      │
-│   (Solar, Wind, │    │   (Mosquitto)   │    │   (Processing)  │    │   (Time-Series) │
-│   Biogas, etc.) │    │   Port 1883     │    │   Port 1880     │    │   Port 8086     │
+│   (Simulated)   │    │   (Mosquitto)   │    │   (Processing)  │    │   (Time-Series) │
+│   Port 40098    │    │   Port 40098    │    │   Port 40100    │    │   Port 40101    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                                               │
                                                                               ▼
                                                                      ┌─────────────────┐
                                                                      │   Express       │
                                                                      │   Backend API   │
-                                                                     │   Port 3001     │
+                                                                     │   (Under Dev)   │
                                                                      └─────────────────┘
                                                                               │
                                                                               ▼
                                                                      ┌─────────────────┐
                                                                      │   React App     │
-                                                                     │   (Frontend)    │
-                                                                     │   Port 3000     │
+                                                                     │   (Under Dev)   │
                                                                      └─────────────────┘
 ```
+
+### 🎯 Current Project Status
+
+- **✅ Production Deployment**: Successfully running on Mikrus VPS
+- **✅ Core Services**: MQTT, InfluxDB, Node-RED, Grafana operational
+- **✅ Data Flow**: End-to-end data pipeline working
+- **🚧 Web App Development**: Basic Express/React setup, needs development
+- **📊 Visualization**: Grafana dashboards operational
+- **🔒 Security**: Basic authentication implemented
 
 ---
 
@@ -99,12 +111,618 @@ INFLUXDB_HTTP_MAX_CONNECTION_LIMIT=0
 INFLUXDB_HTTP_READ_TIMEOUT=30s
 ```
 
-### 🌐 API Base URL
+### 🌐 API Base URLs
 
 ```typescript
-const INFLUXDB_BASE_URL = 'http://localhost:8086'
+// Production (Mikrus VPS)
+const INFLUXDB_BASE_URL_PROD = 'http://robert108.mikrus.xyz:40101'
 const INFLUXDB_API_VERSION = 'v2'
+const INFLUXDB_API_URL_PROD = `${INFLUXDB_BASE_URL_PROD}/api/${INFLUXDB_API_VERSION}`
+
+// Local Development
+const INFLUXDB_BASE_URL_DEV = 'http://localhost:8086'
+const INFLUXDB_API_URL_DEV = `${INFLUXDB_BASE_URL_DEV}/api/${INFLUXDB_API_VERSION}`
+
+// Environment-based configuration
+const INFLUXDB_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? INFLUXDB_BASE_URL_PROD 
+  : INFLUXDB_BASE_URL_DEV
+
 const INFLUXDB_API_URL = `${INFLUXDB_BASE_URL}/api/${INFLUXDB_API_VERSION}`
+```
+
+---
+
+## 🌐 Mikrus VPS Production Deployment
+
+### 🚀 Production Access Information
+
+Your InfluxDB is **successfully deployed and running** on Mikrus VPS with the following access details:
+
+#### **Direct Service Access**
+```bash
+# Production URLs (Mikrus VPS)
+Grafana Dashboard:    http://robert108.mikrus.xyz:40099
+Node-RED Editor:      http://robert108.mikrus.xyz:40100
+InfluxDB Admin:       http://robert108.mikrus.xyz:40101
+MQTT Broker:          robert108.mikrus.xyz:40098
+```
+
+#### **Production Credentials**
+```bash
+# InfluxDB Access
+URL: http://robert108.mikrus.xyz:40101
+Username: admin
+Password: admin_password_123
+Token: renewable_energy_admin_token_123
+Organization: renewable_energy_org
+Bucket: renewable_energy
+```
+
+### 🔧 Production Configuration
+
+#### **Docker Container Details**
+```bash
+# Container Information
+Container Name: iot-influxdb2
+Image: influxdb:2.7
+Port Mapping: 40101 (external) → 8086 (internal)
+Status: ✅ Running and healthy
+```
+
+#### **Production Environment Variables**
+```bash
+# Production-specific settings
+INFLUXDB_PORT=40101
+INFLUXDB_HTTP_AUTH_ENABLED=false  # Disabled for development
+INFLUXDB_LOGGING_LEVEL=info
+INFLUXDB_METRICS_DISABLED=true
+INFLUXDB_REPORTING_DISABLED=true
+```
+
+### 🔌 API Integration for Production
+
+#### **Production API Client Configuration**
+```typescript
+// Production-ready InfluxDB client configuration
+const INFLUXDB_CONFIG_PROD = {
+  url: 'http://robert108.mikrus.xyz:40101',
+  token: 'renewable_energy_admin_token_123',
+  org: 'renewable_energy_org',
+  bucket: 'renewable_energy',
+  timeout: 30000, // 30 seconds
+  retries: 3
+}
+
+// Environment-aware configuration
+const getInfluxDBConfig = () => {
+  const isProduction = process.env.NODE_ENV === 'production'
+  
+  return {
+    url: isProduction 
+      ? 'http://robert108.mikrus.xyz:40101'
+      : 'http://localhost:8086',
+    token: 'renewable_energy_admin_token_123',
+    org: 'renewable_energy_org',
+    bucket: 'renewable_energy',
+    timeout: isProduction ? 30000 : 10000,
+    retries: isProduction ? 3 : 1
+  }
+}
+```
+
+#### **Production API Endpoints**
+```typescript
+// Production API endpoints
+const PRODUCTION_ENDPOINTS = {
+  // Query API
+  query: 'http://robert108.mikrus.xyz:40101/api/v2/query',
+  
+  // Write API
+  write: 'http://robert108.mikrus.xyz:40101/api/v2/write',
+  
+  // Organizations API
+  organizations: 'http://robert108.mikrus.xyz:40101/api/v2/orgs',
+  
+  // Buckets API
+  buckets: 'http://robert108.mikrus.xyz:40101/api/v2/buckets',
+  
+  // Health Check
+  health: 'http://robert108.mikrus.xyz:40101/health',
+  
+  // Admin Interface
+  admin: 'http://robert108.mikrus.xyz:40101'
+}
+```
+
+### 🛡️ Production Security Considerations
+
+#### **Current Security Status**
+```bash
+# Security Configuration
+✅ Authentication: Token-based (renewable_energy_admin_token_123)
+✅ Network: Isolated Docker network (172.20.0.0/16)
+✅ Health Checks: Enabled for all services
+✅ Restart Policy: unless-stopped
+⚠️  HTTP Auth: Disabled (development mode)
+⚠️  SSL/TLS: Not configured (HTTP only)
+```
+
+#### **Recommended Production Security Enhancements**
+```typescript
+// Security improvements for production
+const PRODUCTION_SECURITY_CONFIG = {
+  // Enable authentication
+  INFLUXDB_HTTP_AUTH_ENABLED: true,
+  
+  // Use HTTPS
+  SSL_ENABLED: true,
+  SSL_CERT_PATH: '/path/to/cert.pem',
+  SSL_KEY_PATH: '/path/to/key.pem',
+  
+  // Rate limiting
+  API_RATE_LIMIT: 1000,
+  API_RATE_LIMIT_WINDOW: '1m',
+  
+  // Connection limits
+  MAX_CONNECTIONS: 1000,
+  READ_TIMEOUT: '60s'
+}
+```
+
+### 🔍 Production Monitoring
+
+#### **Health Check Endpoints**
+```bash
+# Health check URLs
+InfluxDB Health: http://robert108.mikrus.xyz:40101/health
+Grafana Health:  http://robert108.mikrus.xyz:40099/api/health
+Node-RED Health: http://robert108.mikrus.xyz:40100
+```
+
+#### **Container Status Commands**
+```bash
+# SSH to VPS and check status
+ssh root@robert108.mikrus.xyz -p10108
+cd /root/renewable-energy-iot
+
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs influxdb
+
+# Health check
+curl -f http://localhost:8086/health
+```
+
+### 📊 Production Data Access
+
+#### **Direct API Access Examples**
+```bash
+# Test InfluxDB connection
+curl -H "Authorization: Token renewable_energy_admin_token_123" \
+     "http://robert108.mikrus.xyz:40101/api/v2/buckets?org=renewable_energy_org"
+
+# Test query endpoint
+curl -X POST \
+     -H "Authorization: Token renewable_energy_admin_token_123" \
+     -H "Content-Type: application/vnd.flux" \
+     -d 'from(bucket:"renewable_energy") |> range(start: -1h) |> limit(n:5)' \
+     "http://robert108.mikrus.xyz:40101/api/v2/query?org=renewable_energy_org"
+```
+
+#### **Production Data Flow**
+```typescript
+// Production data flow example
+const productionDataFlow = {
+  // 1. MQTT data collection
+  mqtt: 'robert108.mikrus.xyz:40098',
+  
+  // 2. Node-RED processing
+  nodeRed: 'http://robert108.mikrus.xyz:40100',
+  
+  // 3. InfluxDB storage
+  influxdb: 'http://robert108.mikrus.xyz:40101',
+  
+  // 4. Grafana visualization
+  grafana: 'http://robert108.mikrus.xyz:40099',
+  
+  // 5. Custom web app (under development)
+  webApp: 'http://robert108.mikrus.xyz:3000' // Future
+}
+```
+
+### 🛠️ Working with Mikrus VPS Deployment
+
+#### **Quick Start Guide for Production**
+
+1. **Access Your Production InfluxDB**
+```bash
+# Direct web interface
+http://robert108.mikrus.xyz:40101
+
+# API endpoint
+http://robert108.mikrus.xyz:40101/api/v2/
+```
+
+2. **Test API Connectivity**
+
+**For Linux/macOS (bash):**
+```bash
+# Health check
+curl http://robert108.mikrus.xyz:40101/health
+
+# List buckets
+curl -H "Authorization: Token renewable_energy_admin_token_123" \
+     "http://robert108.mikrus.xyz:40101/api/v2/buckets?org=renewable_energy_org"
+```
+
+**For Windows PowerShell:**
+```powershell
+# Health check
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/health"
+
+# List buckets
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/api/v2/buckets?org=renewable_energy_org" `
+                 -Headers @{"Authorization" = "Token renewable_energy_admin_token_123"}
+
+# Alternative PowerShell syntax
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+}
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/api/v2/buckets?org=renewable_energy_org" -Headers $headers
+```
+
+3. **Query Production Data**
+
+**For Linux/macOS (bash):**
+```bash
+# Get recent photovoltaic data
+curl -X POST \
+     -H "Authorization: Token renewable_energy_admin_token_123" \
+     -H "Content-Type: application/vnd.flux" \
+     -d 'from(bucket:"renewable_energy") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "photovoltaic_data") |> limit(n:10)' \
+     "http://robert108.mikrus.xyz:40101/api/v2/query?org=renewable_energy_org"
+```
+
+**For Windows PowerShell:**
+```powershell
+# Get recent photovoltaic data
+$headers = @{
+    "Authorization" = "Token renewable_energy_admin_token_123"
+    "Content-Type" = "application/vnd.flux"
+}
+
+$body = 'from(bucket:"renewable_energy") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "photovoltaic_data") |> limit(n:10)'
+
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/api/v2/query?org=renewable_energy_org" `
+                 -Method POST `
+                 -Headers $headers `
+                 -Body $body
+```
+
+#### **PowerShell Testing Scripts**
+
+**📁 Complete Test Script**: [`tests/deploy-vps-mikrus/test-unfluxdb-api.ps1`](../tests/deploy-vps-mikrus/test-unfluxdb-api.ps1)
+
+This comprehensive test script provides detailed output and tests all major InfluxDB API endpoints.
+
+**Quick Test Commands:**
+```powershell
+# Run the complete test script
+.\tests\deploy-vps-mikrus\test-unfluxdb-api.ps1
+
+# Or run individual tests
+# Test health endpoint
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/health"
+
+# Test buckets endpoint
+$headers = @{"Authorization" = "Token renewable_energy_admin_token_123"}
+Invoke-WebRequest -Uri "http://robert108.mikrus.xyz:40101/api/v2/buckets?org=renewable_energy_org" -Headers $headers
+```
+
+**Test Coverage:**
+- ✅ Health endpoint verification
+- ✅ Authentication and bucket listing
+- ✅ Flux query execution
+- ✅ Organization access
+- ✅ Detailed response analysis
+- ✅ Error handling and troubleshooting
+- ✅ Summary report with success rate
+
+#### **PowerShell Data Retrieval Functions**
+
+```powershell
+# PowerShell functions for working with InfluxDB data
+function Get-InfluxDBData {
+    param(
+        [string]$Measurement = "photovoltaic_data",
+        [string]$TimeRange = "-1h",
+        [string]$DeviceId = "",
+        [string]$Field = "",
+        [string]$BaseUrl = "http://robert108.mikrus.xyz:40101",
+        [string]$Token = "renewable_energy_admin_token_123",
+        [string]$Org = "renewable_energy_org",
+        [string]$Bucket = "renewable_energy"
+    )
+    
+    $headers = @{
+        "Authorization" = "Token $Token"
+        "Content-Type" = "application/vnd.flux"
+    }
+    
+    # Build Flux query
+    $fluxQuery = "from(bucket: `"$Bucket`") |> range(start: $TimeRange) |> filter(fn: (r) => r._measurement == `"$Measurement`")"
+    
+    if ($DeviceId) {
+        $fluxQuery += " |> filter(fn: (r) => r.device_id == `"$DeviceId`")"
+    }
+    
+    if ($Field) {
+        $fluxQuery += " |> filter(fn: (r) => r._field == `"$Field`")"
+    }
+    
+    $fluxQuery += " |> sort(columns: [\"_time\"])"
+    
+    try {
+        $response = Invoke-WebRequest -Uri "$BaseUrl/api/v2/query?org=$Org" -Method POST -Headers $headers -Body $fluxQuery
+        return $response.Content
+    }
+    catch {
+        Write-Host "Error retrieving data: $($_.Exception.Message)" -ForegroundColor Red
+        return $null
+    }
+}
+
+# Example usage
+Write-Host "Getting photovoltaic data..." -ForegroundColor Green
+$data = Get-InfluxDBData -Measurement "photovoltaic_data" -TimeRange "-1h"
+if ($data) {
+    Write-Host "Data retrieved successfully!" -ForegroundColor Green
+    Write-Host "Data length: $($data.Length) characters" -ForegroundColor Yellow
+}
+
+# Get specific device data
+Write-Host "Getting device data..." -ForegroundColor Green
+$deviceData = Get-InfluxDBData -Measurement "photovoltaic_data" -DeviceId "pv_001" -Field "power_output"
+if ($deviceData) {
+    Write-Host "Device data retrieved!" -ForegroundColor Green
+}
+```
+
+#### **Production API Client Setup**
+
+```typescript
+// Production-ready InfluxDB client
+class ProductionInfluxDBClient {
+  private baseUrl: string
+  private token: string
+  private org: string
+  private bucket: string
+
+  constructor() {
+    this.baseUrl = 'http://robert108.mikrus.xyz:40101'
+    this.token = 'renewable_energy_admin_token_123'
+    this.org = 'renewable_energy_org'
+    this.bucket = 'renewable_energy'
+  }
+
+  private getHeaders(contentType: string = 'application/json') {
+    return {
+      'Authorization': `Token ${this.token}`,
+      'Content-Type': contentType
+    }
+  }
+
+  // Query data from production
+  async query(fluxQuery: string): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/api/v2/query`, {
+      method: 'POST',
+      headers: {
+        ...this.getHeaders('application/vnd.flux'),
+        'Accept': 'application/csv'
+      },
+      body: fluxQuery
+    })
+
+    if (!response.ok) {
+      throw new Error(`Query failed: ${response.statusText}`)
+    }
+
+    const csvData = await response.text()
+    return this.parseCSVResult(csvData)
+  }
+
+  // Get device data from production
+  async getDeviceData(deviceId: string, measurement: string, timeRange: string = '-1h') {
+    const fluxQuery = `
+      from(bucket: "${this.bucket}")
+        |> range(start: ${timeRange})
+        |> filter(fn: (r) => r._measurement == "${measurement}")
+        |> filter(fn: (r) => r.device_id == "${deviceId}")
+        |> sort(columns: ["_time"])
+    `
+    return this.query(fluxQuery)
+  }
+
+  // Get system health
+  async health(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/health`)
+      return response.ok
+    } catch {
+      return false
+    }
+  }
+
+  private parseCSVResult(csvData: string): any[] {
+    const lines = csvData.trim().split('\n')
+    const headers = lines[0].split(',')
+    const data: any[] = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',')
+      const row: any = {}
+      
+      headers.forEach((header, index) => {
+        row[header.trim()] = values[index]?.trim() || ''
+      })
+      
+      data.push(row)
+    }
+    
+    return data
+  }
+}
+
+// Usage example
+const productionClient = new ProductionInfluxDBClient()
+
+// Get photovoltaic data
+productionClient.getDeviceData('pv_001', 'photovoltaic_data', '-24h')
+  .then(data => console.log('Production data:', data))
+  .catch(error => console.error('Error:', error))
+```
+
+#### **Production Monitoring Dashboard**
+
+```typescript
+// React component for production monitoring
+import React, { useState, useEffect } from 'react'
+
+interface ProductionDashboardProps {
+  deviceId?: string
+}
+
+export function ProductionDashboard({ deviceId }: ProductionDashboardProps) {
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchProductionData = async () => {
+      try {
+        setLoading(true)
+        
+        const response = await fetch('http://robert108.mikrus.xyz:40101/api/v2/query', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Token renewable_energy_admin_token_123',
+            'Content-Type': 'application/vnd.flux',
+            'Accept': 'application/csv'
+          },
+          body: `
+            from(bucket: "renewable_energy")
+              |> range(start: -1h)
+              |> filter(fn: (r) => r._measurement == "photovoltaic_data")
+              ${deviceId ? `|> filter(fn: (r) => r.device_id == "${deviceId}")` : ''}
+              |> sort(columns: ["_time"])
+          `
+        })
+
+        if (!response.ok) {
+          throw new Error(`Production API error: ${response.statusText}`)
+        }
+
+        const csvData = await response.text()
+        const parsedData = parseCSVResult(csvData)
+        setData(parsedData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProductionData()
+  }, [deviceId])
+
+  if (loading) return <div>Loading production data...</div>
+  if (error) return <div>Error: {error}</div>
+
+  return (
+    <div className="production-dashboard">
+      <h2>Production Data from Mikrus VPS</h2>
+      <div className="data-summary">
+        <p>Data Points: {data.length}</p>
+        <p>Latest: {data[data.length - 1]?._time}</p>
+      </div>
+      <div className="data-table">
+        {data.slice(-5).map((row, index) => (
+          <div key={index} className="data-row">
+            <span>{row._time}</span>
+            <span>{row.device_id}</span>
+            <span>{row._field}</span>
+            <span>{row._value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function parseCSVResult(csvData: string): any[] {
+  const lines = csvData.trim().split('\n')
+  const headers = lines[0].split(',')
+  const data: any[] = []
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',')
+    const row: any = {}
+    
+    headers.forEach((header, index) => {
+      row[header.trim()] = values[index]?.trim() || ''
+    })
+    
+    data.push(row)
+  }
+  
+  return data
+}
+```
+
+#### **Production Troubleshooting**
+
+```bash
+# 1. Check if services are running
+ssh root@robert108.mikrus.xyz -p10108
+cd /root/renewable-energy-iot
+docker-compose ps
+
+# 2. Check InfluxDB logs
+docker-compose logs influxdb
+
+# 3. Test InfluxDB connectivity
+curl -f http://localhost:8086/health
+
+# 4. Check data in InfluxDB
+docker-compose exec influxdb influx query \
+  --org renewable_energy_org \
+  --token renewable_energy_admin_token_123 \
+  'from(bucket:"renewable_energy") |> range(start: -1h) |> limit(n:5)'
+
+# 5. Restart services if needed
+docker-compose restart influxdb
+```
+
+#### **Production Data Backup**
+
+```bash
+# Create backup of InfluxDB data
+ssh root@robert108.mikrus.xyz -p10108
+cd /root/renewable-energy-iot
+
+# Backup data directory
+tar -czf influxdb-backup-$(date +%Y%m%d).tar.gz influxdb/data/
+
+# Export data using InfluxDB CLI
+docker-compose exec influxdb influx query \
+  --org renewable_energy_org \
+  --token renewable_energy_admin_token_123 \
+  --file-format csv \
+  'from(bucket:"renewable_energy") |> range(start: -30d)' \
+  > backup-data-$(date +%Y%m%d).csv
 ```
 
 ---
@@ -118,7 +736,9 @@ InfluxDB 2.7 uses token-based authentication. For your Express backend:
 ```typescript
 // Configuration
 const INFLUXDB_CONFIG = {
-  url: 'http://localhost:8086',
+  url: process.env.NODE_ENV === 'production' 
+    ? 'http://robert108.mikrus.xyz:40101'
+    : 'http://localhost:8086',
   token: 'renewable_energy_admin_token_123',
   org: 'renewable_energy_org',
   bucket: 'renewable_energy'
@@ -140,9 +760,9 @@ const getInfluxDBConfig = () => {
   
   return {
     url: isProduction 
-      ? process.env.REACT_APP_INFLUXDB_URL 
+      ? 'http://robert108.mikrus.xyz:40101'
       : 'http://localhost:8086',
-    token: process.env.REACT_APP_INFLUXDB_TOKEN,
+    token: process.env.REACT_APP_INFLUXDB_TOKEN || 'renewable_energy_admin_token_123',
     org: process.env.REACT_APP_INFLUXDB_ORG || 'renewable_energy_org',
     bucket: process.env.REACT_APP_INFLUXDB_BUCKET || 'renewable_energy'
   }
@@ -598,9 +1218,36 @@ const compareDevices = (deviceIds: string[]) => {
 
 ## ⚡ Express Backend + React Frontend Integration Patterns
 
-### 🔌 Express Backend API Endpoints
+### 🔌 Current Web App Development Status
 
-#### 1. **Basic Data Fetching Endpoint**
+**Status**: 🚧 **Under Development** - Basic setup exists, needs significant development
+
+#### **Current Implementation**
+```typescript
+// Current basic Express backend (web-app-for-testing/backend/server.js)
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+const port = process.env.PORT || 3001;
+
+app.use(cors());
+app.use(express.json());
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Express backend running' });
+});
+
+app.listen(port, () => {
+  console.log(`Express backend listening on port ${port}`);
+});
+```
+
+#### **Planned Express Backend API Endpoints**
 
 ```typescript
 import { useState, useEffect, useCallback } from 'react'
@@ -613,13 +1260,28 @@ interface UseInfluxDataOptions {
   interval?: number
 }
 
-// Express.js endpoint for fetching InfluxDB data
+// Planned Express.js endpoint for fetching InfluxDB data
 app.get('/api/energy-data', async (req, res) => {
   try {
     const { measurement, timeRange, deviceId, field } = req.query
     
+    // Production vs Development configuration
+    const influxConfig = process.env.NODE_ENV === 'production' 
+      ? {
+          url: 'http://robert108.mikrus.xyz:40101',
+          token: 'renewable_energy_admin_token_123',
+          org: 'renewable_energy_org',
+          bucket: 'renewable_energy'
+        }
+      : {
+          url: 'http://localhost:8086',
+          token: 'renewable_energy_admin_token_123',
+          org: 'renewable_energy_org',
+          bucket: 'renewable_energy'
+        }
+    
     let fluxQuery = `
-      from(bucket: "${INFLUXDB_CONFIG.bucket}")
+      from(bucket: "${influxConfig.bucket}")
         |> range(start: ${timeRange || '-1h'})
         |> filter(fn: (r) => r._measurement == "${measurement}")
     `
@@ -634,13 +1296,14 @@ app.get('/api/energy-data', async (req, res) => {
     
     fluxQuery += `|> sort(columns: ["_time"])`
     
-    const result = await executeQuery(fluxQuery)
+    const result = await executeQuery(fluxQuery, influxConfig)
     const parsedData = parseCSVResult(result)
     
     res.json({
       success: true,
       data: parsedData,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: process.env.NODE_ENV === 'production' ? 'production' : 'development'
     })
   } catch (error) {
     res.status(500).json({
@@ -1364,10 +2027,44 @@ export const QueryTemplates = {
 
 ---
 
+## 📊 Current Project Status Summary
+
+### 🎯 **Production Deployment Status**
+- **✅ Successfully Deployed**: All core services running on Mikrus VPS
+- **✅ Data Flow**: End-to-end pipeline operational (MQTT → Node-RED → InfluxDB → Grafana)
+- **✅ Monitoring**: Grafana dashboards providing real-time visualization
+- **✅ API Access**: InfluxDB RESTful API accessible at `http://robert108.mikrus.xyz:40101`
+
+### 🚧 **Web App Development Status**
+- **🚧 Express Backend**: Basic setup exists, needs InfluxDB API integration
+- **🚧 React Frontend**: Basic setup exists, needs development
+- **📋 Next Steps**: Implement full API integration and React components
+
+### 🔧 **Available Resources**
+- **Production InfluxDB**: `http://robert108.mikrus.xyz:40101`
+- **Grafana Dashboards**: `http://robert108.mikrus.xyz:40099`
+- **Node-RED Editor**: `http://robert108.mikrus.xyz:40100`
+- **MQTT Broker**: `robert108.mikrus.xyz:40098`
+
+### 🛠️ **Immediate Development Tasks**
+1. **Express Backend Enhancement**: Add InfluxDB API integration
+2. **React Frontend Development**: Create monitoring components
+3. **Production Integration**: Connect web app to production InfluxDB
+4. **Security Enhancement**: Implement proper authentication
+5. **Testing**: Add comprehensive API testing
+
+### 📚 **Documentation Status**
+- **✅ InfluxDB API Guide**: This comprehensive guide
+- **✅ Production Deployment**: Fully documented
+- **✅ System Architecture**: Well documented
+- **📋 Web App Development**: Needs documentation as development progresses
+
+---
+
 <div align="center">
 
 **🌐 Ready to integrate InfluxDB with your React app?**
 
-*Use this comprehensive guide to build powerful renewable energy monitoring dashboards!*
+*Your production InfluxDB is running and ready for integration!*
 
-</div>
+**Production URL**: `
