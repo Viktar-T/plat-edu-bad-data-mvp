@@ -188,6 +188,49 @@ services:
   # React Frontend (Local Development)
   # react-frontend removed (under development)
 
+  # SCADA System - FUXA (Local Development)
+  fuxa:
+    image: frangoteam/fuxa:latest
+    container_name: iot-fuxa-local
+    ports:
+      - "3002:1881"      # FUXA (mapped to 3002 to avoid Grafana conflict)
+    volumes:
+      - ./fuxa/projects:/app/projects
+      - ./fuxa/backups:/app/backups
+    environment:
+      - TZ=UTC
+      - NODE_ENV=development
+      - FUXA_PORT=3000
+      - FUXA_HOST=0.0.0.0
+      # MQTT Configuration for local development
+      - FUXA_MQTT_BROKER=mosquitto
+      - FUXA_MQTT_PORT=1883
+      - FUXA_MQTT_USERNAME=admin
+      - FUXA_MQTT_PASSWORD=admin_password_456
+      # Database Configuration (local SQLite for development)
+      - FUXA_DB_TYPE=sqlite
+      - FUXA_DB_PATH=/app/projects/fuxa.db
+      # Security (disabled for local development)
+      - FUXA_AUTHENTICATION=false
+      - FUXA_AUTHORIZATION=false
+      # Logging
+      - FUXA_LOG_LEVEL=info
+      - FUXA_LOG_FILE=/app/projects/fuxa.log
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      node-red:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:1881 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - iot-network-local
+
 networks:
   iot-network-local:
     driver: bridge
@@ -205,4 +248,8 @@ volumes:
   node_red_data_local:
     driver: local
   grafana_data_local:
+    driver: local
+  fuxa_projects_local:
+    driver: local
+  fuxa_backups_local:
     driver: local

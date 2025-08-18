@@ -113,10 +113,11 @@ function Show-AccessInfo {
     Write-ColorOutput "Local Development Access URLs:" $Cyan
     Write-ColorOutput "================================================" $Cyan
     Write-ColorOutput "  Grafana Dashboard:    http://localhost:3000" $Yellow
+    Write-ColorOutput "  FUXA SCADA:           http://localhost:3002" $Yellow
     Write-ColorOutput "  Node-RED Editor:      http://localhost:1880" $Yellow
     Write-ColorOutput "  InfluxDB Admin:       http://localhost:8086" $Yellow
     Write-ColorOutput "  Express Backend API:  http://localhost:3001" $Yellow
-    Write-ColorOutput "  React Frontend:       http://localhost:3002" $Yellow
+    Write-ColorOutput "  React Frontend:       http://localhost:3003" $Yellow
     Write-ColorOutput "  MQTT Broker:          localhost:1883" $Yellow
     Write-ColorOutput "  MQTT WebSocket:       localhost:9001" $Yellow
     Write-ColorOutput "================================================" $Cyan
@@ -125,6 +126,7 @@ function Show-AccessInfo {
     Write-ColorOutput "Default Credentials:" $Cyan
     Write-ColorOutput "================================================" $Cyan
     Write-ColorOutput "  Grafana:     admin / admin" $Yellow
+    Write-ColorOutput "  FUXA SCADA:  no auth (local dev)" $Yellow
     Write-ColorOutput "  Node-RED:    admin / adminpassword" $Yellow
     Write-ColorOutput "  InfluxDB:    admin / admin_password_123" $Yellow
     Write-ColorOutput "  MQTT:        admin / admin_password_456" $Yellow

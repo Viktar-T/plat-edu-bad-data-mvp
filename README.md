@@ -46,32 +46,33 @@ The system follows a **pipeline architecture** where data flows through multiple
 │ • Heat Boiler   │    │ • Message Retain│    │ • Error Handling│    │ • Flux Queries  │
 │ • Energy Storage│    │                 │    │ • Device Sim.   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                                              │
-                                                                              ▼
-                                                                   ┌─────────────────┐
-                                                                   │   Grafana       │
-                                                                   │ (Visualization) │
-                                                                   │                 │
-                                                                   │ • 7 Dashboards  │
-                                                                   │ • Alerts        │
-                                                                   │ • Analytics     │
-                                                                   │ • Reports       │
-                                                                   └─────────────────┘
+                                │                                              │
+                                ▼                                              ▼
+                       ┌─────────────────┐                        ┌─────────────────┐
+                       │   FUXA SCADA    │                        │   Grafana       │
+                       │ (HMI Interface) │                        │ (Visualization) │
+                       │                 │                        │                 │
+                       │ • Real-time     │                        │ • 7 Dashboards  │
+                       │ • Control       │                        │ • Alerts        │
+                       │ • Alarms        │                        │ • Analytics     │
+                       │ • Asset Mgmt    │                        │ • Reports       │
+                       └─────────────────┘                        └─────────────────┘
 ```
 
 > **💡 Note**: IoT devices are currently **simulated within Node-RED** using realistic mathematical models. The system is designed to easily integrate with real IoT devices by replacing simulation nodes with actual device connections.
 
-### 🏭 FUXA SCADA Integration (Under Construction)
+### 🏭 FUXA SCADA Integration (Local Development)
 
-**FUXA** is a web-based Process Visualization (SCADA/HMI/Dashboard) software that will provide industrial-style Human Machine Interface (HMI) capabilities to our renewable energy monitoring system. 
+**FUXA** is a web-based Process Visualization (SCADA/HMI/Dashboard) software that provides industrial-style Human Machine Interface (HMI) capabilities to our renewable energy monitoring system. 
 
 - **🔗 Official Repository**: [FUXA by frangoteam](https://github.com/frangoteam/FUXA)
 - **🎯 Purpose**: Additional visualization layer alongside Grafana and the custom React web app
 - **🔧 Features**: Real-time monitoring, control interfaces, alarm management, and asset-specific dashboards
-- **📊 Integration**: Will connect via MQTT to provide operator control interfaces and real-time asset management
-- **🚧 Status**: Currently under development and integration planning
+- **📊 Integration**: Connects via MQTT to provide operator control interfaces and real-time asset management
+- **🌐 Access**: http://localhost:3002 (local development)
+- **✅ Status**: Integrated and ready for local development
 
-> **📋 Note**: FUXA SCADA integration is planned as an additional visualization layer to complement the existing Grafana dashboards and custom React web application, providing industrial HMI capabilities for renewable energy asset management.
+> **📋 Note**: FUXA SCADA is now integrated as an additional visualization layer to complement the existing Grafana dashboards and custom React web application, providing industrial HMI capabilities for renewable energy asset management in the local development environment.
 
 ```mermaid
 graph LR
@@ -79,12 +80,14 @@ graph LR
     B --> C[Node-RED<br/>Processing]
     C --> D[InfluxDB 2.x<br/>Time-Series DB]
     D --> E[Grafana<br/>Visualization]
+    B --> F[FUXA SCADA<br/>HMI Interface]
     
     style A fill:#e1f5fe
     style B fill:#f3e5f5
     style C fill:#fff3e0
     style D fill:#e8f5e8
     style E fill:#fce4ec
+    style F fill:#fff8e1
 ```
 
 ---
@@ -109,6 +112,7 @@ cd plat-edu-bad-data-mvp
 
 # Access your services:
 # - Grafana: http://localhost:3000 (admin/admin)
+# - FUXA SCADA: http://localhost:3002 (no auth - local dev)
 # - Node-RED: http://localhost:1880 (admin/adminpassword)
 # - InfluxDB: http://localhost:8086 (admin/admin_password_123)
 # - MQTT: localhost:1883 (admin/admin_password_456)
@@ -185,6 +189,10 @@ plat-edu-bad-data-mvp/
 │   │   ├── 📄 energy-storage-monitoring.json
 │   │   └── 📄 simple.json
 │   └── 📁 provisioning/               # Auto-provisioning config
+├── 📁 fuxa/                           # FUXA SCADA configuration
+│   ├── 📁 projects/                   # FUXA project files
+│   ├── 📁 backups/                    # Local backup scripts
+│   └── 📄 README.md                   # FUXA setup guide
 ├── 📁 web-app-for-testing/            # Custom web application (Under Development)
 │   ├── 📁 backend/                    # Express.js backend (Basic)
 │   └── 📁 frontend/                   # React frontend (Basic)
