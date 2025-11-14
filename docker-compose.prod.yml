@@ -8,6 +8,13 @@ services:
         - NODE_ENV=production
     environment:
       - NODE_ENV=production
+      # InfluxDB Configuration - Use Docker service name for internal communication
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-renewable_energy_org}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-renewable_energy}
+      - TEST_TOKEN=${INFLUXDB_ADMIN_TOKEN:-renewable_energy_admin_token_123}
+      # CORS Configuration - Include production frontend URL
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173,http://localhost:3002}
     restart: always
     logging:
       driver: "json-file"
@@ -30,8 +37,8 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-        - VITE_API_URL=${VITE_API_URL}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
     restart: always
     logging:
       driver: "json-file"

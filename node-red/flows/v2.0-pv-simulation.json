@@ -3,13 +3,13 @@
     "id": "pv-inject-30s",
     "type": "inject",
     "z": "photovoltaic-simulation",
-    "name": "30s Interval",
+    "name": "10s Interval",
     "props": [
       {
         "p": "payload"
       }
     ],
-    "repeat": "30",
+    "repeat": "10",
     "crontab": "",
     "once": false,
     "onceDelay": 0.1,

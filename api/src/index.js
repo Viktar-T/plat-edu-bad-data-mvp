@@ -17,11 +17,11 @@ const getCorsOrigin = () => {
     const origins = process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
     return origins.length === 1 ? origins[0] : origins;
   }
-  // Default origins
+  // Default origins for local development
   return [
     'http://localhost:5173',
     'http://localhost:3000',
-    'http://robert108.mikrus.xyz:40103'
+    'http://localhost:3002'
   ];
 };
 
@@ -36,7 +36,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const INFLUXDB_BASE_URL = process.env.INFLUXDB_URL || 'http://robert108.mikrus.xyz:40101'
+// InfluxDB Configuration
+// In Docker: use service name 'influxdb' for internal communication
+// Outside Docker: use localhost or external URL
+const getInfluxDBUrl = () => {
+  if (process.env.INFLUXDB_URL) {
+    return process.env.INFLUXDB_URL;
+  }
+  // Default to Docker service name for internal communication
+  // This works when running in Docker Compose
+  return 'http://influxdb:8086';
+};
+
+const INFLUXDB_BASE_URL = getInfluxDBUrl();
 const token = process.env.TEST_TOKEN;
 const org = process.env.INFLUXDB_ORG || "renewable_energy_org";
 const bucket = process.env.INFLUXDB_BUCKET || "renewable_energy";
