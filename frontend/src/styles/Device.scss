@@ -1,0 +1,11 @@
+.device {
+    display: flex;
+    flex-direction: row;
+    picture {
+        width: 50%;
+        max-height: 60%;
+    }
+    img {
+        width: 100%;
+    }
+}

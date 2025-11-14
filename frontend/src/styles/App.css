@@ -1,0 +1,6 @@
+#root {
+  width: 100svw;
+  height: 100svh;
+  display: grid;
+  grid-template-rows: min-content auto min-content;
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="200" viewBox="0 0 200 200">
+  <path
+    class="dash dash-red"
+    d="M5 80 l215 0"
+    stroke="red"
+    stroke-width="6"
+    stroke-dasharray="20,20"
+    fill="none"
+  />
+
+  <!-- Blue dashes (shifted and animated the same way) -->
+  <path
+    class="dash dash-blue"
+    d="M5 80 l215 0"
+    stroke="blue"
+    stroke-width="6"
+    stroke-dasharray="20,20"
+    stroke-dashoffset="20"
+    fill="none"
+  />
+</svg>

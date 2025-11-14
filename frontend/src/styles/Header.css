@@ -1,0 +1,59 @@
+.header {
+  height: 7lvh;
+  width: 100%;
+  background-color: var(--background-color2);
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+}
+
+.header .name {
+  margin-left: 1lvh;
+  height: 100%;
+  width: 40lvh;
+}
+
+.header .name .siteName {
+  font-size: 2.5lvh;
+  font-weight: bold;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header .name .school {
+  font-size: 1lvh;
+}
+
+.header nav {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 5lvh;
+  display: flex;
+  flex-direction: row;
+}
+
+.header nav a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 10lvh;
+  height: 100%;
+  text-decoration: none;
+  color: var(--primart-text);
+  transition: .5s;
+}
+
+.header nav .active-link, .header nav a:hover {
+  color: var(--primart-text-inv);
+  background-color: var(--button);
+}
+
+.header .toggle {
+  height: 100%;
+  width: 10lvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

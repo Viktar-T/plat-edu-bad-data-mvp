@@ -1,0 +1,122 @@
+.leaflet-map {
+  height: 100%;
+  height: 100%;
+}
+
+body {
+  --strokeColor: #000;
+  --fillColor: #b6b6b6;
+  --fillColor2: #858585;
+}
+
+body.dark {
+  --strokeColor: #b6b6b6;
+  --fillColor: #000;
+  --fillColor2: #2e2e2e;
+}
+
+body.dark .leaflet-layer,
+body.dark .leaflet-control-zoom-in,
+body.dark .leaflet-control-zoom-out,
+body.dark .leaflet-control-attribution {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+.leaflet-container {
+  background: transparent !important;
+}
+
+.marker {
+  cursor: grab;
+}
+
+.marker .bg {
+  fill: var(--marker-background);
+}
+
+.marker .bg2 {
+  fill: #115f15;
+}
+
+.marker .line {
+  stroke: var(--background-color2-inv);
+}
+
+.marker .name {
+  font-weight: bold;
+  fill: var(--marker-text);
+  font-size: 30px;
+}
+
+.marker .desc {
+  fill: var(--marker-text);
+}
+
+.marker .clickable {
+  cursor: pointer;
+}
+
+.roomMarker .bg {
+  fill: var(--fillColor2);
+}
+
+.roomMarker .name {
+  fill: var(--strokeColor);
+  font-size: 20px;
+}
+
+.marker:focus {
+  outline: none;
+}
+
+.cls-1,
+.cls-2,
+.cls-3,
+.cls-4 {
+  fill: none;
+  stroke: var(--strokeColor);
+}
+
+.cls-1,
+.cls-3 {
+  stroke-miterlimit: 10;
+}
+
+.cls-2,
+.cls-4 {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cls-3 {
+  stroke-width: .25px;
+}
+
+.cls-4 {
+  stroke-width: 2px;
+}
+
+.cls-5 {
+  fill: var(--fillColor);
+}
+
+.eletricLineBg {
+  stroke: white;
+  stroke-width: 6;
+}
+
+.eletricLineCurrent {
+  stroke: #0e460e;
+  stroke-width: 6;
+  stroke-dasharray: 20 10;
+  animation: moveDash 1s linear infinite;
+}
+
+@keyframes moveDash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 30;
+  }
+}
