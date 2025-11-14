@@ -138,10 +138,42 @@ sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/d
 sudo docker-compose up -d
 
 # Access your services:
+# - Frontend Dashboard: http://robert108.mikrus.xyz:40103
+# - API Endpoints: http://robert108.mikrus.xyz:40102
+#   - Health: http://robert108.mikrus.xyz:40102/health
+#   - Summary: http://robert108.mikrus.xyz:40102/api/summary/{device}
 # - Grafana: http://robert108.mikrus.xyz:40099 (admin/admin)
 # - Node-RED: http://robert108.mikrus.xyz:40100 (admin/adminpassword)
 # - InfluxDB: http://robert108.mikrus.xyz:40101 (admin/admin_password_123)
 # - MQTT: robert108.mikrus.xyz:40098 (admin/admin_password_456)
+```
+
+## Production Access URLs
+
+Access the production system at:
+
+- **Frontend Dashboard**: http://robert108.mikrus.xyz:40103
+- **API Endpoints**: http://robert108.mikrus.xyz:40102
+  - Health: http://robert108.mikrus.xyz:40102/health
+  - Summary: http://robert108.mikrus.xyz:40102/api/summary/{device}
+- **Grafana**: http://robert108.mikrus.xyz:40099
+- **Node-RED**: http://robert108.mikrus.xyz:40100
+- **InfluxDB**: http://robert108.mikrus.xyz:40101
+
+## Quick Production Deployment
+
+```powershell
+# Build production images
+.\scripts\deploy-production-apps.ps1 -Build
+
+# Deploy to production
+.\scripts\deploy-production-apps.ps1 -Deploy
+
+# Check status
+.\scripts\deploy-production-apps.ps1 -Status
+
+# View logs
+.\scripts\deploy-production-apps.ps1 -Logs
 ```
 
 ---

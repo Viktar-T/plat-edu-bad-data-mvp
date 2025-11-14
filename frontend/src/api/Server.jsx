@@ -1,5 +1,6 @@
-// const API_SERVER_URL = import.meta.env.PROD ? "https://express-js-on-vercel-coral-gamma.vercel.app" : "http://localhost:3001"
+// Legacy API server URL - kept for backward compatibility
+// New code should use apiService from '../services/apiService' instead
+import config from '../config/api';
 
-// ! dev without local server
-const API_SERVER_URL = "https://express-js-on-vercel-coral-gamma.vercel.app"
-export default API_SERVER_URL
+const API_SERVER_URL = config.apiUrl;
+export default API_SERVER_URL;

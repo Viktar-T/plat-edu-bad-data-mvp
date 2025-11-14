@@ -182,11 +182,71 @@ services:
     networks:
       - iot-network-local
 
-  # Express Backend API (Local Development)
-  # express-backend removed (under development)
+  # API Backend - Express.js (Local Development)
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: iot-api-local
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - TZ=UTC
+      # InfluxDB Configuration
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_ORG=renewable_energy_org
+      - INFLUXDB_BUCKET=renewable_energy
+      - TEST_TOKEN=renewable_energy_admin_token_123
+      # CORS Configuration
+      - CORS_ORIGIN=http://localhost:3002,http://localhost:5173
+    volumes:
+      - ./api/src:/app/src:ro
+      - ./api/public:/app/public:ro
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - iot-network-local
 
-  # React Frontend (Local Development)
-  # react-frontend removed (under development)
+  # Frontend - React with Vite (Local Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
+        - VITE_API_URL=http://localhost:3001
+        - VITE_API_BASE_URL=http://localhost:3001/api
+    container_name: iot-frontend-local
+    ports:
+      - "3002:80"
+    environment:
+      - NODE_ENV=development
+      - TZ=UTC
+      # API Configuration
+      - VITE_API_URL=http://localhost:3001
+      - VITE_API_BASE_URL=http://localhost:3001/api
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - iot-network-local
 
 networks:
   iot-network-local:

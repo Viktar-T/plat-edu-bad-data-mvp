@@ -29,17 +29,43 @@ function Home() {
     const debugMaxBounds = false;
     let lastclick = null
     const MapReady = (e) => {
-        e.target.fitBounds(focusBounds)
-        e.target.setZoom(1)
-
-        e.target.on("click", (e) => {
-            console.log("lat lng [" + e.latlng.lng + ", " + e.latlng.lat + "]")
-            if (lastclick != null) {
-                console.log("size:")
-                console.log("[" + Math.abs(e.latlng.lng - lastclick.lng) + ", " + Math.abs(e.latlng.lat - lastclick.lat) + "]")
+        try {
+            const map = e.target;
+            if (!map || !map.getContainer()) {
+                return;
             }
-            lastclick = e.latlng
-        })
+
+            // Wait for map to be fully initialized and all panes to be ready
+            const initMap = () => {
+                try {
+                    // Check if map panes are initialized
+                    if (map.getPane && map.getPane('tilePane')) {
+                        map.fitBounds(focusBounds);
+                        map.setZoom(1);
+                    } else {
+                        // Retry after a short delay if panes aren't ready
+                        setTimeout(initMap, 50);
+                    }
+                } catch (err) {
+                    // Silently handle initialization errors - map will still work
+                    console.debug("Map initialization:", err.message);
+                }
+            };
+
+            // Start initialization after a short delay
+            setTimeout(initMap, 150);
+
+            map.on("click", (e) => {
+                console.log("lat lng [" + e.latlng.lng + ", " + e.latlng.lat + "]")
+                if (lastclick != null) {
+                    console.log("size:")
+                    console.log("[" + Math.abs(e.latlng.lng - lastclick.lng) + ", " + Math.abs(e.latlng.lat - lastclick.lat) + "]")
+                }
+                lastclick = e.latlng
+            })
+        } catch (err) {
+            console.error("Map ready error:", err);
+        }
     }
 
     const [markersInfo, setMarkersInfo] = useState(Object.fromEntries(
@@ -63,23 +89,28 @@ function Home() {
                 ])
                 // console.log(_photovoltaic_Data)
                 try {
+                    // Helper function to safely get value
+                    const getValue = (data, field) => {
+                        return data?.[field]?._value ?? "N/A";
+                    };
+
                     setMarkersInfo(prev => ({
                         ...prev,
                         turbine_vertical: [
-                            ["Prędkość wiatru", _windTurbine_Data.wind_speed._value, "m\\s"],
-                            ["Prędkość obracania", _windTurbine_Data.rotor_speed._value, "m\\s"],
-                            ["Moc wyjściowa ", _windTurbine_Data.power_output._value, "kw"],
-                            ["Temperatura generatora", _windTurbine_Data.generator_temperature._value, "℃"],
-                            ["Kąt natarcia", _windTurbine_Data.blade_pitch._value, "°"],
-                            ["Efektywność", _windTurbine_Data.efficiency._value, ""],
+                            ["Prędkość wiatru", getValue(_windTurbine_Data, "wind_speed"), "m\\s"],
+                            ["Prędkość obracania", getValue(_windTurbine_Data, "rotor_speed"), "m\\s"],
+                            ["Moc wyjściowa ", getValue(_windTurbine_Data, "power_output"), "kw"],
+                            ["Temperatura generatora", getValue(_windTurbine_Data, "generator_temperature"), "℃"],
+                            ["Kąt natarcia", getValue(_windTurbine_Data, "blade_pitch"), "°"],
+                            ["Efektywność", getValue(_windTurbine_Data, "efficiency"), ""],
                         ],
                         ladowarka_sloneczna: [
-                            ["Promieniowanie", _photovoltaic_Data.irradiance._value, "W/m²"],
-                            ["Napięcie", _photovoltaic_Data.voltage._value, "V"],
-                            ["Moc wyjściowa ", _photovoltaic_Data.power_output._value, "W"],
-                            ["Temperatura", _photovoltaic_Data.temperature._value, "℃"],
-                            ["Nw co to current", _photovoltaic_Data.current._value, ":)"],
-                            ["Efektywność", _photovoltaic_Data.efficiency._value, ""],
+                            ["Promieniowanie", getValue(_photovoltaic_Data, "irradiance"), "W/m²"],
+                            ["Napięcie", getValue(_photovoltaic_Data, "voltage"), "V"],
+                            ["Moc wyjściowa ", getValue(_photovoltaic_Data, "power_output"), "W"],
+                            ["Temperatura", getValue(_photovoltaic_Data, "temperature"), "℃"],
+                            ["Nw co to current", getValue(_photovoltaic_Data, "current"), ":)"],
+                            ["Efektywność", getValue(_photovoltaic_Data, "efficiency"), ""],
                         ],
                     }));
                 } catch (err) {

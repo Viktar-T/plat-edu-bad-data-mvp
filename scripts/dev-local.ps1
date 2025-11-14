@@ -36,6 +36,35 @@ function Test-Docker {
     }
 }
 
+# Helper function to detect docker compose command
+function Get-DockerComposeCmd {
+    # Try docker compose (newer format) first
+    try {
+        $null = docker compose version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return "docker compose"
+        }
+    } catch {
+        # Continue to check docker-compose
+    }
+    
+    # Try docker-compose (legacy format)
+    try {
+        $null = docker-compose version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return "docker-compose"
+        }
+    } catch {
+        # Neither works
+    }
+    
+    # Default to docker compose
+    Write-ColorOutput "⚠️  Warning: Could not detect docker compose version, using 'docker compose' as default" $Yellow
+    return "docker compose"
+}
+
+$dockerComposeCmd = Get-DockerComposeCmd
+
 function Test-RequiredFiles {
     $requiredFiles = @(
         "docker-compose.local.yml",
@@ -78,11 +107,11 @@ function Start-Services {
 
     # Stop any existing containers
     Write-ColorOutput "Stopping any existing containers..." $Yellow
-    docker-compose -f docker-compose.local.yml down 2>$null
+    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml down" 2>$null
 
     # Start services
     Write-ColorOutput "Starting services with docker-compose.local.yml..." $Yellow
-    docker-compose -f docker-compose.local.yml up -d
+    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d"
 
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput "Services started successfully" $Green
@@ -94,18 +123,18 @@ function Start-Services {
 
 function Stop-Services {
     Write-ColorOutput "Stopping local development services..." $Green
-    docker-compose -f docker-compose.local.yml down
+    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml down"
     Write-ColorOutput "Services stopped" $Green
 }
 
 function Show-Status {
     Write-ColorOutput "Checking service status..." $Green
-    docker-compose -f docker-compose.local.yml ps
+    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml ps"
 }
 
 function Show-Logs {
     Write-ColorOutput "Showing service logs (Ctrl+C to stop)..." $Green
-    docker-compose -f docker-compose.local.yml logs -f
+    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml logs -f"
 }
 
 function Show-AccessInfo {
@@ -143,6 +172,8 @@ function Show-AccessInfo {
 # Main script logic
 Write-ColorOutput "Renewable Energy IoT - Local Development Setup" $Green
 Write-ColorOutput "================================================" $Green
+Write-ColorOutput "Using: $dockerComposeCmd" $Cyan
+Write-ColorOutput ""
 
 # Check if Docker is running
 if (-not (Test-Docker)) {

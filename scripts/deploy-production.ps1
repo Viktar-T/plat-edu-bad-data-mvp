@@ -88,27 +88,45 @@ function Deploy-OnVps {
     Write-Host "Deploying on VPS..." -ForegroundColor Green
     $remoteDir = Get-RemoteDir
 
-    # First, ensure Docker Compose is available
-    $checkCmd = "if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then echo 'Docker Compose not found'; else echo 'Docker Compose available'; fi"
-    $composeStatus = & ssh -p $VpsPort "$VpsUser@$VpsHost" $checkCmd
+    # Detect which docker compose command to use on remote
+    $detectCmd = @"
+        if docker compose version &> /dev/null 2>&1; then
+            echo "docker compose"
+        elif command -v docker-compose &> /dev/null; then
+            echo "docker-compose"
+        else
+            echo "not-found"
+        fi
+"@
     
-    if ($composeStatus -like "*not found*") {
-        Write-Host "Installing Docker Compose..." -ForegroundColor Yellow
+    $composeCmd = (& ssh -p $VpsPort "$VpsUser@$VpsHost" $detectCmd).Trim()
+    
+    if ($composeCmd -eq "not-found") {
+        Write-Host "Docker Compose not found. Installing..." -ForegroundColor Yellow
         $installCmd = @"
-            if ! command -v docker-compose &> /dev/null; then
+            if ! docker compose version &> /dev/null 2>&1 && ! command -v docker-compose &> /dev/null; then
                 curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)" -o /usr/local/bin/docker-compose
                 chmod +x /usr/local/bin/docker-compose
                 ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+                echo "docker-compose"
+            else
+                if docker compose version &> /dev/null 2>&1; then
+                    echo "docker compose"
+                else
+                    echo "docker-compose"
+                fi
             fi
 "@
-        & ssh -p $VpsPort "$VpsUser@$VpsHost" $installCmd
+        $composeCmd = (& ssh -p $VpsPort "$VpsUser@$VpsHost" $installCmd).Trim()
     }
+    
+    Write-Host "Using: $composeCmd" -ForegroundColor Cyan
 
-    # Use docker-compose (older syntax) for compatibility
-    $remoteCmd = "set -e; cd $remoteDir; docker-compose pull; docker-compose up -d; docker-compose ps"
+    # Use detected docker compose command
+    $remoteCmd = "set -e; cd $remoteDir; $composeCmd pull; $composeCmd up -d; $composeCmd ps"
     & ssh -p $VpsPort "$VpsUser@$VpsHost" $remoteCmd
 
-    Write-Host "[OK] Deployment complete. Use docker-compose ps to verify status." -ForegroundColor Green
+    Write-Host "[OK] Deployment complete. Use '$composeCmd ps' to verify status." -ForegroundColor Green
 }
 
 # Main

@@ -1,0 +1,49 @@
+services:
+  # API - Production overrides
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    environment:
+      - NODE_ENV=production
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Frontend - Production overrides
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+

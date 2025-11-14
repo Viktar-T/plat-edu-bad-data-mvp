@@ -232,13 +232,22 @@ export function GetMarkersOverlay({markersInfo}) {
                 }
                 <text x={((_cloudSize[0] + (data.img != null ? _imgSize[0] : 0)) / 2) + data.cloudPos[0]} y={data.cloudPos[1] + 30} className="name" color="white" textAnchor="middle">{data.name}</text>
                 <g transform={"translate(" + (data.cloudPos[0] + (data.img != null ? _imgSize[0] : 0) + 10) + " " + (data.cloudPos[1] + 40) + ")"}>
-                    {markersInfo[key] != null ? markersInfo[key].map((mensurent_data, key) =>
-                        <g key={key} transform={"translate(0 " + ((lineHeight + markerDescMargin) * (key)) + ")"}>
-                            <rect width={valueBoxWidth} height={lineHeight} x="0" y="0" rx="10" ry="10" fill="white" stroke="black" strokeWidth={2} />
-                            <AutoFitText x={valueBoxWidth / 2} y={24} className="desc" maxWidth={valueBoxWidth - 4} maxFontSize={markerDescFontSize} anchor="middle" text={mensurent_data[1].toFixed(2) + mensurent_data[2]} />
-                            <text x={valueBoxWidth + 1} y={24} className="desc" color="white" fontSize={markerDescFontSize}>{mensurent_data[0]}</text>
-                        </g>
-                    ) : null}
+                    {markersInfo[key] != null ? markersInfo[key].map((mensurent_data, key) => {
+                        // Safely format the value - handle both numbers and strings
+                        const value = mensurent_data[1];
+                        const formattedValue = typeof value === 'number' && !isNaN(value) 
+                            ? value.toFixed(2) 
+                            : String(value || 'N/A');
+                        const unit = mensurent_data[2] || '';
+                        
+                        return (
+                            <g key={key} transform={"translate(0 " + ((lineHeight + markerDescMargin) * (key)) + ")"}>
+                                <rect width={valueBoxWidth} height={lineHeight} x="0" y="0" rx="10" ry="10" fill="white" stroke="black" strokeWidth={2} />
+                                <AutoFitText x={valueBoxWidth / 2} y={24} className="desc" maxWidth={valueBoxWidth - 4} maxFontSize={markerDescFontSize} anchor="middle" text={formattedValue + unit} />
+                                <text x={valueBoxWidth + 1} y={24} className="desc" color="white" fontSize={markerDescFontSize}>{mensurent_data[0]}</text>
+                            </g>
+                        );
+                    }) : null}
                     {
                         data.text != null ? data.text.map((text, key) =>
                             <g key={key} transform={"translate(0 " + ((lineHeight + markerDescMargin) * (key + (markersInfo[key] != null ? markersInfo[key].length : 0))) + ")"}>

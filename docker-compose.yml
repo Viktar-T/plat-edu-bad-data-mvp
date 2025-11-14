@@ -171,6 +171,68 @@ services:
     networks:
       - iot-network
 
+  # API Backend - Express.js
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: iot-api
+    ports:
+      - "${API_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - TZ=UTC
+      # InfluxDB Configuration
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-renewable_energy_org}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-renewable_energy}
+      - TEST_TOKEN=${INFLUXDB_ADMIN_TOKEN:-renewable_energy_admin_token_123}
+      # CORS Configuration
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+    volumes:
+      - ./api/src:/app/src:ro
+      - ./api/public:/app/public:ro
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - iot-network
+
+  # Frontend - React with Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iot-frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+      # API Configuration
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - iot-network
+
 networks:
   iot-network:
     driver: bridge

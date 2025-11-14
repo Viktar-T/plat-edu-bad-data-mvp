@@ -37,7 +37,7 @@ export function GetRoomsOverlay() {
                 }}
                 className="roomMarker">
                     <rect width={data.size[0]} height={data.size[1]} x={0} y={0} className="bg" />
-                    <text x={(data.size[0] / 2)} y={(data.size[1] / 2)} className="name" textAnchor="middle" alignment-baseline="central">{data.room}</text>
+                    <text x={(data.size[0] / 2)} y={(data.size[1] / 2)} className="name" textAnchor="middle" alignmentBaseline="central">{data.room}</text>
             </SVGOverlay>)
     })
 }
