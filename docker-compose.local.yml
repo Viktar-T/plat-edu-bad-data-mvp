@@ -123,6 +123,7 @@ services:
       - NODE_RED_HOME=/data
       - NODE_RED_OPTIONS=--max-old-space-size=512
       - NODE_RED_SETTINGS_FILE=/data/settings.js
+      - NODE_RED_CREDENTIAL_SECRET=your-node-red-secret
       # Node-RED Authentication
       - NODE_RED_USERNAME=admin
       - NODE_RED_PASSWORD=adminpassword
@@ -131,6 +132,7 @@ services:
       - NODE_RED_INFLUXDB_ORG=renewable_energy_org
       - NODE_RED_INFLUXDB_BUCKET=renewable_energy
       - NODE_RED_INFLUXDB_TOKEN=renewable_energy_admin_token_123
+      - INFLUXDB_TOKEN=renewable_energy_admin_token_123
     restart: unless-stopped
     depends_on:
       mosquitto:
