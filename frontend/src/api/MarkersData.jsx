@@ -6,7 +6,7 @@ export const CloudSize = [600, 300]
 const url = "/device/"
 export const MarkersData = {
     "algy": {
-        name: "Algy",
+        name: "Farma do produkcji Alg 1",
         pos: [-140, 420],
         align: "right-top",
         svgSize: [800, 800],
@@ -16,7 +16,7 @@ export const MarkersData = {
         img: "wiatrakStorage.png"
     },
     "huljanogi_converter": {
-        name: "PV Hulajnogi Converter",
+        name: "Inverter",
         pos: [350, -130],
         align: "right-center",
         svgSize: [600, 350],
@@ -25,8 +25,7 @@ export const MarkersData = {
         cloudSize: [400, 120],
         imgSize: [250, 300],
         text: [
-            "Ale fajny tekst",
-            "AAAAAAA",
+            "SOFAR 1.1K-3.3KTL-G3",
         ]
     },
     "ladowarka_sloneczna": {
@@ -42,7 +41,7 @@ export const MarkersData = {
         img: "hulajnogi.png"
     },
     "turbine_vertical": {
-        name: "Wind Big Vertical Turbine",
+        name: "Turbina wiatrowa VAWT",
         pos: [-350, 400],
         align: "left-center",
         svgSize: [800, 300],
@@ -53,7 +52,7 @@ export const MarkersData = {
         img: "wiatrak.png"
     },
     "turbine_is": {
-        name: "Inverter & Storage",
+        name: "Converter & Storage",
         pos: [310, 540],
         align: "left-center",
         svgSize: [950, 170],
@@ -62,7 +61,7 @@ export const MarkersData = {
         cloudSize: [400, 60],
     },
     "engine_bench": {
-        name: "Engine test bench",
+        name: "Stanowisko do badań silnika",
         pos: [80, -70],
         align: "right-center",
         svgSize: [1000, 800],
@@ -72,7 +71,7 @@ export const MarkersData = {
         img: "wiatrakStorage.png"
     },
     "biogas": {
-        name: "Small Biogas station",
+        name: "Biogazownia",
         pos: [450, 470],
         align: "left-center",
         svgSize: [800, 300],
@@ -82,7 +81,7 @@ export const MarkersData = {
         img: "wiatrakStorage.png"
     },
     "wind_turbine": {
-        name: "Small wind turbine",
+        name: "Turbina wiatrowa HAWT",
         pos: [1130, 1080],
         align: "left-center",
         svgSize: [750, 300],
@@ -92,7 +91,7 @@ export const MarkersData = {
         img: "wiatrakStorage.png"
     },
     "pv_panels": {
-        name: "PV panels",
+        name: "Panele fotowoltaiczne",
         pos: [800, 1120],
         align: "left-center",
         svgSize: [750, 300],
@@ -102,7 +101,7 @@ export const MarkersData = {
         img: "wiatrakStorage.png"
     },
     "big_algy": {
-        name: "Big algy",
+        name: "Farma do produkcji Alg 2",
         pos: [0, 600],
         align: "left-center",
         svgSize: [900, 300],
@@ -112,7 +111,7 @@ export const MarkersData = {
         img: "wiatrak.png"
     },
     "hybride_is": {
-        name: "Inverter & Storage",
+        name: "Wind/Solar Controler",
         pos: [900, 1000],
         align: "center-top",
         svgSize: [400, 270],
@@ -120,17 +119,21 @@ export const MarkersData = {
         cloudPos: [0, 170],
         cloudSize: [400, 70],
         text: [
-            "for hybride Wind/PV",
+            "Wind/Solar Hybrid Controler & Storage",
         ]
     },
     "heat_system": {
-        name: "Heat system",
+        name: "Stirling-Ogniwo-Magazyn",
         pos: [900, 750],
         align: "center-bottom",
         svgSize: [400, 200],
         circlePos: [400 / 2 - 10, 200 - 20],
         cloudPos: [0, 0],
         cloudSize: [400, 70],
+        text: [
+            "Silnik Stirlinga, Ogniwo paliwowe",
+            "Magazyn ciepła"
+        ]
     },
 }
 

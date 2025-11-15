@@ -3,13 +3,13 @@
     "id": "bg-inject-30s",
     "type": "inject",
     "z": "biogas-plant-simulation",
-    "name": "10s Interval",
+    "name": "1s Interval",
     "props": [
       {
         "p": "payload"
       }
     ],
-    "repeat": "10",
+    "repeat": "1",
     "crontab": "",
     "once": false,
     "onceDelay": 0.1,

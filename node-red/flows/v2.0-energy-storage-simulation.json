@@ -3,13 +3,13 @@
     "id": "es-inject-30s",
     "type": "inject",
     "z": "energy-storage-simulation",
-    "name": "10s Interval",
+    "name": "1s Interval",
     "props": [
       {
         "p": "payload"
       }
     ],
-    "repeat": "10",
+    "repeat": "1",
     "crontab": "",
     "once": false,
     "onceDelay": 0.1,

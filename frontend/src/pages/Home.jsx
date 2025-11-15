@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import MapSVG from "../components/MapSVG";
 import WindTurbine from "../api/WindTurbine";
 import Photovoltaic from "../api/Photovoltaic";
+import Biogas from "../api/Biogas";
 import { MarkersData, GetMarkersOverlay } from "../api/MarkersData"
 import { GetRoomsOverlay } from "../api/RoomsData";
 import { GetEletricLinesOverlay } from "../api/EletricLinesData";
@@ -83,9 +84,11 @@ function Home() {
                 const [
                     _windTurbine_Data,
                     _photovoltaic_Data,
+                    _biogas_Data,
                 ] = await Promise.all([
                     await WindTurbine(),
                     await Photovoltaic(),
+                    await Biogas(),
                 ])
                 // console.log(_photovoltaic_Data)
                 try {
@@ -111,6 +114,14 @@ function Home() {
                             ["Temperatura", getValue(_photovoltaic_Data, "temperature"), "℃"],
                             ["Nw co to current", getValue(_photovoltaic_Data, "current"), ":)"],
                             ["Efektywność", getValue(_photovoltaic_Data, "efficiency"), ""],
+                        ],
+                        biogas: [
+                            ["Temperatura", getValue(_biogas_Data, "temperature"), "℃"],
+                            ["pH", getValue(_biogas_Data, "ph"), ""],
+                            ["Przepływ gazu", getValue(_biogas_Data, "gas_flow_rate"), "m³/h"],
+                            ["Stężenie metanu", getValue(_biogas_Data, "methane_concentration"), "%"],
+                            ["Ciśnienie", getValue(_biogas_Data, "pressure"), "bar"],
+                            ["Zawartość energii", getValue(_biogas_Data, "energy_content"), "kWh/m³"],
                         ],
                     }));
                 } catch (err) {
