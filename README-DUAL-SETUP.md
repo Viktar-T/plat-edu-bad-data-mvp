@@ -128,8 +128,10 @@ plat-edu-bad-data-mvp/
 ├── 📁 node-red/                       # Node-RED configuration
 │   ├── 📁 data/                       # Node-RED data
 │   └── 📁 flows/                      # IoT device simulation flows
-│       ├── 📄 v2.0-pv-simulation.json
-│       ├── 📄 v2.0-wind-turbine-simulation.json
+│       ├── 📄 v2.0-pv-hulajnogi-simulation.json
+│       ├── 📄 v2.0-pv-hybrid-simulation.json
+│       ├── 📄 v2.0-wind-vawt-simulation.json
+│       ├── 📄 v2.0-wind-hawt-hybrid-simulation.json
 │       ├── 📄 v2.0-biogas-plant-simulation.json
 │       ├── 📄 v2.0-heat-boiler-simulation.json
 │       └── 📄 v2.0-energy-storage-simulation.json

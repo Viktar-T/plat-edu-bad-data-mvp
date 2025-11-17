@@ -9,6 +9,11 @@ import MapSVG from "../components/MapSVG";
 import WindTurbine from "../api/WindTurbine";
 import Photovoltaic from "../api/Photovoltaic";
 import Biogas from "../api/Biogas";
+import PVPanels from "../api/PVPanels";
+import WindTurbineHAWT from "../api/WindTurbineHAWT";
+import AlgaeFarm1 from "../api/AlgaeFarm1";
+import AlgaeFarm2 from "../api/AlgaeFarm2";
+import EngineTestBench from "../api/EngineTestBench";
 import { MarkersData, GetMarkersOverlay } from "../api/MarkersData"
 import { GetRoomsOverlay } from "../api/RoomsData";
 import { GetEletricLinesOverlay } from "../api/EletricLinesData";
@@ -85,10 +90,20 @@ function Home() {
                     _windTurbine_Data,
                     _photovoltaic_Data,
                     _biogas_Data,
+                    _pvPanels_Data,
+                    _windTurbineHAWT_Data,
+                    _algaeFarm1_Data,
+                    _algaeFarm2_Data,
+                    _engineTestBench_Data,
                 ] = await Promise.all([
                     await WindTurbine(),
                     await Photovoltaic(),
                     await Biogas(),
+                    await PVPanels(),
+                    await WindTurbineHAWT(),
+                    await AlgaeFarm1(),
+                    await AlgaeFarm2(),
+                    await EngineTestBench(),
                 ])
                 // console.log(_photovoltaic_Data)
                 try {
@@ -99,7 +114,7 @@ function Home() {
 
                     setMarkersInfo(prev => ({
                         ...prev,
-                        turbine_vertical: [
+                        "wind-vawt-simulation": [
                             ["Prędkość wiatru", getValue(_windTurbine_Data, "wind_speed"), "m\\s"],
                             ["Prędkość obracania", getValue(_windTurbine_Data, "rotor_speed"), "m\\s"],
                             ["Moc wyjściowa ", getValue(_windTurbine_Data, "power_output"), "kw"],
@@ -107,7 +122,7 @@ function Home() {
                             ["Kąt natarcia", getValue(_windTurbine_Data, "blade_pitch"), "°"],
                             ["Efektywność", getValue(_windTurbine_Data, "efficiency"), ""],
                         ],
-                        ladowarka_sloneczna: [
+                        "pv-hulajnogi-simulation": [
                             ["Promieniowanie", getValue(_photovoltaic_Data, "irradiance"), "W/m²"],
                             ["Napięcie", getValue(_photovoltaic_Data, "voltage"), "V"],
                             ["Moc wyjściowa ", getValue(_photovoltaic_Data, "power_output"), "W"],
@@ -115,13 +130,64 @@ function Home() {
                             ["Nw co to current", getValue(_photovoltaic_Data, "current"), ":)"],
                             ["Efektywność", getValue(_photovoltaic_Data, "efficiency"), ""],
                         ],
-                        biogas: [
+                        "biogas-plant-simulation": [
                             ["Temperatura", getValue(_biogas_Data, "temperature"), "℃"],
                             ["pH", getValue(_biogas_Data, "ph"), ""],
                             ["Przepływ gazu", getValue(_biogas_Data, "gas_flow_rate"), "m³/h"],
                             ["Stężenie metanu", getValue(_biogas_Data, "methane_concentration"), "%"],
                             ["Ciśnienie", getValue(_biogas_Data, "pressure"), "bar"],
                             ["Zawartość energii", getValue(_biogas_Data, "energy_content"), "kWh/m³"],
+                        ],
+                        "pv-hybrid-simulation": [
+                            ["Promieniowanie", getValue(_pvPanels_Data, "irradiance"), "W/m²"],
+                            ["Napięcie", getValue(_pvPanels_Data, "voltage"), "V"],
+                            ["Moc wyjściowa ", getValue(_pvPanels_Data, "power_output"), "W"],
+                            ["Temperatura", getValue(_pvPanels_Data, "temperature"), "℃"],
+                            ["Prąd", getValue(_pvPanels_Data, "current"), "A"],
+                            ["Efektywność", getValue(_pvPanels_Data, "efficiency"), ""],
+                        ],
+                        "wind-hawt-hybrid-simulation": [
+                            ["Prędkość wiatru", getValue(_windTurbineHAWT_Data, "wind_speed"), "m\\s"],
+                            ["Prędkość obracania", getValue(_windTurbineHAWT_Data, "rotor_speed"), "m\\s"],
+                            ["Moc wyjściowa ", getValue(_windTurbineHAWT_Data, "power_output"), "kw"],
+                            ["Temperatura generatora", getValue(_windTurbineHAWT_Data, "generator_temperature"), "℃"],
+                            ["Kąt natarcia", getValue(_windTurbineHAWT_Data, "blade_pitch"), "°"],
+                            ["Efektywność", getValue(_windTurbineHAWT_Data, "efficiency"), ""],
+                        ],
+                        "algae-farm-1-simulation": [
+                            ["Temperatura", getValue(_algaeFarm1_Data, "temperature"), "℃"],
+                            ["pH", getValue(_algaeFarm1_Data, "ph"), ""],
+                            ["Azot", getValue(_algaeFarm1_Data, "nitrogen"), "mg/L"],
+                            ["Fosfor", getValue(_algaeFarm1_Data, "phosphorus"), "mg/L"],
+                            ["Biomasa", getValue(_algaeFarm1_Data, "biomass"), "kg/m³"],
+                            ["Produkcja biomasy", getValue(_algaeFarm1_Data, "biomass_production"), "kg/m³/dzień"],
+                            ["Zużycie CO2", getValue(_algaeFarm1_Data, "co2_consumption"), "g/m³/h"],
+                            ["Produkcja O2", getValue(_algaeFarm1_Data, "oxygen_production"), "g/m³/h"],
+                            ["Tempo wzrostu", getValue(_algaeFarm1_Data, "growth_rate"), "%/dzień"],
+                        ],
+                        "algae-farm-2-simulation": [
+                            ["Temperatura", getValue(_algaeFarm2_Data, "temperature"), "℃"],
+                            ["pH", getValue(_algaeFarm2_Data, "ph"), ""],
+                            ["Azot", getValue(_algaeFarm2_Data, "nitrogen"), "mg/L"],
+                            ["Fosfor", getValue(_algaeFarm2_Data, "phosphorus"), "mg/L"],
+                            ["Biomasa", getValue(_algaeFarm2_Data, "biomass"), "kg/m³"],
+                            ["Produkcja biomasy", getValue(_algaeFarm2_Data, "biomass_production"), "kg/m³/dzień"],
+                            ["Zużycie CO2", getValue(_algaeFarm2_Data, "co2_consumption"), "g/m³/h"],
+                            ["Produkcja O2", getValue(_algaeFarm2_Data, "oxygen_production"), "g/m³/h"],
+                            ["Tempo wzrostu", getValue(_algaeFarm2_Data, "growth_rate"), "%/dzień"],
+                        ],
+                        "engine-test-bench-simulation": [
+                            ["Prędkość silnika", getValue(_engineTestBench_Data, "engine_speed"), "RPM"],
+                            ["Moment obrotowy", getValue(_engineTestBench_Data, "torque"), "Nm"],
+                            ["Moc wyjściowa", getValue(_engineTestBench_Data, "power_output"), "kW"],
+                            ["Temperatura chłodziwa", getValue(_engineTestBench_Data, "coolant_temperature"), "℃"],
+                            ["Temperatura oleju", getValue(_engineTestBench_Data, "oil_temperature"), "℃"],
+                            ["Temperatura spalin", getValue(_engineTestBench_Data, "exhaust_temperature"), "℃"],
+                            ["Zużycie paliwa", getValue(_engineTestBench_Data, "fuel_consumption"), "L/h"],
+                            ["Ciśnienie oleju", getValue(_engineTestBench_Data, "oil_pressure"), "bar"],
+                            ["Ciśnienie paliwa", getValue(_engineTestBench_Data, "fuel_pressure"), "bar"],
+                            ["Efektywność", getValue(_engineTestBench_Data, "efficiency"), "%"],
+                            ["Obciążenie", getValue(_engineTestBench_Data, "load"), "%"],
                         ],
                     }));
                 } catch (err) {

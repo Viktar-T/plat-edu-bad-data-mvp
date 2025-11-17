@@ -10,7 +10,8 @@ param(
     [switch]$Stop,
     [switch]$Restart,
     [switch]$Logs,
-    [switch]$Status
+    [switch]$Status,
+    [switch]$NoRebuild
 )
 
 # Colors for output
@@ -103,15 +104,24 @@ function Setup-Environment {
 }
 
 function Start-Services {
+    param(
+        [bool]$shouldRebuild = $true
+    )
+    
     Write-ColorOutput "Starting local development services..." $Green
 
     # Stop any existing containers
     Write-ColorOutput "Stopping any existing containers..." $Yellow
     Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml down" 2>$null
 
-    # Start services
-    Write-ColorOutput "Starting services with docker-compose.local.yml..." $Yellow
-    Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d"
+    # Start services with optional rebuild
+    if ($shouldRebuild) {
+        Write-ColorOutput "Rebuilding and starting services with docker-compose.local.yml..." $Yellow
+        Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d --build"
+    } else {
+        Write-ColorOutput "Starting services with docker-compose.local.yml (no rebuild)..." $Yellow
+        Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d"
+    }
 
     if ($LASTEXITCODE -eq 0) {
         Write-ColorOutput "Services started successfully" $Green
@@ -165,7 +175,9 @@ function Show-AccessInfo {
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Logs' to view logs" $Yellow
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Status' to check status" $Yellow
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Stop' to stop services" $Yellow
-    Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Restart' to restart services" $Yellow
+    Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Restart' to restart & rebuild services" $Yellow
+    Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Restart -NoRebuild' to restart without rebuild" $Yellow
+    Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -NoRebuild' to start without rebuild" $Yellow
     Write-ColorOutput "================================================" $Cyan
 }
 
@@ -208,17 +220,19 @@ if ($Logs) {
 }
 
 if ($Restart) {
-    Write-ColorOutput "Restarting services..." $Green
+    Write-ColorOutput "Restarting and rebuilding services..." $Green
     Stop-Services
     Start-Sleep -Seconds 2
-    Start-Services
+    $shouldRebuild = -not $NoRebuild
+    Start-Services -shouldRebuild $shouldRebuild
     Show-AccessInfo
     exit 0
 }
 
 # Default action: start services
 Setup-Environment
-Start-Services
+$shouldRebuild = -not $NoRebuild
+Start-Services -shouldRebuild $shouldRebuild
 
 Write-ColorOutput "Waiting for services to initialize..." $Yellow
 Start-Sleep -Seconds 10

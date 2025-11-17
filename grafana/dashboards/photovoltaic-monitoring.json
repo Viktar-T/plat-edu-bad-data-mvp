@@ -1,4 +1,4 @@
-{
+﻿{
   "id": null,
   "title": "Photovoltaic Panel Monitoring",
   "tags": ["photovoltaic", "solar", "monitoring", "mvp"],
@@ -17,7 +17,7 @@
       {
         "name": "panel_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"photovoltaic_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -26,7 +26,7 @@
       {
         "name": "location",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"photovoltaic_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -45,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -75,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -107,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"irradiance\")\n  |> mean()",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"irradiance\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -137,7 +137,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"irradiance\")",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"irradiance\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -219,7 +219,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -301,7 +301,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"power_output\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -383,7 +383,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"efficiency\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -465,7 +465,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\n  |> filter(fn: (r) => r._field == \"voltage\")",
+          "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\n  |> filter(fn: (r) => r._field == \"voltage\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -542,3 +542,7 @@
     }
   ]
 } 
+
+
+
+

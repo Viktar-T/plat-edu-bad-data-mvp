@@ -1,4 +1,4 @@
-{
+﻿{
   "id": null,
   "title": "Wind Turbine Analytics",
   "tags": ["wind-turbine", "wind-power", "analytics", "mvp"],
@@ -17,7 +17,7 @@
       {
         "name": "turbine_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"wind_turbine_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")]) |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -26,7 +26,7 @@
       {
         "name": "location",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"wind_turbine_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")]) |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -45,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"power_output\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -75,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -107,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")\n  |> mean()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -138,7 +138,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"power_output\")",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"power_output\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -220,7 +220,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"wind_speed\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -302,7 +302,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"efficiency\")",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"efficiency\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -384,7 +384,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"wind_turbine_data\")\n  |> filter(fn: (r) => r._field == \"rotor_speed\")",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-wind-vawt-simulation.json\" or r._measurement == \"@v2.0-wind-hawt-hybrid-simulation.json\")\n  |> filter(fn: (r) => r._field == \"rotor_speed\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -461,3 +461,8 @@
     }
   ]
 } 
+
+
+
+
+

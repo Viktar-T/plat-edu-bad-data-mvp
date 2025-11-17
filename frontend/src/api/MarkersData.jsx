@@ -5,15 +5,15 @@ import { useNavigate } from "react-router-dom";
 export const CloudSize = [600, 300]
 const url = "/device/"
 export const MarkersData = {
-    "algy": {
+    "algae-farm-1-simulation": {
         name: "Farma do produkcji Alg 1",
         pos: [-140, 420],
         align: "right-top",
         svgSize: [800, 800],
         circlePos: [800 - 20, 20],
         cloudPos: [150, 400],
-        imgSize: [175, 300],
-        img: "wiatrakStorage.png"
+        imgSize: [245, 420],
+        img: "icon_algae.png"
     },
     "huljanogi_converter": {
         name: "Inverter",
@@ -28,7 +28,7 @@ export const MarkersData = {
             "SOFAR 1.1K-3.3KTL-G3",
         ]
     },
-    "ladowarka_sloneczna": {
+    "pv-hulajnogi-simulation": {
         name: "Ładowarka słoneczna",
         pos: [120, 90],
         align: "right-top",
@@ -40,7 +40,7 @@ export const MarkersData = {
         interactive:true,
         img: "hulajnogi.png"
     },
-    "turbine_vertical": {
+    "wind-vawt-simulation": {
         name: "Turbina wiatrowa VAWT",
         pos: [-350, 400],
         align: "left-center",
@@ -51,7 +51,7 @@ export const MarkersData = {
         interactive:true,
         img: "wiatrak.png"
     },
-    "turbine_is": {
+    "energy-storage-simulation": {
         name: "Converter & Storage",
         pos: [310, 540],
         align: "left-center",
@@ -60,37 +60,37 @@ export const MarkersData = {
         cloudPos: [100, 0],
         cloudSize: [400, 60],
     },
-    "engine_bench": {
+    "engine-test-bench-simulation": {
         name: "Stanowisko do badań silnika",
         pos: [80, -70],
         align: "right-center",
         svgSize: [1000, 800],
         circlePos: [1000 - 20, 800 - 20],
         cloudPos: [0, 180],
-        imgSize: [175, 300],
-        img: "wiatrakStorage.png"
+        imgSize: [245, 420],
+        img: "icon_engine_bench_white_bg.png"
     },
-    "biogas": {
+    "biogas-plant-simulation": {
         name: "Biogazownia",
         pos: [450, 470],
         align: "left-center",
         svgSize: [800, 300],
         circlePos: [20, 300 / 2],
         cloudPos: [100, 0],
-        imgSize: [175, 300],
-        img: "wiatrakStorage.png"
+        imgSize: [245, 420],
+        img: "icon-biogaz.png"
     },
-    "wind_turbine": {
+    "wind-hawt-hybrid-simulation": {
         name: "Turbina wiatrowa HAWT",
         pos: [1130, 1080],
         align: "left-center",
         svgSize: [750, 300],
         circlePos: [20, 280],
         cloudPos: [150, 0],
-        imgSize: [175, 300],
-        img: "wiatrakStorage.png"
+        imgSize: [245, 420],
+        img: "icon-wind-hawt-hybride.jpg"
     },
-    "pv_panels": {
+    "pv-hybrid-simulation": {
         name: "Panele fotowoltaiczne",
         pos: [800, 1120],
         align: "left-center",
@@ -98,17 +98,17 @@ export const MarkersData = {
         circlePos: [20, 300 / 2 - 10],
         cloudPos: [150, 0],
         imgSize: [175, 300],
-        img: "wiatrakStorage.png"
+        img: "icon-pv-hybride.jpg"
     },
-    "big_algy": {
+    "algae-farm-2-simulation": {
         name: "Farma do produkcji Alg 2",
         pos: [0, 600],
         align: "left-center",
         svgSize: [900, 300],
         circlePos: [20, 250],
         cloudPos: [300, 0],
-        imgSize: [130, 300],
-        img: "wiatrak.png"
+        imgSize: [260, 600],
+        img: "icon_algae.png"
     },
     "hybride_is": {
         name: "Wind/Solar Controler",
@@ -122,7 +122,7 @@ export const MarkersData = {
             "Wind/Solar Hybrid Controler & Storage",
         ]
     },
-    "heat_system": {
+    "heat-boiler-simulation": {
         name: "Stirling-Ogniwo-Magazyn",
         pos: [900, 750],
         align: "center-bottom",

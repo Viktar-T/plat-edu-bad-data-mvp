@@ -1,0 +1,255 @@
+﻿[
+  {
+    "id": "etb-inject-1s",
+    "type": "inject",
+    "z": "engine-test-bench-simulation",
+    "name": "1s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "1",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "etb-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "etb-simulation-function",
+    "type": "function",
+    "z": "engine-test-bench-simulation",
+    "name": "Stanowisko do badań silnika Data Generator",
+    "func": "// Engine Test Bench Data Simulation\nconst now = new Date();\nconst hour = now.getHours();\nconst minute = now.getMinutes();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Test cycle simulation (varies load over time)\nfunction calculateTestCycle() {\n    const cycleTime = (hour * 60 + minute) % 60; // 60-minute cycle\n    const cycleProgress = cycleTime / 60;\n    // Simulate different test phases: idle, ramp up, full load, ramp down\n    if (cycleProgress < 0.1) return 0.1; // Idle\n    if (cycleProgress < 0.3) return 0.1 + (cycleProgress - 0.1) * 4.5; // Ramp up\n    if (cycleProgress < 0.7) return 1.0; // Full load\n    if (cycleProgress < 0.9) return 1.0 - (cycleProgress - 0.7) * 4.5; // Ramp down\n    return 0.1; // Idle\n}\n\n// Engine speed model (RPM)\nfunction calculateEngineSpeed(load) {\n    const baseSpeed = 1500;\n    const loadFactor = 1 + 0.3 * load;\n    const noise = (Math.random() - 0.5) * 50;\n    return Math.max(800, Math.min(3000, baseSpeed * loadFactor + noise));\n}\n\n// Torque model (Nm)\nfunction calculateTorque(engineSpeed, load) {\n    const baseTorque = 200;\n    const speedFactor = 1 - 0.2 * (engineSpeed - 1500) / 1500;\n    const loadFactor = load;\n    const noise = (Math.random() - 0.5) * 10;\n    return Math.max(50, baseTorque * speedFactor * loadFactor + noise);\n}\n\n// Power output model (kW)\nfunction calculatePowerOutput(engineSpeed, torque) {\n    // Power (kW) = (Torque (Nm) * Speed (RPM)) / 9549\n    const power = (torque * engineSpeed) / 9549;\n    const noise = (Math.random() - 0.5) * 2;\n    return Math.max(0, power + noise);\n}\n\n// Coolant temperature model (°C)\nfunction calculateCoolantTemperature(engineSpeed, powerOutput) {\n    const baseTemp = 85;\n    const speedFactor = 1 + 0.1 * (engineSpeed - 1500) / 1500;\n    const powerFactor = 1 + 0.15 * (powerOutput - 50) / 50;\n    const noise = (Math.random() - 0.5) * 3;\n    return Math.max(70, Math.min(100, baseTemp * speedFactor * powerFactor + noise));\n}\n\n// Oil temperature model (°C)\nfunction calculateOilTemperature(coolantTemp, engineSpeed) {\n    const baseTemp = coolantTemp + 5;\n    const speedFactor = 1 + 0.05 * (engineSpeed - 1500) / 1500;\n    const noise = (Math.random() - 0.5) * 2;\n    return Math.max(75, Math.min(110, baseTemp * speedFactor + noise));\n}\n\n// Exhaust temperature model (°C)\nfunction calculateExhaustTemperature(powerOutput, engineSpeed) {\n    const baseTemp = 400;\n    const powerFactor = 1 + 0.3 * (powerOutput - 50) / 50;\n    const speedFactor = 1 + 0.1 * (engineSpeed - 1500) / 1500;\n    const noise = (Math.random() - 0.5) * 20;\n    return Math.max(300, Math.min(600, baseTemp * powerFactor * speedFactor + noise));\n}\n\n// Fuel consumption model (L/h)\nfunction calculateFuelConsumption(powerOutput, engineSpeed) {\n    const baseConsumption = 15;\n    const powerFactor = 1 + 0.8 * (powerOutput - 50) / 50;\n    const speedFactor = 1 + 0.2 * (engineSpeed - 1500) / 1500;\n    const noise = (Math.random() - 0.5) * 1.5;\n    return Math.max(5, baseConsumption * powerFactor * speedFactor + noise);\n}\n\n// Oil pressure model (bar)\nfunction calculateOilPressure(engineSpeed, oilTemp) {\n    const basePressure = 4.0;\n    const speedFactor = 1 + 0.3 * (engineSpeed - 1500) / 1500;\n    const tempFactor = 1 - 0.1 * (oilTemp - 90) / 90;\n    const noise = (Math.random() - 0.5) * 0.3;\n    return Math.max(2.0, Math.min(6.0, basePressure * speedFactor * tempFactor + noise));\n}\n\n// Fuel pressure model (bar)\nfunction calculateFuelPressure(engineSpeed) {\n    const basePressure = 3.5;\n    const speedFactor = 1 + 0.1 * (engineSpeed - 1500) / 1500;\n    const noise = (Math.random() - 0.5) * 0.2;\n    return Math.max(2.5, Math.min(4.5, basePressure * speedFactor + noise));\n}\n\n// Efficiency model (%)\nfunction calculateEfficiency(powerOutput, fuelConsumption) {\n    const fuelEnergyDensity = 9.7; // kWh/L for diesel\n    const energyInput = fuelConsumption * fuelEnergyDensity;\n    const efficiency = (powerOutput / energyInput) * 100;\n    const noise = (Math.random() - 0.5) * 1;\n    return Math.max(25, Math.min(45, efficiency + noise));\n}\n\n// Load model (%)\nfunction calculateLoad(loadFactor) {\n    return Math.round(loadFactor * 100);\n}\n\n// Generate data with fault scenarios\nfunction generateEngineTestBenchData() {\n    const faultProbability = 0.001;\n    const isFault = Math.random() < faultProbability;\n    \n    const loadFactor = calculateTestCycle();\n    let engineSpeed = calculateEngineSpeed(loadFactor);\n    let torque = calculateTorque(engineSpeed, loadFactor);\n    let powerOutput = calculatePowerOutput(engineSpeed, torque);\n    let coolantTemp = calculateCoolantTemperature(engineSpeed, powerOutput);\n    let oilTemp = calculateOilTemperature(coolantTemp, engineSpeed);\n    let exhaustTemp = calculateExhaustTemperature(powerOutput, engineSpeed);\n    let fuelConsumption = calculateFuelConsumption(powerOutput, engineSpeed);\n    let oilPressure = calculateOilPressure(engineSpeed, oilTemp);\n    let fuelPressure = calculateFuelPressure(engineSpeed);\n    let efficiency = calculateEfficiency(powerOutput, fuelConsumption);\n    let load = calculateLoad(loadFactor);\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 5);\n        switch (faultType) {\n            case 0: // Low oil pressure fault\n                oilPressure *= 0.6;\n                oilTemp += 10;\n                efficiency *= 0.9;\n                break;\n            case 1: // Overheating fault\n                coolantTemp += 15;\n                oilTemp += 15;\n                exhaustTemp += 50;\n                efficiency *= 0.85;\n                break;\n            case 2: // Fuel supply fault\n                fuelPressure *= 0.7;\n                fuelConsumption *= 0.8;\n                powerOutput *= 0.8;\n                break;\n            case 3: // Low efficiency fault\n                efficiency *= 0.7;\n                fuelConsumption *= 1.2;\n                exhaustTemp += 30;\n                break;\n            case 4: // High vibration (simulated by speed fluctuation)\n                engineSpeed += (Math.random() - 0.5) * 200;\n                torque *= 0.9;\n                powerOutput *= 0.9;\n                break;\n        }\n    }\n    \n    return {\n        device_id: 'engine_bench',\n        device_type: 'engine_test_bench',\n        timestamp: now.toISOString(),\n        data: {\n            engine_speed: Math.round(engineSpeed),\n            torque: Math.round(torque * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            coolant_temperature: Math.round(coolantTemp * 100) / 100,\n            oil_temperature: Math.round(oilTemp * 100) / 100,\n            exhaust_temperature: Math.round(exhaustTemp * 100) / 100,\n            fuel_consumption: Math.round(fuelConsumption * 100) / 100,\n            oil_pressure: Math.round(oilPressure * 100) / 100,\n            fuel_pressure: Math.round(fuelPressure * 100) / 100,\n            efficiency: Math.round(efficiency * 100) / 100,\n            load: load\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_e',\n        fault_type: isFault ? ['low_oil_pressure', 'overheating', 'fuel_supply', 'low_efficiency', 'vibration'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst etbData = generateEngineTestBenchData();\nmsg.payload = etbData;\nmsg.topic = `devices/engine_test_bench/${etbData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "etb-mqtt-output"
+      ]
+    ]
+  },
+  {
+    "id": "etb-mqtt-output",
+    "type": "mqtt out",
+    "z": "engine-test-bench-simulation",
+    "name": "MQTT Output (Publish)",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker-config",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "etb-mqtt-input",
+    "type": "mqtt in",
+    "z": "engine-test-bench-simulation",
+    "name": "MQTT Input (Subscribe)",
+    "topic": "devices/engine_test_bench/+/telemetry",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt-broker-config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "etb-validation"
+      ]
+    ]
+  },
+  {
+    "id": "etb-validation",
+    "type": "function",
+    "z": "engine-test-bench-simulation",
+    "name": "Data Validation",
+    "func": "// Validate engine test bench data received from MQTT\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    engine_speed: { min: 500, max: 3500 },\n    torque: { min: 0, max: 500 },\n    power_output: { min: 0, max: 200 },\n    coolant_temperature: { min: 60, max: 110 },\n    oil_temperature: { min: 70, max: 120 },\n    exhaust_temperature: { min: 200, max: 700 },\n    fuel_consumption: { min: 0, max: 50 },\n    oil_pressure: { min: 1.5, max: 7.0 },\n    fuel_pressure: { min: 2.0, max: 5.0 },\n    efficiency: { min: 20, max: 50 },\n    load: { min: 0, max: 100 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.oil_temperature < data.data.coolant_temperature) {\n    errors.push('Oil temperature below coolant temperature');\n}\n\nif (data.data.exhaust_temperature < data.data.coolant_temperature) {\n    errors.push('Exhaust temperature below coolant temperature');\n}\n\nif (data.data.efficiency > 50) {\n    errors.push('Efficiency exceeds realistic maximum for diesel engine');\n}\n\nif (data.data.oil_pressure < 2.0 && data.data.engine_speed > 2000) {\n    errors.push('Low oil pressure at high engine speed');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 200,
+    "wires": [
+      [
+        "etb-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "etb-error-handling",
+    "type": "switch",
+    "z": "engine-test-bench-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 200,
+    "wires": [
+      [
+        "etb-data-transformer"
+      ],
+      [
+        "etb-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "etb-data-transformer",
+    "type": "function",
+    "z": "engine-test-bench-simulation",
+    "name": "Data Transformer",
+    "func": "// Transform data for InfluxDB 2.x format\nconst data = msg.payload;\n\n// Ensure all numeric values are properly converted\nconst engineSpeed = parseFloat(data.data.engine_speed) || 0;\nconst torque = parseFloat(data.data.torque) || 0;\nconst powerOutput = parseFloat(data.data.power_output) || 0;\nconst coolantTemp = parseFloat(data.data.coolant_temperature) || 0;\nconst oilTemp = parseFloat(data.data.oil_temperature) || 0;\nconst exhaustTemp = parseFloat(data.data.exhaust_temperature) || 0;\nconst fuelConsumption = parseFloat(data.data.fuel_consumption) || 0;\nconst oilPressure = parseFloat(data.data.oil_pressure) || 0;\nconst fuelPressure = parseFloat(data.data.fuel_pressure) || 0;\nconst efficiency = parseFloat(data.data.efficiency) || 0;\nconst load = parseFloat(data.data.load) || 0;\n\n// The Node-RED InfluxDB output node expects fields directly in the payload\n// and tags as separate message properties\nmsg.payload = {\n    engine_speed: engineSpeed,\n    torque: torque,\n    power_output: powerOutput,\n    coolant_temperature: coolantTemp,\n    oil_temperature: oilTemp,\n    exhaust_temperature: exhaustTemp,\n    fuel_consumption: fuelConsumption,\n    oil_pressure: oilPressure,\n    fuel_pressure: fuelPressure,\n    efficiency: efficiency,\n    load: load\n};\n\n// Set tags as message properties\nmsg.device_id = data.device_id;\nmsg.device_type = data.device_type;\nmsg.location = data.location || 'unknown';\nmsg.status = data.status || 'operational';\n\n// Set timestamp\nmsg.timestamp = new Date(data.timestamp).getTime();\n\n// Add debug information\nnode.log('✅ Engine test bench data transformed for InfluxDB:');\nnode.log('  - Engine Speed: ' + engineSpeed + ' RPM');\nnode.log('  - Torque: ' + torque + ' Nm');\nnode.log('  - Power Output: ' + powerOutput + ' kW');\nnode.log('  - Coolant Temperature: ' + coolantTemp + ' °C');\nnode.log('  - Oil Temperature: ' + oilTemp + ' °C');\nnode.log('  - Exhaust Temperature: ' + exhaustTemp + ' °C');\nnode.log('  - Fuel Consumption: ' + fuelConsumption + ' L/h');\nnode.log('  - Oil Pressure: ' + oilPressure + ' bar');\nnode.log('  - Fuel Pressure: ' + fuelPressure + ' bar');\nnode.log('  - Efficiency: ' + efficiency + ' %');\nnode.log('  - Load: ' + load + ' %');\nnode.log('  - Fields count: ' + Object.keys(msg.payload).length);\nnode.log('  - Tags: device_id=' + msg.device_id + ', device_type=' + msg.device_type);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 160,
+    "wires": [
+      [
+        "etb-influxdb-writer",
+        "etb-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "etb-influxdb-writer",
+    "type": "influxdb out",
+    "z": "engine-test-bench-simulation",
+    "influxdb": "influxdb-config",
+    "name": "InfluxDB Writer",
+    "measurement": "engine_test_bench_data",
+    "precision": "ms",
+    "precisionV18FluxV20": "ms",
+    "org": "renewable_energy_org",
+    "bucket": "renewable_energy",
+    "tags": "device_id={{device_id}},device_type={{device_type}},location={{location}},status={{status}}",
+    "x": 720,
+    "y": 160,
+    "wires": [
+      [
+        "etb-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "etb-success-log",
+    "type": "debug",
+    "z": "engine-test-bench-simulation",
+    "name": "Engine Test Bench Success Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "etb-error-log",
+    "type": "debug",
+    "z": "engine-test-bench-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker-config",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "renewable_energy_admin_token_123",
+    "organization": "renewable_energy_org",
+    "bucket": "renewable_energy"
+  }
+]
+

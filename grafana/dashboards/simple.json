@@ -1,4 +1,4 @@
-{
+﻿{
     "annotations": {
       "list": [
         {
@@ -108,7 +108,7 @@
               "type": "influxdb",
               "uid": "P76DD52F0BF9A44B8"
             },
-            "query": "from(bucket: \"renewable_energy\")\r\n  |> range(start: -1h)\r\n  |> filter(fn: (r) => r._measurement == \"photovoltaic_data\")\r\n  |> filter(fn: (r) => r._field == \"irradiance\")",
+            "query": "from(bucket: "pv-hulajnogi-simulation") or from(bucket: "pv-hybrid-simulation")\r\n  |> range(start: -1h)\r\n  |> filter(fn: (r) => r._measurement == \\"@v2.0-pv-hulajnogi-simulation.json\\" or r._measurement == \\"@v2.0-pv-hybrid-simulation.json\\")\r\n  |> filter(fn: (r) => r._field == \"irradiance\")",
             "refId": "A"
           }
         ],
@@ -133,3 +133,6 @@
     "version": 3,
     "weekStart": ""
   }
+
+
+

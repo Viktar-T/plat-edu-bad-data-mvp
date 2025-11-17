@@ -1,4 +1,4 @@
-{
+﻿{
   "id": null,
   "title": "Renewable Energy Overview",
   "tags": ["overview", "renewable", "energy", "mvp"],
@@ -17,7 +17,7 @@
       {
         "name": "device_type",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"_measurement\"]) |> distinct(column: \"_measurement\")",
+        "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")]) |> range(start: -1h) |> group(columns: [\"_measurement\"]) |> distinct(column: \"_measurement\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -26,7 +26,7 @@
       {
         "name": "location",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")]) |> range(start: -1h) |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -45,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\" or r._field == \"gas_flow_rate\")\n  |> sum()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")])\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\" or r._field == \"gas_flow_rate\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -75,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")])\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -107,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> group(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")])\n  |> range(start: -5m)\n  |> group(columns: [\"device_id\"])\n  |> distinct(column: \"device_id\")\n  |> count()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -137,7 +137,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\")\n  |> group(columns: [\"_measurement\"])",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"power_output\" or r._field == \"heat_output\")\n  |> group(columns: [\"_measurement\"])",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -219,7 +219,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> group(columns: [\"_measurement\"])",
+          "query": "union(tables: [from(bucket: "wind-vawt-simulation"), from(bucket: "wind-hawt-hybrid-simulation"), from(bucket: "algae-farm-1-simulation"), from(bucket: "algae-farm-2-simulation"), from(bucket: "pv-hybrid-simulation"), from(bucket: "energy-storage-simulation"), from(bucket: "heat-boiler-simulation"), from(bucket: "biogas-plant-simulation"), from(bucket: "engine-test-bench-simulation"), from(bucket: "pv-hulajnogi-simulation")])\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._field == \"efficiency\")\n  |> group(columns: [\"_measurement\"])",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -296,3 +296,4 @@
     }
   ]
 } 
+

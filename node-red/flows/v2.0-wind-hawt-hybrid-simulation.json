@@ -1,0 +1,255 @@
+﻿[
+  {
+    "id": "wt-hawt-inject",
+    "type": "inject",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "1s Interval",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "1",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 80,
+    "wires": [
+      [
+        "wt-hawt-simulation-function"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-simulation-function",
+    "type": "function",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Turbina wiatrowa HAWT Data Generator",
+    "func": "// Wind Turbine HAWT Data Simulation\nconst now = new Date();\nconst hour = now.getHours();\nconst dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));\n\n// Wind speed model (m/s)\nfunction calculateWindSpeed() {\n    const baseWindSpeed = 8;\n    const seasonalFactor = 1 + 0.3 * Math.sin(2 * Math.PI * (dayOfYear - 80) / 365);\n    const dailyFactor = 1 + 0.2 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const turbulence = (Math.random() - 0.5) * 3;\n    return Math.max(0, baseWindSpeed * seasonalFactor * dailyFactor + turbulence);\n}\n\n// Power curve model (W)\nfunction calculatePowerOutput(windSpeed) {\n    const cutInSpeed = 3;\n    const ratedSpeed = 12;\n    const cutOutSpeed = 25;\n    const ratedPower = 2000;\n    \n    if (windSpeed < cutInSpeed || windSpeed > cutOutSpeed) {\n        return 0;\n    }\n    \n    if (windSpeed >= ratedSpeed) {\n        return ratedPower;\n    }\n    \n    // Power curve follows cubic relationship\n    const powerFactor = Math.pow((windSpeed - cutInSpeed) / (ratedSpeed - cutInSpeed), 3);\n    return ratedPower * powerFactor;\n}\n\n// Rotor speed model (RPM)\nfunction calculateRotorSpeed(windSpeed) {\n    const minSpeed = 10;\n    const maxSpeed = 30;\n    const optimalWindSpeed = 12;\n    \n    if (windSpeed < 3) return 0;\n    \n    const speedFactor = Math.min(1, windSpeed / optimalWindSpeed);\n    return minSpeed + (maxSpeed - minSpeed) * speedFactor;\n}\n\n// Blade pitch angle model (degrees)\nfunction calculateBladePitch(windSpeed) {\n    const minPitch = 0;\n    const maxPitch = 90;\n    const optimalWindSpeed = 12;\n    \n    if (windSpeed <= optimalWindSpeed) {\n        return minPitch;\n    }\n    \n    const pitchFactor = Math.min(1, (windSpeed - optimalWindSpeed) / 10);\n    return minPitch + (maxPitch - minPitch) * pitchFactor;\n}\n\n// Generator temperature model (°C)\nfunction calculateGeneratorTemp(powerOutput) {\n    const ambientTemp = 20 + 10 * Math.sin(2 * Math.PI * (hour - 6) / 24);\n    const loadFactor = powerOutput / 2000;\n    const tempRise = loadFactor * 40;\n    const noise = (Math.random() - 0.5) * 5;\n    return ambientTemp + tempRise + noise;\n}\n\n// Generate data with fault scenarios\nfunction generateWindTurbineHAWTData() {\n    const faultProbability = 0.001;\n    const isFault = Math.random() < faultProbability;\n    \n    let windSpeed = calculateWindSpeed();\n    let powerOutput = calculatePowerOutput(windSpeed);\n    let rotorSpeed = calculateRotorSpeed(windSpeed);\n    let bladePitch = calculateBladePitch(windSpeed);\n    let generatorTemp = calculateGeneratorTemp(powerOutput);\n    \n    // Fault scenarios\n    if (isFault) {\n        const faultType = Math.floor(Math.random() * 4);\n        switch (faultType) {\n            case 0: // Gearbox fault\n                rotorSpeed *= 0.7;\n                powerOutput *= 0.6;\n                generatorTemp += 20;\n                break;\n            case 1: // Blade damage\n                bladePitch += 15;\n                powerOutput *= 0.5;\n                break;\n            case 2: // Generator fault\n                powerOutput *= 0.3;\n                generatorTemp += 30;\n                break;\n            case 3: // Sensor fault\n                windSpeed *= 1.5;\n                powerOutput *= 0.8;\n                break;\n        }\n    }\n    \n    return {\n        device_id: 'wind_turbine',\n        device_type: 'wind_turbine',\n        timestamp: now.toISOString(),\n        data: {\n            wind_speed: Math.round(windSpeed * 100) / 100,\n            power_output: Math.round(powerOutput * 100) / 100,\n            rotor_speed: Math.round(rotorSpeed * 100) / 100,\n            blade_pitch: Math.round(bladePitch * 100) / 100,\n            generator_temperature: Math.round(generatorTemp * 100) / 100\n        },\n        status: isFault ? 'fault' : 'operational',\n        location: 'site_b',\n        fault_type: isFault ? ['gearbox', 'blade_damage', 'generator', 'sensor'][faultType] : null\n    };\n}\n\n// Generate and return data\nconst wtHAWTData = generateWindTurbineHAWTData();\nmsg.payload = wtHAWTData;\nmsg.topic = `devices/wind_turbine/${wtHAWTData.device_id}/telemetry`;\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 80,
+    "wires": [
+      [
+        "wt-hawt-mqtt-output"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-mqtt-output",
+    "type": "mqtt out",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "MQTT Output (Publish)",
+    "topic": "",
+    "qos": "1",
+    "retain": false,
+    "respTopic": "",
+    "contentType": "",
+    "userProps": "",
+    "correl": "",
+    "expiry": "",
+    "broker": "mqtt-broker-config",
+    "x": 520,
+    "y": 80,
+    "wires": []
+  },
+  {
+    "id": "wt-hawt-mqtt-input",
+    "type": "mqtt in",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "MQTT Input (Subscribe)",
+    "topic": "devices/wind_turbine/+/telemetry",
+    "qos": "1",
+    "datatype": "json",
+    "broker": "mqtt-broker-config",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 120,
+    "y": 200,
+    "wires": [
+      [
+        "wt-hawt-validation"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-validation",
+    "type": "function",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Data Validation",
+    "func": "// Validate wind turbine HAWT data received from MQTT\nconst data = msg.payload;\nconst errors = [];\n\n// Check required fields\nif (!data.device_id || !data.timestamp || !data.data) {\n    errors.push('Missing required fields');\n}\n\n// Validate data ranges\nconst ranges = {\n    wind_speed: { min: 0, max: 50 },\n    power_output: { min: 0, max: 2500 },\n    rotor_speed: { min: 0, max: 50 },\n    blade_pitch: { min: 0, max: 90 },\n    generator_temperature: { min: -20, max: 120 }\n};\n\nfor (const [key, range] of Object.entries(ranges)) {\n    const value = data.data[key];\n    if (value < range.min || value > range.max) {\n        errors.push(`${key} out of range: ${value} (${range.min}-${range.max})`);\n    }\n}\n\n// Check for physical consistency\nif (data.data.wind_speed < 3 && data.data.power_output > 0) {\n    errors.push('Power output when wind speed below cut-in');\n}\n\nif (data.data.wind_speed > 25 && data.data.power_output > 0) {\n    errors.push('Power output when wind speed above cut-out');\n}\n\nif (errors.length > 0) {\n    msg.error = errors;\n    msg.status = 'invalid';\n} else {\n    msg.status = 'valid';\n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 200,
+    "wires": [
+      [
+        "wt-hawt-error-handling"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-error-handling",
+    "type": "switch",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Error Check",
+    "property": "status",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "valid",
+        "vt": "str"
+      },
+      {
+        "t": "eq",
+        "v": "invalid",
+        "vt": "str"
+      }
+    ],
+    "check": "all",
+    "repair": false,
+    "outputs": 2,
+    "x": 520,
+    "y": 200,
+    "wires": [
+      [
+        "wt-hawt-data-transformer"
+      ],
+      [
+        "wt-hawt-error-log"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-data-transformer",
+    "type": "function",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Data Transformer",
+    "func": "// Transform data for InfluxDB 2.x format\nconst data = msg.payload;\n\n// Ensure all numeric values are properly converted\nconst windSpeed = parseFloat(data.data.wind_speed) || 0;\nconst powerOutput = parseFloat(data.data.power_output) || 0;\nconst rotorSpeed = parseFloat(data.data.rotor_speed) || 0;\nconst bladePitch = parseFloat(data.data.blade_pitch) || 0;\nconst generatorTemp = parseFloat(data.data.generator_temperature) || 0;\n\n// Calculate efficiency if not provided\nconst efficiency = data.data.efficiency ? parseFloat(data.data.efficiency) : \n    (powerOutput > 0 && windSpeed > 3) ? (powerOutput / (0.5 * 1.225 * Math.PI * 25 * Math.pow(windSpeed, 3))) * 100 : 0;\n\n// The Node-RED InfluxDB output node expects fields directly in the payload\n// and tags as separate message properties\nmsg.payload = {\n    wind_speed: windSpeed,\n    power_output: powerOutput,\n    rotor_speed: rotorSpeed,\n    blade_pitch: bladePitch,\n    generator_temperature: generatorTemp,\n    efficiency: efficiency\n};\n\n// Set tags as message properties\nmsg.device_id = data.device_id;\nmsg.device_type = data.device_type;\nmsg.location = data.location || 'unknown';\nmsg.status = data.status || 'operational';\n\n// Set timestamp\nmsg.timestamp = new Date(data.timestamp).getTime();\n\n// Add debug information\nnode.log('✅ Wind turbine HAWT data transformed for InfluxDB:');\nnode.log('  - Wind Speed: ' + windSpeed + ' m/s');\nnode.log('  - Power Output: ' + powerOutput + ' W');\nnode.log('  - Rotor Speed: ' + rotorSpeed + ' RPM');\nnode.log('  - Blade Pitch: ' + bladePitch + ' °');\nnode.log('  - Generator Temp: ' + generatorTemp + ' °C');\nnode.log('  - Efficiency: ' + efficiency + ' %');\nnode.log('  - Fields count: ' + Object.keys(msg.payload).length);\nnode.log('  - Tags: device_id=' + msg.device_id + ', device_type=' + msg.device_type);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 620,
+    "y": 160,
+    "wires": [
+      [
+        "wt-hawt-influxdb-writer",
+        "wt-hawt-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-influxdb-writer",
+    "type": "influxdb out",
+    "z": "wind-turbine-hawt-simulation",
+    "influxdb": "influxdb-config",
+    "name": "InfluxDB Writer",
+    "measurement": "wind_turbine_data",
+    "precision": "ms",
+    "precisionV18FluxV20": "ms",
+    "org": "renewable_energy_org",
+    "bucket": "renewable_energy",
+    "tags": "device_id={{device_id}},device_type={{device_type}},location={{location}},status={{status}}",
+    "x": 720,
+    "y": 160,
+    "wires": [
+      [
+        "wt-hawt-success-log"
+      ]
+    ]
+  },
+  {
+    "id": "wt-hawt-success-log",
+    "type": "debug",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Wind Turbine HAWT Success Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "wt-hawt-error-log",
+    "type": "debug",
+    "z": "wind-turbine-hawt-simulation",
+    "name": "Error Log",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 720,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker-config",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "influxdb-config",
+    "type": "influxdb",
+    "hostname": "influxdb",
+    "port": "8086",
+    "protocol": "http",
+    "name": "InfluxDB",
+    "usetls": false,
+    "tls": "",
+    "influxdbVersion": "2.0",
+    "url": "http://influxdb:8086",
+    "rejectUnauthorized": false,
+    "token": "renewable_energy_admin_token_123",
+    "organization": "renewable_energy_org",
+    "bucket": "renewable_energy"
+  }
+]
+

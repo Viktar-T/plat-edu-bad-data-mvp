@@ -1,4 +1,4 @@
-{
+﻿{
   "id": null,
   "title": "Biogas Plant Metrics",
   "tags": ["biogas", "gas-production", "methane", "mvp"],
@@ -17,7 +17,7 @@
       {
         "name": "plant_id",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"biogas_plant_data\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
+        "query": "from(bucket: "biogas-plant-simulation") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\") |> group(columns: [\"device_id\"]) |> distinct(column: \"device_id\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -26,7 +26,7 @@
       {
         "name": "location",
         "type": "query",
-        "query": "from(bucket: \"renewable_energy\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"biogas_plant_data\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
+        "query": "from(bucket: "biogas-plant-simulation") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\") |> group(columns: [\"location\"]) |> distinct(column: \"location\")",
         "datasource": "InfluxDB 2.x",
         "refresh": 2,
         "includeAll": true,
@@ -45,7 +45,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> sum()",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")\n  |> sum()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -75,7 +75,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -107,7 +107,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"temperature\")\n  |> mean()",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -138,7 +138,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"gas_flow_rate\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -220,7 +220,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"methane_concentration\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -302,7 +302,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"temperature\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -384,7 +384,7 @@
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: \"renewable_energy\")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"biogas_plant_data\")\n  |> filter(fn: (r) => r._field == \"pressure\")",
+          "query": "from(bucket: "biogas-plant-simulation")\n  |> range(start: -6h)\n  |> filter(fn: (r) => r._measurement == \"@v2.0-biogas-plant-simulation.json\")\n  |> filter(fn: (r) => r._field == \"pressure\")",
           "datasource": "InfluxDB 2.x"
         }
       ],
@@ -461,3 +461,8 @@
     }
   ]
 } 
+
+
+
+
+

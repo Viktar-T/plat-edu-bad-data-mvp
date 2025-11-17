@@ -4,6 +4,7 @@ import cors from "cors";
 import { InfluxDB } from "@influxdata/influxdb-client";
 import { PingAPI } from '@influxdata/influxdb-client-apis'
 import dotenv from 'dotenv'
+import fs from 'fs';
 // import { RegisterPhoto } from "./photovoltaic";
 dotenv.config()
 
@@ -39,20 +40,50 @@ app.use(express.json());
 // InfluxDB Configuration
 // In Docker: use service name 'influxdb' for internal communication
 // Outside Docker: use localhost or external URL
+const runningInsideDocker = () => {
+  try {
+    return fs.existsSync("/.dockerenv");
+  } catch {
+    return false;
+  }
+};
+
 const getInfluxDBUrl = () => {
   if (process.env.INFLUXDB_URL) {
     return process.env.INFLUXDB_URL;
   }
-  // Default to Docker service name for internal communication
-  // This works when running in Docker Compose
-  return 'http://influxdb:8086';
+
+  if (runningInsideDocker()) {
+    return 'http://influxdb:8086';
+  }
+
+  const devPort = process.env.DEV_INFLUXDB_PORT || process.env.INFLUXDB_PORT || '8086';
+  return `http://localhost:${devPort}`;
+};
+
+const resolveInfluxToken = () => {
+  const candidates = [
+    process.env.TEST_TOKEN,
+    process.env.INFLUXDB_TOKEN,
+    process.env.INFLUXDB_ADMIN_TOKEN,
+    process.env.NODE_RED_INFLUXDB_TOKEN,
+  ];
+
+  return candidates.find(Boolean);
 };
 
 const INFLUXDB_BASE_URL = getInfluxDBUrl();
-const token = process.env.TEST_TOKEN;
+const token = resolveInfluxToken();
 const org = process.env.INFLUXDB_ORG || "renewable_energy_org";
 const bucket = process.env.INFLUXDB_BUCKET || "renewable_energy";
 const timeout = 10 * 1000
+
+if (!token) {
+  throw new Error(
+    'Missing InfluxDB token. Please set TEST_TOKEN or INFLUXDB_TOKEN in your environment.'
+  );
+}
+
 const influx = new InfluxDB({ url: INFLUXDB_BASE_URL, token, timeout });
 const pingAPI = new PingAPI(influx)
 const queryApi = influx.getQueryApi(org);
@@ -91,20 +122,52 @@ app.post("/api/query", async (req, res) => {
 app.get("/api/summary/:machine", async (req, res) => {
     // parameter to provide when calling api : name of the table in database for given machine
     const machines = {
-        "big_turbine": "wind_turbine_data",
-        "charger": "photovoltaic_data",
-        "heat_boiler": "heat_boiler_data",
-        "biogas": "biogas_plant_data",
-        "storage": "energy_storage_data"
+        "big_turbine": "wind-vawt",
+        "charger": "pv-hulajnogi",
+        "heat_boiler": "heat-boiler",
+        "biogas": "biogas-plant",
+        "storage": "energy-storage",
+        "pv_panels": "pv-hybrid",
+        "wind_turbine": "wind-hawt-hybrid",
+        "algae_farm": null, // Will be determined by device_id
+        "engine_test_bench": "engine-test-bench"
     }
+    
+    // Map device_id to measurement for algae farms
+    const deviceIdToMeasurement = {
+        "algy": "algae-farm-1",
+        "big_algy": "algae-farm-2"
+    }
+    
     const machine = req.params.machine;
+    const deviceId = req.query?.device_id;
     const time = req.query?.start;
-    const fluxQuery = `
+    
+    // Determine measurement name
+    let measurement = machines[machine];
+    
+    // Special handling for algae_farm - use device_id to determine measurement
+    if (machine === "algae_farm" && deviceId && deviceIdToMeasurement[deviceId]) {
+        measurement = deviceIdToMeasurement[deviceId];
+    }
+    
+    if (!measurement) {
+        return res.status(400).json({ error: `Unknown machine type: ${machine} or missing device_id for algae_farm` });
+    }
+    
+    let fluxQuery = `
         from(bucket: "${bucket}")
         |> range(start: -${time || "2m"})
-        |> filter(fn: (r) => r["_measurement"] == "${machines[machine]}")
-        |> last()
+        |> filter(fn: (r) => r["_measurement"] == "${measurement}")
     `;
+    
+    // Add device_id filter if provided
+    if (deviceId) {
+        fluxQuery += `\n        |> filter(fn: (r) => r["device_id"] == "${deviceId}")`;
+    }
+    
+    fluxQuery += `\n        |> last()`;
+    
     try {
         const rows = await Query(fluxQuery);
         res.json(rows)

@@ -1,7 +1,7 @@
 import API_SERVER_URL from "./Server";
 
-async function Biogas() {
-    const res = await fetch(API_SERVER_URL+"/api/summary/biogas?device_id=biogas", {
+async function AlgaeFarm1() {
+    const res = await fetch(API_SERVER_URL+"/api/summary/algae_farm?device_id=algy", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
     });
@@ -9,5 +9,5 @@ async function Biogas() {
     return data;
 }
 
-export default Biogas;
+export default AlgaeFarm1;
 

@@ -12,7 +12,7 @@
 
 ## 📋 Table of Contents
 
-- [🏗️ System Architecture](#️-system-architecture)
+- [🏗️ System Architecture](#-system-architecture)
 - [🚀 Quick Start Guide](#-quick-start-guide)
 - [📁 Project Structure](#-project-structure)
 - [🔐 MQTT Configuration](#-mqtt-configuration)
@@ -20,7 +20,7 @@
 - [🔧 Configuration](#-configuration)
 - [📊 Data Flow](#-data-flow)
 - [📈 Grafana Dashboards](#-grafana-dashboards)
-- [🛡️ Security](#️-security)
+- [🛡️ Security](#-security)
 - [📈 Monitoring](#-monitoring)
 - [🔄 Development](#-development)
 - [📚 Documentation](#-documentation)
@@ -160,6 +160,8 @@ Access the production system at:
 - **Node-RED**: http://robert108.mikrus.xyz:40100
 - **InfluxDB**: http://robert108.mikrus.xyz:40101
 
+### **Production Deployment (edubad.zut.edu.pl)**
+
 ## Quick Production Deployment
 
 ```powershell
@@ -201,8 +203,10 @@ plat-edu-bad-data-mvp/
 ├── 📁 node-red/                       # Node-RED configuration
 │   ├── 📁 data/                       # Node-RED data
 │   └── 📁 flows/                      # IoT device simulation flows
-│       ├── 📄 v2.0-pv-simulation.json
-│       ├── 📄 v2.0-wind-turbine-simulation.json
+│       ├── 📄 v2.0-pv-hulajnogi-simulation.json
+│       ├── 📄 v2.0-pv-hybrid-simulation.json
+│       ├── 📄 v2.0-wind-vawt-simulation.json
+│       ├── 📄 v2.0-wind-hawt-hybrid-simulation.json
 │       ├── 📄 v2.0-biogas-plant-simulation.json
 │       ├── 📄 v2.0-heat-boiler-simulation.json
 │       └── 📄 v2.0-energy-storage-simulation.json
@@ -513,15 +517,22 @@ sudo docker-compose logs -f [service_name]
 ### **Local Development**
 
 ```powershell
-# Start development environment
+# Start development environment (rebuilds containers by default)
 .\scripts\dev-local.ps1
 
 # Available commands
 .\scripts\dev-local.ps1 -Status    # Check service status
 .\scripts\dev-local.ps1 -Logs      # View service logs
-.\scripts\dev-local.ps1 -Restart   # Restart services
 .\scripts\dev-local.ps1 -Stop      # Stop services
+
+# Rebuild options (to see code changes)
+.\scripts\dev-local.ps1                    # Default start: Rebuilds and starts all containers
+.\scripts\dev-local.ps1 -Restart           # Restart: Stops, rebuilds, and starts all containers
+.\scripts\dev-local.ps1 -NoRebuild         # Start without rebuild: Starts without rebuilding
+.\scripts\dev-local.ps1 -Restart -NoRebuild # Restart without rebuild: Restarts without rebuilding
 ```
+
+> **💡 Tip**: By default, the script rebuilds containers to ensure you see all code changes. Use `-NoRebuild` only when you want faster startup without code changes.
 
 ### **Production Updates**
 
