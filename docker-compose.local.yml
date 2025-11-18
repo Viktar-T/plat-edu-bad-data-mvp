@@ -44,8 +44,8 @@ services:
   influxdb:
     image: influxdb:2.7
     container_name: iot-influxdb2-local
-    ports:
-      - "8086:8086"      # InfluxDB (standard port)
+    expose:
+      - "8086"      # InfluxDB (exposed internally for nginx)
     volumes:
       - ./influxdb/data:/var/lib/influxdb2
       - ./influxdb/backups:/backups
@@ -107,11 +107,11 @@ services:
   node-red:
     image: nodered/node-red:latest
     container_name: iot-node-red-local
-    ports:
-      - "1880:1880"      # Node-RED (standard port)
+    expose:
+      - "1880"      # Node-RED (exposed internally for nginx)
     volumes:
       - ./node-red/data:/data
-      - ./node-red/settings.js:/data/settings.js
+      - ./node-red/settings.local.js:/data/settings.js
       - ./node-red/package.json:/data/package.json
       - ./node-red/startup.sh:/startup.sh
     environment:
@@ -140,7 +140,7 @@ services:
       influxdb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:1880 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:1880/nodered/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -153,8 +153,8 @@ services:
   grafana:
     image: grafana/grafana:10.2.0
     container_name: iot-grafana-local
-    ports:
-      - "3000:3000"      # Grafana (standard port)
+    expose:
+      - "3000"      # Grafana (exposed internally for nginx)
     volumes:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -166,8 +166,8 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
       - GF_SECURITY_COOKIE_SECURE=false
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_SERVER_ROOT_URL=http://localhost:8080/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_ANALYTICS_REPORTING_ENABLED=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_LOG_LEVEL=info
@@ -190,8 +190,8 @@ services:
       context: ./api
       dockerfile: Dockerfile
     container_name: iot-api-local
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"      # API (exposed internally for nginx)
     environment:
       - NODE_ENV=development
       - PORT=3001
@@ -202,7 +202,7 @@ services:
       - INFLUXDB_BUCKET=renewable_energy
       - TEST_TOKEN=renewable_energy_admin_token_123
       # CORS Configuration
-      - CORS_ORIGIN=http://localhost:3002,http://localhost:5173
+      - CORS_ORIGIN=http://localhost:8080,http://localhost:3002,http://localhost:5173
     volumes:
       - ./api/src:/app/src:ro
       - ./api/public:/app/public:ro
@@ -226,27 +226,56 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=development
-        - VITE_API_URL=http://localhost:3001
-        - VITE_API_BASE_URL=http://localhost:3001/api
+        - VITE_API_URL=http://localhost:8080/api
+        - VITE_API_BASE_URL=http://localhost:8080/api
     container_name: iot-frontend-local
-    ports:
-      - "3002:80"
+    expose:
+      - "80"      # Frontend (exposed internally for nginx)
     environment:
       - NODE_ENV=development
       - TZ=UTC
       # API Configuration
-      - VITE_API_URL=http://localhost:3001
-      - VITE_API_BASE_URL=http://localhost:3001/api
+      - VITE_API_URL=http://localhost:8080/api
+      - VITE_API_BASE_URL=http://localhost:8080/api
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:80/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:80/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
+    networks:
+      - iot-network-local
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: iot-nginx-local
+    ports:
+      - "8080:80"      # Nginx (single entry point for all services)
+    volumes:
+      - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    depends_on:
+      grafana:
+        condition: service_healthy
+      node-red:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - iot-network-local
 

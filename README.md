@@ -150,6 +150,8 @@ sudo docker-compose up -d
 
 ## Production Access URLs
 
+### **Mikrus VPS (robert108.mikrus.xyz)**
+
 Access the production system at:
 
 - **Frontend Dashboard**: http://robert108.mikrus.xyz:40103
@@ -159,10 +161,69 @@ Access the production system at:
 - **Grafana**: http://robert108.mikrus.xyz:40099
 - **Node-RED**: http://robert108.mikrus.xyz:40100
 - **InfluxDB**: http://robert108.mikrus.xyz:40101
+- **MQTT**: robert108.mikrus.xyz:40098
+
+### **edubad.zut.edu.pl**
+
+Access the production system at:
+
+- **Frontend Dashboard**: http://edubad.zut.edu.pl:[FRONTEND_PORT]
+- **API Endpoints**: http://edubad.zut.edu.pl:[API_PORT]
+  - Health: http://edubad.zut.edu.pl:[API_PORT]/health
+  - Summary: http://edubad.zut.edu.pl:[API_PORT]/api/summary/{device}
+- **Grafana**: http://edubad.zut.edu.pl:[GRAFANA_PORT]
+- **Node-RED**: http://edubad.zut.edu.pl:[NODE_RED_PORT]
+- **InfluxDB**: http://edubad.zut.edu.pl:[INFLUXDB_PORT]
+- **MQTT**: edubad.zut.edu.pl:[MQTT_PORT]
+
+> **💡 Note**: Replace port placeholders with your actual configured ports for edubad.zut.edu.pl deployment.
 
 ### **Production Deployment (edubad.zut.edu.pl)**
 
-## Quick Production Deployment
+**Server Information:**
+- **Server**: [edubad.zut.edu.pl](http://edubad.zut.edu.pl/) (82.145.64.204)
+- **Login**: `admin`
+- **Password**: `XXXXXX`
+- **Privileges**: Administrator access through `sudo`
+
+```bash
+# SSH to your server
+ssh admin@edubad.zut.edu.pl
+# or using IP address
+ssh admin@82.145.64.204
+
+# Clone the repository
+git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
+cd plat-edu-bad-data-mvp
+
+# Set up environment
+cp .env.production .env
+
+# Fix permissions (IMPORTANT for deployment)
+# Note: Administrator privileges required (use sudo)
+sudo chown -R 472:472 ./grafana/data ./grafana/plugins
+sudo chown -R 1000:1000 ./node-red/data
+sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
+sudo chown -R 472:472 ./influxdb/data
+sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
+
+# Start services
+sudo docker-compose up -d
+
+# Access your services:
+# - Frontend Dashboard: http://edubad.zut.edu.pl:[FRONTEND_PORT]
+# - API Endpoints: http://edubad.zut.edu.pl:[API_PORT]
+#   - Health: http://edubad.zut.edu.pl:[API_PORT]/health
+#   - Summary: http://edubad.zut.edu.pl:[API_PORT]/api/summary/{device}
+# - Grafana: http://edubad.zut.edu.pl:[GRAFANA_PORT] (admin/admin)
+# - Node-RED: http://edubad.zut.edu.pl:[NODE_RED_PORT] (admin/adminpassword)
+# - InfluxDB: http://edubad.zut.edu.pl:[INFLUXDB_PORT] (admin/admin_password_123)
+# - MQTT: edubad.zut.edu.pl:[MQTT_PORT] (admin/admin_password_456)
+```
+
+> **💡 Note**: Replace port placeholders with your actual configured ports for edubad.zut.edu.pl deployment. The `admin` user has administrator privileges through `sudo`.
+
+### **Quick Production Deployment**
 
 ```powershell
 # Build production images

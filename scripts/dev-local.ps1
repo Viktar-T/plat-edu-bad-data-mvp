@@ -105,7 +105,8 @@ function Setup-Environment {
 
 function Start-Services {
     param(
-        [bool]$shouldRebuild = $true
+        [bool]$shouldRebuild = $true,
+        [bool]$useNoCache = $false
     )
     
     Write-ColorOutput "Starting local development services..." $Green
@@ -116,8 +117,19 @@ function Start-Services {
 
     # Start services with optional rebuild
     if ($shouldRebuild) {
-        Write-ColorOutput "Rebuilding and starting services with docker-compose.local.yml..." $Yellow
-        Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d --build"
+        if ($useNoCache) {
+            Write-ColorOutput "Rebuilding services with --no-cache (fresh build)..." $Yellow
+            Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml build --no-cache"
+            if ($LASTEXITCODE -ne 0) {
+                Write-ColorOutput "Failed to build services" $Red
+                exit 1
+            }
+            Write-ColorOutput "Starting services..." $Yellow
+            Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d"
+        } else {
+            Write-ColorOutput "Rebuilding and starting services with docker-compose.local.yml..." $Yellow
+            Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d --build"
+        }
     } else {
         Write-ColorOutput "Starting services with docker-compose.local.yml (no rebuild)..." $Yellow
         Invoke-Expression "$dockerComposeCmd -f docker-compose.local.yml up -d"
@@ -149,15 +161,21 @@ function Show-Logs {
 
 function Show-AccessInfo {
     Write-ColorOutput "" $Cyan
-    Write-ColorOutput "Local Development Access URLs:" $Cyan
+    Write-ColorOutput "Local Development Access URLs (via Nginx Reverse Proxy):" $Cyan
     Write-ColorOutput "================================================" $Cyan
-    Write-ColorOutput "  Grafana Dashboard:    http://localhost:3000" $Yellow
-    Write-ColorOutput "  Node-RED Editor:      http://localhost:1880" $Yellow
-    Write-ColorOutput "  InfluxDB Admin:       http://localhost:8086" $Yellow
-    Write-ColorOutput "  Express Backend API:  http://localhost:3001" $Yellow
-    Write-ColorOutput "  React Frontend:       http://localhost:3002" $Yellow
-    Write-ColorOutput "  MQTT Broker:          localhost:1883" $Yellow
-    Write-ColorOutput "  MQTT WebSocket:       localhost:9001" $Yellow
+    Write-ColorOutput "  Nginx Entry Point:     http://localhost:8080" $Yellow
+    Write-ColorOutput "" $Cyan
+    Write-ColorOutput "  Path-Based Routing:" $Cyan
+    Write-ColorOutput "  - Grafana Dashboard:   http://localhost:8080/grafana/" $Yellow
+    Write-ColorOutput "  - Node-RED Editor:     http://localhost:8080/nodered/" $Yellow
+    Write-ColorOutput "  - InfluxDB Admin:      http://localhost:8080/influxdb/" $Yellow
+    Write-ColorOutput "  - Express Backend API: http://localhost:8080/api/" $Yellow
+    Write-ColorOutput "  - React Frontend:      http://localhost:8080/app/" $Yellow
+    Write-ColorOutput "  - Health Check:        http://localhost:8080/health" $Yellow
+    Write-ColorOutput "" $Cyan
+    Write-ColorOutput "  Direct Access (MQTT only):" $Cyan
+    Write-ColorOutput "  - MQTT Broker:         localhost:1883" $Yellow
+    Write-ColorOutput "  - MQTT WebSocket:      localhost:9001" $Yellow
     Write-ColorOutput "================================================" $Cyan
 
     Write-ColorOutput "" $Cyan
@@ -172,6 +190,9 @@ function Show-AccessInfo {
     Write-ColorOutput "" $Cyan
     Write-ColorOutput "Tips:" $Cyan
     Write-ColorOutput "================================================" $Cyan
+    Write-ColorOutput "  - All HTTP services are accessible via nginx on port 8080" $Yellow
+    Write-ColorOutput "  - Use path-based routing: /grafana/, /nodered/, /influxdb/, /api/, /app/" $Yellow
+    Write-ColorOutput "  - MQTT remains accessible directly on ports 1883 and 9001" $Yellow
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Logs' to view logs" $Yellow
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Status' to check status" $Yellow
     Write-ColorOutput "  - Use '.\\scripts\\dev-local.ps1 -Stop' to stop services" $Yellow
@@ -220,11 +241,11 @@ if ($Logs) {
 }
 
 if ($Restart) {
-    Write-ColorOutput "Restarting and rebuilding services..." $Green
+    Write-ColorOutput "Restarting and rebuilding services with --no-cache..." $Green
     Stop-Services
     Start-Sleep -Seconds 2
     $shouldRebuild = -not $NoRebuild
-    Start-Services -shouldRebuild $shouldRebuild
+    Start-Services -shouldRebuild $shouldRebuild -useNoCache $true
     Show-AccessInfo
     exit 0
 }
