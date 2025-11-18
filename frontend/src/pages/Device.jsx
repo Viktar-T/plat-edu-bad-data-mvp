@@ -9,7 +9,7 @@ function Device() {
     const device = MarkersData[deviceID];
     if (!device) return (<>DEVICE NOT FOUND</>)
     
-    const imagePath = MarkerImageMap[deviceID] || "/labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg";
+    const imagePath = MarkerImageMap[deviceID] || "/app/labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg";
     
     return (
             <div className="device">

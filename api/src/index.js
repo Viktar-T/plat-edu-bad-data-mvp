@@ -109,6 +109,25 @@ async function Query(fluxQuery) {
 
 // RegisterPhoto(app);
 
+// API root endpoint
+app.get("/api", (req, res) => {
+    res.json({ 
+        service: "Renewable Energy IoT API",
+        version: "1.0.0",
+        status: "running",
+        endpoints: {
+            health: "/api/health",
+            query: "/api/query",
+            summary: "/api/summary/:machine"
+        }
+    });
+});
+
+// API health check endpoint
+app.get("/api/health", (req, res) => {
+    res.json({ health: "ok", service: "api" });
+});
+
 app.post("/api/query", async (req, res) => {
     const { fluxQuery } = req.body;
     try {

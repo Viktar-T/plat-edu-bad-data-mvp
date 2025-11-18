@@ -226,7 +226,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=development
-        - VITE_API_URL=http://localhost:8080/api
+        - VITE_API_URL=http://localhost:8080
         - VITE_API_BASE_URL=http://localhost:8080/api
     container_name: iot-frontend-local
     expose:
@@ -235,7 +235,8 @@ services:
       - NODE_ENV=development
       - TZ=UTC
       # API Configuration
-      - VITE_API_URL=http://localhost:8080/api
+      # Note: VITE_API_URL should NOT include /api since frontend code appends it
+      - VITE_API_URL=http://localhost:8080
       - VITE_API_BASE_URL=http://localhost:8080/api
     restart: unless-stopped
     depends_on:
