@@ -1,26 +1,21 @@
 import { useParams } from "react-router-dom";
 import "../styles/Device.scss"
-import { MarkersData } from "../api/MarkersData";
+import { MarkersData, MarkerImageMap } from "../api/MarkersData";
 
 function Device() {
     const { deviceID } = useParams();
     if (!deviceID) return (<>NO GIVEN DEVICE</>)
-    let devices = {}
-    for (const key in MarkersData) {
-        if (Object.prototype.hasOwnProperty.call(MarkersData, key)) {
-            const value = MarkersData[key].name;
-            const path = "/"+key+".png";
-            
-            devices[key] = [value, path];
-        }
-    }
     
-    console.log(devices);
-    if (!devices[deviceID]) return (<>DEVICE NOT FOUND</>)
+    const device = MarkersData[deviceID];
+    if (!device) return (<>DEVICE NOT FOUND</>)
+    
+    const imagePath = MarkerImageMap[deviceID] || "/labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg";
+    
     return (
             <div className="device">
+                <h1>{device.name}</h1>
                 <picture>
-                    <img src={devices[deviceID][1]} alt={"Picture of " + devices[deviceID][0]}></img>
+                    <img src={imagePath} alt={"Picture of " + device.name}></img>
                 </picture>
                 <div className="scada"></div>
             </div>

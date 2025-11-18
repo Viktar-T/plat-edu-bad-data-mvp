@@ -159,19 +159,22 @@ app.get("/api/summary/:machine", async (req, res) => {
         from(bucket: "${bucket}")
         |> range(start: -${time || "2m"})
         |> filter(fn: (r) => r["_measurement"] == "${measurement}")
+        |> last()
     `;
     
-    // Add device_id filter if provided
-    if (deviceId) {
-        fluxQuery += `\n        |> filter(fn: (r) => r["device_id"] == "${deviceId}")`;
-    }
-    
-    fluxQuery += `\n        |> last()`;
+    console.log(`Query for ${machine} (${measurement}):`);
+    console.log(fluxQuery);
     
     try {
         const rows = await Query(fluxQuery);
+        const fieldCount = Object.keys(rows).length;
+        console.log(`Query for ${machine} (${measurement}): ${fieldCount} fields found`);
+        if (fieldCount === 0) {
+            console.log('⚠️ No data returned from InfluxDB');
+        }
         res.json(rows)
     } catch (err) {
+        console.error(`❌ Query error for ${machine}:`, err.message);
         res.status(500).json({ error: err.message });
     }
 })

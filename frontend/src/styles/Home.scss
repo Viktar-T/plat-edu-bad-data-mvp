@@ -27,7 +27,7 @@ body.dark .leaflet-control-attribution {
 }
 
 .marker {
-    cursor: grab;
+    cursor: pointer;
     .bg {
         fill: var(--marker-background);
     }

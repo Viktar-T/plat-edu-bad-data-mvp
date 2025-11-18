@@ -13,7 +13,6 @@ import PVPanels from "../api/PVPanels";
 import WindTurbineHAWT from "../api/WindTurbineHAWT";
 import AlgaeFarm1 from "../api/AlgaeFarm1";
 import AlgaeFarm2 from "../api/AlgaeFarm2";
-import EngineTestBench from "../api/EngineTestBench";
 import { MarkersData, GetMarkersOverlay } from "../api/MarkersData"
 import { GetRoomsOverlay } from "../api/RoomsData";
 import { GetEletricLinesOverlay } from "../api/EletricLinesData";
@@ -94,7 +93,6 @@ function Home() {
                     _windTurbineHAWT_Data,
                     _algaeFarm1_Data,
                     _algaeFarm2_Data,
-                    _engineTestBench_Data,
                 ] = await Promise.all([
                     await WindTurbine(),
                     await Photovoltaic(),
@@ -103,13 +101,28 @@ function Home() {
                     await WindTurbineHAWT(),
                     await AlgaeFarm1(),
                     await AlgaeFarm2(),
-                    await EngineTestBench(),
                 ])
-                // console.log(_photovoltaic_Data)
+                
+                // Debug logging
+                console.log("API Response - Wind Turbine:", _windTurbine_Data);
+                console.log("API Response - Photovoltaic:", _photovoltaic_Data);
+                console.log("API Response - Biogas:", _biogas_Data);
+                
                 try {
                     // Helper function to safely get value
                     const getValue = (data, field) => {
-                        return data?.[field]?._value ?? "N/A";
+                        if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+                            return "N/A";
+                        }
+                        // Check if the field exists and has _value property
+                        if (data[field] && typeof data[field] === 'object' && '_value' in data[field]) {
+                            return data[field]._value;
+                        }
+                        // Fallback: check if field exists directly
+                        if (field in data) {
+                            return data[field];
+                        }
+                        return "N/A";
                     };
 
                     setMarkersInfo(prev => ({
@@ -159,35 +172,17 @@ function Home() {
                             ["pH", getValue(_algaeFarm1_Data, "ph"), ""],
                             ["Azot", getValue(_algaeFarm1_Data, "nitrogen"), "mg/L"],
                             ["Fosfor", getValue(_algaeFarm1_Data, "phosphorus"), "mg/L"],
-                            ["Biomasa", getValue(_algaeFarm1_Data, "biomass"), "kg/m³"],
-                            ["Produkcja biomasy", getValue(_algaeFarm1_Data, "biomass_production"), "kg/m³/dzień"],
-                            ["Zużycie CO2", getValue(_algaeFarm1_Data, "co2_consumption"), "g/m³/h"],
-                            ["Produkcja O2", getValue(_algaeFarm1_Data, "oxygen_production"), "g/m³/h"],
-                            ["Tempo wzrostu", getValue(_algaeFarm1_Data, "growth_rate"), "%/dzień"],
                         ],
                         "algae-farm-2-simulation": [
                             ["Temperatura", getValue(_algaeFarm2_Data, "temperature"), "℃"],
                             ["pH", getValue(_algaeFarm2_Data, "ph"), ""],
                             ["Azot", getValue(_algaeFarm2_Data, "nitrogen"), "mg/L"],
                             ["Fosfor", getValue(_algaeFarm2_Data, "phosphorus"), "mg/L"],
-                            ["Biomasa", getValue(_algaeFarm2_Data, "biomass"), "kg/m³"],
-                            ["Produkcja biomasy", getValue(_algaeFarm2_Data, "biomass_production"), "kg/m³/dzień"],
-                            ["Zużycie CO2", getValue(_algaeFarm2_Data, "co2_consumption"), "g/m³/h"],
-                            ["Produkcja O2", getValue(_algaeFarm2_Data, "oxygen_production"), "g/m³/h"],
-                            ["Tempo wzrostu", getValue(_algaeFarm2_Data, "growth_rate"), "%/dzień"],
                         ],
                         "engine-test-bench-simulation": [
-                            ["Prędkość silnika", getValue(_engineTestBench_Data, "engine_speed"), "RPM"],
-                            ["Moment obrotowy", getValue(_engineTestBench_Data, "torque"), "Nm"],
-                            ["Moc wyjściowa", getValue(_engineTestBench_Data, "power_output"), "kW"],
-                            ["Temperatura chłodziwa", getValue(_engineTestBench_Data, "coolant_temperature"), "℃"],
-                            ["Temperatura oleju", getValue(_engineTestBench_Data, "oil_temperature"), "℃"],
-                            ["Temperatura spalin", getValue(_engineTestBench_Data, "exhaust_temperature"), "℃"],
-                            ["Zużycie paliwa", getValue(_engineTestBench_Data, "fuel_consumption"), "L/h"],
-                            ["Ciśnienie oleju", getValue(_engineTestBench_Data, "oil_pressure"), "bar"],
-                            ["Ciśnienie paliwa", getValue(_engineTestBench_Data, "fuel_pressure"), "bar"],
-                            ["Efektywność", getValue(_engineTestBench_Data, "efficiency"), "%"],
-                            ["Obciążenie", getValue(_engineTestBench_Data, "load"), "%"],
+                            ["Prędkość obrotowa silnika", "0", "RPM"],
+                            ["Moment obrotowy", "0", "Nm"],
+                            ["Temperatura oleju", "0", "℃"],
                         ],
                     }));
                 } catch (err) {
