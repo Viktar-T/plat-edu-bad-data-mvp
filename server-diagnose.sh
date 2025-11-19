@@ -91,7 +91,16 @@ echo "Testing Frontend endpoint directly:"
 sudo docker-compose exec -T frontend wget --spider -q http://127.0.0.1:80/ 2>&1 && echo "  ✓ Frontend endpoint OK" || echo "  ✗ Frontend endpoint FAILED"
 echo ""
 echo "Testing API health endpoint:"
-sudo docker-compose exec -T api curl -f -s http://127.0.0.1:3001/health > /dev/null 2>&1 && echo "  ✓ API health endpoint OK" || echo "  ✗ API health endpoint FAILED"
+# Try both /health and /api/health endpoints
+if sudo docker-compose exec -T api curl -f -s http://127.0.0.1:3001/health > /dev/null 2>&1 || \
+   sudo docker-compose exec -T api curl -f -s http://127.0.0.1:3001/api/health > /dev/null 2>&1; then
+    echo "  ✓ API health endpoint OK"
+else
+    echo "  ✗ API health endpoint FAILED (tried /health and /api/health)"
+    # Show what's actually listening
+    echo "  Checking API port 3001:"
+    sudo docker-compose exec -T api netstat -tlnp 2>/dev/null | grep 3001 || echo "    Port 3001 not found"
+fi
 echo ""
 echo "Testing Grafana health endpoint:"
 sudo docker-compose exec -T grafana curl -f -s http://127.0.0.1:3000/api/health > /dev/null 2>&1 && echo "  ✓ Grafana health endpoint OK" || echo "  ✗ Grafana health endpoint FAILED"
