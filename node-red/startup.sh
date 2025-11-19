@@ -119,7 +119,8 @@ if [ "$FLOWS_EMPTY" = true ]; then
         TEMP_FLOWS="/tmp/merged_flows.json"
         
         # Use Python to properly merge all flow files and generate tab definitions
-        if python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS" 2>/dev/null; then
+        # stdout (JSON) goes to file, stderr (debug messages) goes to logs
+        if python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS"; then
 import json
 import glob
 import os
@@ -155,8 +156,9 @@ for flow_file in sorted(glob.glob('/flows/*.json')):
                         if node_id not in config_nodes:
                             config_nodes[node_id] = node
                             print(f"    ✓ Found config node: {node_type} ({node_id})", file=sys.stderr)
+                        # Don't add config nodes to all_flows - they're handled separately
                     else:
-                        # Regular flow node
+                        # Regular flow node (has 'z' property or is not a config node type)
                         all_flows.append(node)
             else:
                 # Single node
@@ -199,9 +201,16 @@ for tab_id in sorted(tab_ids):
 
 print(f"  ✅ Generated {len(tab_definitions)} tab definitions", file=sys.stderr)
 print(f"  ✅ Found {len(config_nodes)} config nodes", file=sys.stderr)
+if len(config_nodes) > 0:
+    for config_id, config in config_nodes.items():
+        print(f"    - {config.get('type')} ({config_id})", file=sys.stderr)
+else:
+    print(f"  ⚠️  WARNING: No config nodes found! This may cause connection issues.", file=sys.stderr)
 
 # Combine tab definitions, config nodes, and flows (tabs first, then configs, then flows)
 final_flows = tab_definitions + list(config_nodes.values()) + all_flows
+
+print(f"  ✅ Total flows in output: {len(final_flows)} (tabs: {len(tab_definitions)}, configs: {len(config_nodes)}, nodes: {len(all_flows)})", file=sys.stderr)
 
 # Write merged flows as formatted JSON
 print(json.dumps(final_flows, indent=2))
