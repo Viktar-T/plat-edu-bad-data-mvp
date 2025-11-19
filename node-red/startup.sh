@@ -118,35 +118,52 @@ if [ "$FLOWS_EMPTY" = true ]; then
         # Create a temporary file to store merged flows
         TEMP_FLOWS="/tmp/merged_flows.json"
         
-        # Initialize merged flows array
-        echo "[" > "$TEMP_FLOWS"
-        FIRST=true
-        
-        # Process each flow file
-        for flow_file in /flows/*.json; do
-            if [ -f "$flow_file" ] && [ -s "$flow_file" ]; then
-                echo "  📄 Processing $(basename "$flow_file")..."
-                
-                # Read the flow file and merge its contents
-                if [ "$FIRST" = true ]; then
-                    FIRST=false
-                else
-                    echo "," >> "$TEMP_FLOWS"
+        # Use Python to properly merge all flow files into one JSON array
+        python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS" 2>/dev/null || {
+            echo "⚠️  Python merge failed, using fallback method..."
+            # Fallback: simple sed-based merge
+            FIRST=true
+            for flow_file in /flows/*.json; do
+                if [ -f "$flow_file" ] && [ -s "$flow_file" ]; then
+                    echo "  📄 Processing $(basename "$flow_file")..."
+                    if [ "$FIRST" = true ]; then
+                        echo "[" > "$TEMP_FLOWS"
+                        FIRST=false
+                    else
+                        echo "," >> "$TEMP_FLOWS"
+                    fi
+                    cat "$flow_file" | sed '1d;$d' | sed 's/^/  /' >> "$TEMP_FLOWS"
                 fi
-                
-                # Extract the array content from the flow file (remove [ and ])
-                # Handle both single-line and multi-line JSON
-                cat "$flow_file" | sed '1d;$d' | sed 's/^/  /' >> "$TEMP_FLOWS" 2>/dev/null || {
-                    # Fallback: if sed fails, try to extract content differently
-                    python3 -c "import json, sys; data=json.load(open('$flow_file')); print(json.dumps(data, indent=2)[1:-1])" 2>/dev/null | sed 's/^/  /' >> "$TEMP_FLOWS" || {
-                        # Last resort: just copy the file content
-                        cat "$flow_file" | grep -v '^\s*\[\s*$' | grep -v '^\s*\]\s*$' | sed 's/^/  /' >> "$TEMP_FLOWS"
-                    }
-                }
-            fi
-        done
-        
-        echo "]" >> "$TEMP_FLOWS"
+            done
+            echo "]" >> "$TEMP_FLOWS"
+        }
+import json
+import glob
+import os
+import sys
+
+all_flows = []
+
+# Process each flow file
+for flow_file in sorted(glob.glob('/flows/*.json')):
+    if os.path.isfile(flow_file) and os.path.getsize(flow_file) > 0:
+        print(f"  📄 Processing {os.path.basename(flow_file)}...", file=sys.stderr)
+        try:
+            with open(flow_file, 'r') as f:
+                flow_data = json.load(f)
+            
+            # If it's a list, extend; if it's a single object, append
+            if isinstance(flow_data, list):
+                all_flows.extend(flow_data)
+            else:
+                all_flows.append(flow_data)
+        except Exception as e:
+            print(f"  ⚠️  Error processing {flow_file}: {e}", file=sys.stderr)
+            continue
+
+# Write merged flows as formatted JSON
+print(json.dumps(all_flows, indent=2))
+PYTHON_SCRIPT
         
         # Validate JSON before copying
         if python3 -m json.tool "$TEMP_FLOWS" > /dev/null 2>&1 || node -e "JSON.parse(require('fs').readFileSync('$TEMP_FLOWS'))" 2>/dev/null; then
