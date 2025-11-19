@@ -155,6 +155,16 @@ sudo docker-compose up -d
 # - MQTT: robert108.mikrus.xyz:40098 (admin/admin_password_456) - Direct connection only
 ```
 
+**Quick Access Links:**
+- 🌐 [React Frontend](http://robert108.mikrus.xyz:20108/app/) - Main dashboard application
+- 🔌 [Express API](http://robert108.mikrus.xyz:20108/api/) - REST API endpoints
+- 📊 [Grafana Dashboards](http://robert108.mikrus.xyz:20108/grafana/) - Data visualization (admin/admin)
+- 🔄 [Node-RED Editor](http://robert108.mikrus.xyz:20108/nodered/) - Flow editor (admin/adminpassword)
+- 💾 [InfluxDB Admin](http://robert108.mikrus.xyz:20108/influxdb/) - Database administration (admin/admin_password_123)
+- 📡 MQTT Broker: `robert108.mikrus.xyz:40098` - Direct connection (admin/admin_password_456)
+
+> **💡 Note**: All web services are accessible through the Nginx reverse proxy on port **20108**. MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
+
 #### **edubad.zut.edu.pl**
 
 **Server Information:**
