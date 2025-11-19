@@ -103,6 +103,7 @@ services:
       - ./node-red/settings.js:/data/settings.js
       - ./node-red/package.json:/data/package.json
       - ./node-red/startup.sh:/startup.sh
+      - ./node-red/flows:/flows:ro
     environment:
       - TZ=UTC
       - NODE_RED_ENABLE_PROJECTS=true
