@@ -128,6 +128,7 @@ import re
 
 all_flows = []
 tab_ids = set()
+config_nodes = {}  # Track config nodes by ID to avoid duplicates
 
 # Process each flow file
 for flow_file in sorted(glob.glob('/flows/*.json')):
@@ -138,17 +139,30 @@ for flow_file in sorted(glob.glob('/flows/*.json')):
             with open(flow_file, 'r') as f:
                 flow_data = json.load(f)
             
-            # If it's a list, extend; if it's a single object, append
+            # If it's a list, process each node
             if isinstance(flow_data, list):
-                all_flows.extend(flow_data)
-                # Collect tab IDs from nodes
                 for node in flow_data:
+                    node_id = node.get('id', '')
+                    node_type = node.get('type', '')
+                    
+                    # Collect tab IDs from nodes
                     if 'z' in node and node['z']:
                         tab_ids.add(node['z'])
+                    
+                    # Check if this is a config node (no 'z' property and specific types)
+                    if 'z' not in node and node_type in ['mqtt-broker', 'influxdb']:
+                        # Store config node (only once per ID)
+                        if node_id not in config_nodes:
+                            config_nodes[node_id] = node
+                            print(f"    ✓ Found config node: {node_type} ({node_id})", file=sys.stderr)
+                    else:
+                        # Regular flow node
+                        all_flows.append(node)
             else:
-                all_flows.append(flow_data)
+                # Single node
                 if 'z' in flow_data and flow_data['z']:
                     tab_ids.add(flow_data['z'])
+                all_flows.append(flow_data)
         except Exception as e:
             print(f"  ⚠️  Error processing {filename}: {e}", file=sys.stderr)
             continue
@@ -184,9 +198,10 @@ for tab_id in sorted(tab_ids):
     tab_definitions.append(tab_def)
 
 print(f"  ✅ Generated {len(tab_definitions)} tab definitions", file=sys.stderr)
+print(f"  ✅ Found {len(config_nodes)} config nodes", file=sys.stderr)
 
-# Combine tab definitions with flows (tabs first)
-final_flows = tab_definitions + all_flows
+# Combine tab definitions, config nodes, and flows (tabs first, then configs, then flows)
+final_flows = tab_definitions + list(config_nodes.values()) + all_flows
 
 # Write merged flows as formatted JSON
 print(json.dumps(final_flows, indent=2))
