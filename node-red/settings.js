@@ -66,7 +66,8 @@ module.exports = {
     // By default, the Node-RED UI is available at http://localhost:1880/
     // The following property can be used to specify a different root path.
     // If set to false, this is disabled.
-    //httpRoot: '/red/',
+    // When using nginx reverse proxy with path-based routing, set this to match the nginx location path.
+    httpRoot: '/nodered',
 
     // The following property can be used to add a custom middleware function
     // in front of all http in nodes. This allows custom authentication to be
