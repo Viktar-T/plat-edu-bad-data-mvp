@@ -94,6 +94,15 @@ fi
 if [ "$FLOWS_EMPTY" = true ]; then
     echo "📥 Loading flows from /flows directory..."
     
+    # Debug: Check if flows directory exists
+    if [ -d "/flows" ]; then
+        echo "  ✓ /flows directory exists"
+        echo "  📂 Contents of /flows:"
+        ls -la /flows/ 2>/dev/null || echo "    (cannot list directory)"
+    else
+        echo "  ✗ /flows directory does not exist (volume mount may not be working)"
+    fi
+    
     # Check if flows directory exists and has flow files
     if [ -d "/flows" ] && [ "$(ls -A /flows/*.json 2>/dev/null)" ]; then
         echo "🔄 Merging flow files from /flows directory..."
