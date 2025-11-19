@@ -13,8 +13,8 @@ services:
       - INFLUXDB_ORG=${INFLUXDB_ORG:-renewable_energy_org}
       - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-renewable_energy}
       - TEST_TOKEN=${INFLUXDB_ADMIN_TOKEN:-renewable_energy_admin_token_123}
-      # CORS Configuration - Include production frontend URL
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173,http://localhost:3002}
+      # CORS Configuration - Include production frontend URL (via Nginx)
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://robert108.mikrus.xyz:20108}
     restart: always
     logging:
       driver: "json-file"
@@ -37,8 +37,8 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
+        - VITE_API_URL=${VITE_API_URL:-http://robert108.mikrus.xyz:20108/api}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://robert108.mikrus.xyz:20108/api}
     restart: always
     logging:
       driver: "json-file"
