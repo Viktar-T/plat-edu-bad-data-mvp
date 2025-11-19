@@ -118,19 +118,22 @@ if [ "$FLOWS_EMPTY" = true ]; then
         # Create a temporary file to store merged flows
         TEMP_FLOWS="/tmp/merged_flows.json"
         
-        # Use Python to properly merge all flow files into one JSON array
+        # Use Python to properly merge all flow files and generate tab definitions
         if python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS" 2>/dev/null; then
 import json
 import glob
 import os
 import sys
+import re
 
 all_flows = []
+tab_ids = set()
 
 # Process each flow file
 for flow_file in sorted(glob.glob('/flows/*.json')):
     if os.path.isfile(flow_file) and os.path.getsize(flow_file) > 0:
-        print(f"  📄 Processing {os.path.basename(flow_file)}...", file=sys.stderr)
+        filename = os.path.basename(flow_file)
+        print(f"  📄 Processing {filename}...", file=sys.stderr)
         try:
             with open(flow_file, 'r') as f:
                 flow_data = json.load(f)
@@ -138,14 +141,55 @@ for flow_file in sorted(glob.glob('/flows/*.json')):
             # If it's a list, extend; if it's a single object, append
             if isinstance(flow_data, list):
                 all_flows.extend(flow_data)
+                # Collect tab IDs from nodes
+                for node in flow_data:
+                    if 'z' in node and node['z']:
+                        tab_ids.add(node['z'])
             else:
                 all_flows.append(flow_data)
+                if 'z' in flow_data and flow_data['z']:
+                    tab_ids.add(flow_data['z'])
         except Exception as e:
-            print(f"  ⚠️  Error processing {flow_file}: {e}", file=sys.stderr)
+            print(f"  ⚠️  Error processing {filename}: {e}", file=sys.stderr)
             continue
 
+# Generate tab definitions for each unique tab ID
+tab_definitions = []
+tab_labels = {
+    'algae-farm-1-simulation': 'Algae Farm 1',
+    'algae-farm-2-simulation': 'Algae Farm 2',
+    'biogas-plant-simulation': 'Biogazownia',
+    'energy-storage-simulation': 'Converter & Storage',
+    'heat-boiler-simulation': 'Stirling-Ogniwo-Magazyn',
+    'photovoltaic-simulation': 'Ładowarka słoneczna',
+    'wind-turbine-simulation': 'Turbina wiatrowa VAWT',
+    'engine-test-bench-simulation': 'Stanowisko do badań silnika',
+    'pv-panels-simulation': 'Panele fotowoltaiczne',
+    'wind-hawt-hybrid-simulation': 'Turbina wiatrowa HAWT',
+    'pv-hulajnogi-simulation': 'PV Hulajnogi',
+    'pv-hybrid-simulation': 'PV Hybrid'
+}
+
+for tab_id in sorted(tab_ids):
+    # Generate a human-readable label
+    label = tab_labels.get(tab_id, tab_id.replace('-', ' ').title())
+    
+    tab_def = {
+        "id": tab_id,
+        "type": "tab",
+        "label": label,
+        "disabled": False,
+        "info": ""
+    }
+    tab_definitions.append(tab_def)
+
+print(f"  ✅ Generated {len(tab_definitions)} tab definitions", file=sys.stderr)
+
+# Combine tab definitions with flows (tabs first)
+final_flows = tab_definitions + all_flows
+
 # Write merged flows as formatted JSON
-print(json.dumps(all_flows, indent=2))
+print(json.dumps(final_flows, indent=2))
 PYTHON_SCRIPT
             echo "  ✅ Python merge completed"
         else
