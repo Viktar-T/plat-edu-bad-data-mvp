@@ -245,13 +245,13 @@ services:
     restart: unless-stopped
     depends_on:
       grafana:
-        condition: service_healthy
+        condition: service_started
       node-red:
-        condition: service_healthy
+        condition: service_started
       influxdb:
-        condition: service_healthy
+        condition: service_started
       api:
-        condition: service_healthy
+        condition: service_started
       frontend:
         condition: service_started
     healthcheck:
