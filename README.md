@@ -119,7 +119,7 @@ cd plat-edu-bad-data-mvp
 
 ### **Production Deployment**
 
-Production deployments use direct port access for each service. Services are exposed on individual ports for direct access.
+Production deployments use **Nginx reverse proxy** for path-based routing, allowing all services to be accessed through a single port with different paths.
 
 #### **Mikrus VPS (robert108.mikrus.xyz)**
 
@@ -144,15 +144,15 @@ sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/d
 # Start services
 sudo docker-compose up -d
 
-# Access your services:
-# - Frontend Dashboard: http://robert108.mikrus.xyz:40103
-# - API Endpoints: http://robert108.mikrus.xyz:40102
-#   - Health: http://robert108.mikrus.xyz:40102/health
-#   - Summary: http://robert108.mikrus.xyz:40102/api/summary/{device}
-# - Grafana: http://robert108.mikrus.xyz:40099 (admin/admin)
-# - Node-RED: http://robert108.mikrus.xyz:40100 (admin/adminpassword)
-# - InfluxDB: http://robert108.mikrus.xyz:40101 (admin/admin_password_123)
-# - MQTT: robert108.mikrus.xyz:40098 (admin/admin_password_456)
+# Access your services through Nginx reverse proxy at http://robert108.mikrus.xyz:20108:
+# - React Frontend: http://robert108.mikrus.xyz:20108/app/
+# - Express API: http://robert108.mikrus.xyz:20108/api/
+#   - Health: http://robert108.mikrus.xyz:20108/api/health
+#   - Summary: http://robert108.mikrus.xyz:20108/api/summary/{device}
+# - Grafana: http://robert108.mikrus.xyz:20108/grafana/ (admin/admin)
+# - Node-RED: http://robert108.mikrus.xyz:20108/nodered/ (admin/adminpassword)
+# - InfluxDB Admin: http://robert108.mikrus.xyz:20108/influxdb/ (admin/admin_password_123)
+# - MQTT: robert108.mikrus.xyz:40098 (admin/admin_password_456) - Direct connection only
 ```
 
 #### **edubad.zut.edu.pl**
