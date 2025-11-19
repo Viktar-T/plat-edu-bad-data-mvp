@@ -216,6 +216,12 @@ print(f"  ✅ Total flows in output: {len(final_flows)} (tabs: {len(tab_definiti
 print(json.dumps(final_flows, indent=2))
 PYTHON_SCRIPT
             echo "  ✅ Python merge completed"
+            # Debug: Check what's in the temp file
+            if [ -f "$TEMP_FLOWS" ]; then
+                TEMP_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
+                TEMP_TAB_COUNT=$(grep -c '"type":"tab"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
+                echo "  📊 Temp file stats: ${TEMP_CONFIG_COUNT} config nodes, ${TEMP_TAB_COUNT} tabs"
+            fi
         else
             echo "⚠️  Python merge failed, using fallback method..."
             # Fallback: simple sed-based merge
@@ -235,13 +241,30 @@ PYTHON_SCRIPT
             echo "]" >> "$TEMP_FLOWS"
         fi
         
-        # Validate JSON before copying
+        # Validate JSON and verify config nodes before copying
         if python3 -m json.tool "$TEMP_FLOWS" > /dev/null 2>&1 || node -e "JSON.parse(require('fs').readFileSync('$TEMP_FLOWS'))" 2>/dev/null; then
-            # Copy merged flows to flows.json
-            cp "$TEMP_FLOWS" /data/flows.json
-            echo "✅ Flows loaded successfully from /flows directory"
+            # Verify config nodes are in the temp file
+            CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
+            if [ "$CONFIG_COUNT" -ge 2 ]; then
+                # Copy merged flows to flows.json
+                cp "$TEMP_FLOWS" /data/flows.json
+                # Verify it was copied correctly
+                FINAL_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' /data/flows.json 2>/dev/null || echo "0")
+                if [ "$FINAL_CONFIG_COUNT" -ge 2 ]; then
+                    echo "✅ Flows loaded successfully from /flows directory (${FINAL_CONFIG_COUNT} config nodes verified in flows.json)"
+                else
+                    echo "⚠️  WARNING: Config nodes were in temp file but missing from flows.json after copy!"
+                fi
+            else
+                echo "⚠️  WARNING: Config nodes missing from merged file! Checking temp file..."
+                grep -c '"type":"influxdb"\|"type":"mqtt-broker"' "$TEMP_FLOWS" || echo "No config nodes found in temp file"
+                # Still copy it, but warn
+                cp "$TEMP_FLOWS" /data/flows.json
+                echo "⚠️  Copied flows.json but config nodes may be missing"
+            fi
         else
-            echo "⚠️  Merged flows JSON is invalid, keeping existing flows.json"
+            echo "⚠️  Merged flows JSON is invalid, checking temp file..."
+            head -50 "$TEMP_FLOWS" || echo "Cannot read temp file"
             if [ ! -f "/data/flows.json" ]; then
                 echo "[]" > /data/flows.json
             fi
