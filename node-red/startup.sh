@@ -119,24 +119,7 @@ if [ "$FLOWS_EMPTY" = true ]; then
         TEMP_FLOWS="/tmp/merged_flows.json"
         
         # Use Python to properly merge all flow files into one JSON array
-        python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS" 2>/dev/null || {
-            echo "⚠️  Python merge failed, using fallback method..."
-            # Fallback: simple sed-based merge
-            FIRST=true
-            for flow_file in /flows/*.json; do
-                if [ -f "$flow_file" ] && [ -s "$flow_file" ]; then
-                    echo "  📄 Processing $(basename "$flow_file")..."
-                    if [ "$FIRST" = true ]; then
-                        echo "[" > "$TEMP_FLOWS"
-                        FIRST=false
-                    else
-                        echo "," >> "$TEMP_FLOWS"
-                    fi
-                    cat "$flow_file" | sed '1d;$d' | sed 's/^/  /' >> "$TEMP_FLOWS"
-                fi
-            done
-            echo "]" >> "$TEMP_FLOWS"
-        }
+        if python3 <<'PYTHON_SCRIPT' > "$TEMP_FLOWS" 2>/dev/null; then
 import json
 import glob
 import os
@@ -164,6 +147,25 @@ for flow_file in sorted(glob.glob('/flows/*.json')):
 # Write merged flows as formatted JSON
 print(json.dumps(all_flows, indent=2))
 PYTHON_SCRIPT
+            echo "  ✅ Python merge completed"
+        else
+            echo "⚠️  Python merge failed, using fallback method..."
+            # Fallback: simple sed-based merge
+            FIRST=true
+            for flow_file in /flows/*.json; do
+                if [ -f "$flow_file" ] && [ -s "$flow_file" ]; then
+                    echo "  📄 Processing $(basename "$flow_file")..."
+                    if [ "$FIRST" = true ]; then
+                        echo "[" > "$TEMP_FLOWS"
+                        FIRST=false
+                    else
+                        echo "," >> "$TEMP_FLOWS"
+                    fi
+                    cat "$flow_file" | sed '1d;$d' | sed 's/^/  /' >> "$TEMP_FLOWS"
+                fi
+            done
+            echo "]" >> "$TEMP_FLOWS"
+        fi
         
         # Validate JSON before copying
         if python3 -m json.tool "$TEMP_FLOWS" > /dev/null 2>&1 || node -e "JSON.parse(require('fs').readFileSync('$TEMP_FLOWS'))" 2>/dev/null; then
