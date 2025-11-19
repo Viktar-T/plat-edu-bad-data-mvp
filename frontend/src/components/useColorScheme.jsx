@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMediaQuery } from "react-responsive";
 
 export function useColorScheme() {
-    const systemPrefersDark = useMediaQuery({ query: "(prefers-color-scheme: dark)" });
-
     // Load persisted preference from localStorage
     const [isDark, setIsDark] = useState(() => {
         const stored = localStorage.getItem("colorScheme");
         return stored ? JSON.parse(stored) : undefined;
     });
 
-    // Determine active mode (user preference OR system)
+    // Determine active mode (user preference OR default to light mode)
     const value = useMemo(
-        () => (isDark === undefined ? systemPrefersDark : isDark),
-        [isDark, systemPrefersDark]
+        () => (isDark === undefined ? false : isDark),
+        [isDark]
     );
 
     // Persist when user changes preference

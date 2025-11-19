@@ -16,19 +16,58 @@
     display: grid;
     grid-template-columns: min-content 1fr min-content;
 
-    .name {
-        margin-left: 1lvh;
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 1lvh;
         height: 100%;
-        width: 40lvh;
 
-        .siteName {
-            font-size: 2.5lvh;
-            font-weight: bold;
-            width: 100%;
+        .logos {
+            display: flex;
+            align-items: center;
+            gap: 1lvh;
+            height: 100%;
+            padding: 0.5lvh 0;
+
+            .logo-link {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                text-decoration: none;
+                transition: opacity 0.3s ease;
+
+                &:hover {
+                    opacity: 0.8;
+                }
+
+                .header-logo {
+                    max-height: 6lvh;
+                    max-width: 20lvh;
+                    min-height: 3lvh;
+                    min-width: 5lvh;
+                    height: auto;
+                    width: auto;
+                    object-fit: contain;
+                    display: block;
+                }
+            }
         }
 
-        .school {
-            font-size: 1lvh;
+        .name {
+            margin-left: 1lvh;
+            height: 100%;
+            width: 40lvh;
+
+            .siteName {
+                font-size: 2.5lvh;
+                font-weight: bold;
+                width: 100%;
+            }
+
+            .school {
+                font-size: 1lvh;
+            }
         }
     }
 

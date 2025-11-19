@@ -1,7 +1,7 @@
 .footer {
     width: 100%;
     min-height: 10lvh;
-    background-color: #303846;
+    background-color: #5a6b7d;
     color: white;
 
     display: flex;
@@ -41,7 +41,69 @@
             }
 
         }
+
+        &.logo {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5lvh;
+
+            .sponsor-label {
+                margin-bottom: 0;
+            }
+
+            .logo-and-contact {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5lvh;
+            }
+
+            .logo-link {
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: opacity 0.3s ease;
+
+                &:hover {
+                    opacity: 0.8;
+                }
+
+                .pge-logo {
+                    max-height: 80px;
+                    max-width: 200px;
+                    height: auto;
+                    width: auto;
+                    object-fit: contain;
+                }
+            }
+
+            .contact-info {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+                font-size: 0.9em;
+                gap: 0.2lvh;
+
+                div {
+                    margin: 0;
+                    line-height: 1.4;
+
+                    a {
+                        text-decoration: underline;
+                        color: white;
+                        transition: opacity 0.3s ease;
+
+                        &:hover {
+                            opacity: 0.8;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
-
-body.dark {}

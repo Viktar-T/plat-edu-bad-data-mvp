@@ -6,12 +6,14 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import About from './pages/About.jsx'
 import Device from './pages/Device.jsx'
+import FundacjaPGE from './pages/FundacjaPGE.jsx'
 
 function App() {
   // Aby pokazała się zakładka w headerze, route musi zawierac label
   const routes = [
     {path:"/", element: <Home />, label: "Home"},
-    {path:"/about", element: <About />, label: "About"},
+    {path:"/about", element: <About />, label: "O projekcie"},
+    {path:"/fundacja-pge", element: <FundacjaPGE />, label: "Fundacja PGE"},
     {path:"/device/:deviceID", element: <Device />},
     {path:"/device", element: <Device />}
   ];
