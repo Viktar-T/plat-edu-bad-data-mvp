@@ -74,7 +74,7 @@ fi
 # Load flows from flows directory if flows.json is empty or missing
 echo "📋 Checking Node-RED flows..."
 
-# Check if flows.json is empty, missing, or only contains empty array
+# Check if flows.json is empty, missing, or only contains empty/default flow
 FLOWS_EMPTY=false
 if [ ! -f "/data/flows.json" ]; then
     FLOWS_EMPTY=true
@@ -88,6 +88,14 @@ else
     if [ "$FLOWS_CONTENT" = "[]" ] || [ -z "$FLOWS_CONTENT" ]; then
         FLOWS_EMPTY=true
         echo "📥 flows.json contains only empty array"
+    else
+        # Check if flows.json only has the default flow (usually just one flow with minimal content)
+        # Count the number of flow objects (tabs) - if only 1, it's likely the default flow
+        FLOW_COUNT=$(cat /data/flows.json | grep -c '"type":"tab"' || echo "0")
+        if [ "$FLOW_COUNT" -le 1 ]; then
+            FLOWS_EMPTY=true
+            echo "📥 flows.json contains only default flow (${FLOW_COUNT} tab(s)), will reload from /flows"
+        fi
     fi
 fi
 
