@@ -235,7 +235,7 @@ total_count=$(sudo docker-compose ps | grep -c "Up" || echo "0")
 echo "Healthy services: ${healthy_count}/${total_count}"
 echo ""
 echo "Services status:"
-sudo docker-compose ps --format "table {{.Name}}\t{{.Status}}"
+sudo docker-compose ps
 echo ""
 echo "=========================================="
 echo "Diagnostic complete at $(date)"
