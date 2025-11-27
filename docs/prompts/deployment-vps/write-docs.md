@@ -24,7 +24,7 @@ Global writing requirements
 - Current deployment excludes Express/React; only Mosquitto, Node-RED, InfluxDB 2.x, Grafana, and Nginx are deployed.
 
 - Always provide two deployment tracks with clear, step-by-step instructions:
-  - For Manual Deployments: use the existing PowerShell scripts (`scripts/dev-local.ps1`, `scripts/deploy-production.ps1`) and include a direct GitHub‑clone alternative on the VPS. Show exact commands, expected results, and verification checks.
+  - For Manual Deployments: use the existing PowerShell scripts (`scripts/dev-local.ps1`, `scripts/deploy-mikrus.ps1`) and include a direct GitHub‑clone alternative on the VPS. Show exact commands, expected results, and verification checks.
   - For CI/CD Pipeline: include a GitHub Actions workflow example (YAML), required repository secrets, branch triggers, and the VPS side steps (`git pull`, `docker-compose` lifecycle). Explain rollback, versioning by commit SHA, and environment secrets handling. Do not include real secrets.
 
 Repository context (read-only)
@@ -48,14 +48,14 @@ Deliverable structure and content requirements
 - Goal: Prepare the application on the VPS.
 - Include:
   - Cloning the repository to the VPS, directory layout, and permissions.
-  - Environment files are managed by scripts: local uses `.env.local` → `.env` via `scripts/dev-local.ps1`; production uses `.env.production` via `scripts/deploy-production.ps1` (no manual `.env` creation on VPS).
+  - Environment files are managed by scripts: local uses `.env.local` → `.env` via `scripts/dev-local.ps1`; production uses `.env.production` via `scripts/deploy-mikrus.ps1` (no manual `.env` creation on VPS).
   - Verifying and adjusting `docker-compose.yml` (volumes, networks, restart policies, healthchecks); remove Express/React services for production until ready.
   - Port strategy:
     - Local development: standard ports (1883 MQTT, 9001 WS, 8086 InfluxDB, 1880 Node-RED, 3000 Grafana).
     - Production: Nginx reverse proxy on `20108`/`30108` with path-based routing; MQTT on `40098`.
   - Persistence volumes for all stateful services.
   - Two subsections with full procedures:
-    - For Manual Deployments: packaging with `deploy-production.ps1`, transferring to VPS, and deploying; plus an alternate path using direct `git clone` on VPS with minimal steps.
+    - For Manual Deployments: packaging with `deploy-mikrus.ps1`, transferring to VPS, and deploying; plus an alternate path using direct `git clone` on VPS with minimal steps.
     - For CI/CD Pipeline: repository layout expectations, creating a GitHub Actions workflow to SSH into the VPS and run `git pull` + `docker-compose` commands, required secrets, and safety checks.
 
 3) `docs/prompts/deployment-vps/03-deployment-and-operations.md`

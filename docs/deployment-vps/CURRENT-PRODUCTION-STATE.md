@@ -91,7 +91,7 @@ The system was deployed using the automated PowerShell script:
 
 ```powershell
 # Full deployment process
-.\scripts\deploy-production.ps1 -Full
+.\scripts\deploy-mikrus.ps1 -Full
 
 # Deployment location on VPS
 /root/renewable-energy-iot/

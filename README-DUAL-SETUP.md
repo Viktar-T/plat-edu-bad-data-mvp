@@ -116,7 +116,7 @@ plat-edu-bad-data-mvp/
 ├── 📄 env.example                     # Environment template
 ├── 📁 scripts/
 │   ├── 📄 dev-local.ps1               # Local development script
-│   └── 📄 deploy-production.ps1       # Production deployment script
+│   └── 📄 deploy-mikrus.ps1           # Mikrus VPS deployment script
 ├── 📁 mosquitto/                      # MQTT broker configuration
 │   ├── 📁 config/                     # Mosquitto configuration
 │   ├── 📁 data/                       # MQTT data storage
@@ -429,9 +429,11 @@ sudo docker-compose logs -f
 sudo docker-compose restart
 
 # Update services
-git pull --ff-only
+# On local machine: git push origin main
+# Then on server:
+git pull origin main
 cp .env.production .env
-sudo docker-compose up -d
+sudo docker-compose up -d --build
 ```
 
 **Network Issues:**

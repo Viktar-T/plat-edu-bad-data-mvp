@@ -14,7 +14,7 @@
     background-color: var(--background-color2);
 
     display: grid;
-    grid-template-columns: min-content 1fr min-content;
+    grid-template-columns: min-content 1fr auto;
 
     .header-left {
         display: flex;
@@ -102,11 +102,57 @@
         }
     }
 
-    .toggle {
-        height: 100%;
-        width: 10lvh;
+    .header-right {
         display: flex;
-        justify-content: center;
         align-items: center;
+        gap: 1lvh;
+        height: 100%;
+        padding-right: 1lvh;
+
+        .pge-funding {
+            display: flex;
+            align-items: center;
+            gap: 1lvh;
+            height: 100%;
+            padding: 0.5lvh 0;
+
+            .funding-text {
+                font-size: 2.4lvh;
+                color: var(--primart-text);
+                white-space: nowrap;
+            }
+
+            .logo-link {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                text-decoration: none;
+                transition: opacity 0.3s ease;
+
+                &:hover {
+                    opacity: 0.8;
+                }
+
+                .header-logo {
+                    max-height: 6lvh;
+                    max-width: 20lvh;
+                    min-height: 3lvh;
+                    min-width: 5lvh;
+                    height: auto;
+                    width: auto;
+                    object-fit: contain;
+                    display: block;
+                }
+            }
+        }
+
+        .toggle {
+            height: 100%;
+            width: 10lvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     }
 }

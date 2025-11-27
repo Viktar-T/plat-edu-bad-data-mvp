@@ -572,7 +572,7 @@ ulimits:
 **✅ Environment variables are handled automatically by your deployment scripts:**
 
 - **Local Development**: `scripts/dev-local.ps1` creates `.env.local` from `env.example`
-- **Production Deployment**: `scripts/deploy-production.ps1` uses `.env.production`
+- **Production Deployment**: `scripts/deploy-mikrus.ps1` uses `.env.production`
 
 **No manual environment setup required!** Your scripts handle everything automatically.
 
@@ -689,10 +689,10 @@ For local development, use the provided scripts:
 .\scripts\dev-local.ps1
 
 # Prepare production deployment
-.\scripts\deploy-production.ps1 -Prepare
+.\scripts\deploy-mikrus.ps1 -Prepare
 
 # Full deployment to VPS
-.\scripts\deploy-production.ps1 -Full
+.\scripts\deploy-mikrus.ps1 -Full
 ```
 
 ---

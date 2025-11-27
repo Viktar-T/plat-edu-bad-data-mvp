@@ -204,23 +204,50 @@ print(f"  ✅ Found {len(config_nodes)} config nodes", file=sys.stderr)
 if len(config_nodes) > 0:
     for config_id, config in config_nodes.items():
         print(f"    - {config.get('type')} ({config_id})", file=sys.stderr)
+        # Verify config node structure
+        if 'id' not in config or 'type' not in config:
+            print(f"      ⚠️  WARNING: Config node {config_id} missing required fields!", file=sys.stderr)
 else:
     print(f"  ⚠️  WARNING: No config nodes found! This may cause connection issues.", file=sys.stderr)
 
 # Combine tab definitions, config nodes, and flows (tabs first, then configs, then flows)
-final_flows = tab_definitions + list(config_nodes.values()) + all_flows
+config_nodes_list = list(config_nodes.values())
+print(f"  🔍 DEBUG: config_nodes dict has {len(config_nodes)} items, list has {len(config_nodes_list)} items", file=sys.stderr)
 
-print(f"  ✅ Total flows in output: {len(final_flows)} (tabs: {len(tab_definitions)}, configs: {len(config_nodes)}, nodes: {len(all_flows)})", file=sys.stderr)
+final_flows = tab_definitions + config_nodes_list + all_flows
+
+print(f"  ✅ Total flows in output: {len(final_flows)} (tabs: {len(tab_definitions)}, configs: {len(config_nodes_list)}, nodes: {len(all_flows)})", file=sys.stderr)
+
+# Verify config nodes are in final_flows before serializing
+config_in_final = [f for f in final_flows if f.get('type') in ['mqtt-broker', 'influxdb']]
+print(f"  🔍 DEBUG: Config nodes in final_flows: {len(config_in_final)}", file=sys.stderr)
+if len(config_in_final) != len(config_nodes_list):
+    print(f"  ⚠️  WARNING: Config node count mismatch! Expected {len(config_nodes_list)}, found {len(config_in_final)}", file=sys.stderr)
 
 # Write merged flows as formatted JSON
-print(json.dumps(final_flows, indent=2))
+try:
+    json_output = json.dumps(final_flows, indent=2)
+    print(json_output)
+except Exception as e:
+    print(f"  ❌ ERROR serializing JSON: {e}", file=sys.stderr)
+    sys.exit(1)
 PYTHON_SCRIPT
             echo "  ✅ Python merge completed"
             # Debug: Check what's in the temp file
             if [ -f "$TEMP_FLOWS" ]; then
-                TEMP_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
-                TEMP_TAB_COUNT=$(grep -c '"type":"tab"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
-                echo "  📊 Temp file stats: ${TEMP_CONFIG_COUNT} config nodes, ${TEMP_TAB_COUNT} tabs"
+                TEMP_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null | head -1 || echo "0")
+                TEMP_TAB_COUNT=$(grep -c '"type":"tab"' "$TEMP_FLOWS" 2>/dev/null | head -1 || echo "0")
+                TEMP_SIZE=$(wc -c < "$TEMP_FLOWS" 2>/dev/null || echo "0")
+                echo "  📊 Temp file stats: ${TEMP_CONFIG_COUNT} config nodes, ${TEMP_TAB_COUNT} tabs, ${TEMP_SIZE} bytes"
+                
+                # If config nodes are missing, check what's actually in the file
+                if [ "$TEMP_CONFIG_COUNT" = "0" ]; then
+                    echo "  ⚠️  DEBUG: Checking temp file content..."
+                    echo "  First 20 lines of temp file:"
+                    head -20 "$TEMP_FLOWS" | sed 's/^/    /'
+                    echo "  Searching for any config-like nodes:"
+                    grep -i "influxdb\|mqtt-broker" "$TEMP_FLOWS" | head -5 | sed 's/^/    /' || echo "    None found"
+                fi
             fi
         else
             echo "⚠️  Python merge failed, using fallback method..."
@@ -244,13 +271,16 @@ PYTHON_SCRIPT
         # Validate JSON and verify config nodes before copying
         if python3 -m json.tool "$TEMP_FLOWS" > /dev/null 2>&1 || node -e "JSON.parse(require('fs').readFileSync('$TEMP_FLOWS'))" 2>/dev/null; then
             # Verify config nodes are in the temp file
-            CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null || echo "0")
-            if [ "$CONFIG_COUNT" -ge 2 ]; then
+            CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' "$TEMP_FLOWS" 2>/dev/null | head -1 || echo "0")
+            # Convert to integer (handle any newlines)
+            CONFIG_COUNT=$(echo "$CONFIG_COUNT" | tr -d '\n' | head -1)
+            if [ "$CONFIG_COUNT" -ge 2 ] 2>/dev/null; then
                 # Copy merged flows to flows.json
                 cp "$TEMP_FLOWS" /data/flows.json
                 # Verify it was copied correctly
-                FINAL_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' /data/flows.json 2>/dev/null || echo "0")
-                if [ "$FINAL_CONFIG_COUNT" -ge 2 ]; then
+                FINAL_CONFIG_COUNT=$(grep -c '"id":"influxdb-config"\|"id":"mqtt-broker-config"' /data/flows.json 2>/dev/null | head -1 || echo "0")
+                FINAL_CONFIG_COUNT=$(echo "$FINAL_CONFIG_COUNT" | tr -d '\n' | head -1)
+                if [ "$FINAL_CONFIG_COUNT" -ge 2 ] 2>/dev/null; then
                     echo "✅ Flows loaded successfully from /flows directory (${FINAL_CONFIG_COUNT} config nodes verified in flows.json)"
                 else
                     echo "⚠️  WARNING: Config nodes were in temp file but missing from flows.json after copy!"

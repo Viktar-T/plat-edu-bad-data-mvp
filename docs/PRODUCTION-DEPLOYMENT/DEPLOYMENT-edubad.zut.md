@@ -87,8 +87,10 @@ cd plat-edu-bad-data-mvp
 
 ### 4. Prepare Environment File
 
+**Note**: `.env.production` is now tracked in git. If this is the first deployment, you may need to create it locally and commit it.
+
 ```bash
-# Copy example to production
+# If .env.production doesn't exist, copy from example
 cp env.example .env.production
 
 # Edit .env.production and update:
@@ -97,6 +99,11 @@ cp env.example .env.production
 # - Server URLs to edubad.zut.edu.pl
 # - Verify Nginx configuration paths
 nano .env.production
+
+# After editing, commit and push (if not already in git)
+# git add .env.production
+# git commit -m "Add production environment configuration"
+# git push origin main
 ```
 
 **Important Configuration for edubad.zut.edu.pl:**
@@ -210,7 +217,8 @@ sudo ufw reload
 ### 8. Build and Deploy Services
 
 ```bash
-# Copy production environment
+# Copy production environment (docker-compose uses .env)
+# Note: .env.production is tracked in git, so it's already available after git clone/pull
 cp .env.production .env
 
 # Build and start all services (including Nginx)
@@ -296,15 +304,31 @@ sudo docker compose logs -f api
 
 ### Update Services
 
+**On your local machine:**
+```powershell
+# Push changes to repository (includes .env.production)
+git push origin main
+```
+
+**On the server (edubad.zut.edu.pl):**
 ```bash
-# Pull latest code
-git pull --ff-only
+# SSH to server
+ssh admin@edubad.zut.edu.pl
+
+# Navigate to project directory
+cd /home/admin/plat-edu-bad-data-mvp
+
+# Pull latest changes (includes .env.production from git)
+git pull origin main
+
+# Copy .env.production to .env (docker-compose uses .env)
+cp .env.production .env
 
 # Rebuild and restart services
-sudo docker compose up -d --build
+sudo docker-compose up -d --build
 
 # Verify deployment
-sudo docker compose ps
+sudo docker-compose ps
 ```
 
 ### Backup

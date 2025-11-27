@@ -73,11 +73,12 @@
                 }
 
                 .pge-logo {
-                    max-height: 80px;
-                    max-width: 200px;
+                    max-height: 50px;
+                    max-width: 120px;
                     height: auto;
                     width: auto;
                     object-fit: contain;
+                    display: block;
                 }
             }
 

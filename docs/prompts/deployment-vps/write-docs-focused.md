@@ -21,7 +21,7 @@ Generate 6 complete documentation files for deploying a containerized renewable 
 ### **Repository Context**
 - Root: `docker-compose.yml`
 - Services: `influxdb/`, `mosquitto/`, `node-red/`, `grafana/`
-- Scripts: `scripts/dev-local.ps1`, `scripts/deploy-production.ps1`
+- Scripts: `scripts/dev-local.ps1`, `scripts/deploy-mikrus.ps1`
 - **Note**: Express/React excluded from current deployment
 
 ## 📁 **Files to Create**

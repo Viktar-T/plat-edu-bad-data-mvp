@@ -277,19 +277,17 @@ docker-compose -f docker-compose.yml --env-file .env.production up -d
 ```powershell
 # 1. Update .env.production with edubad.zut.edu.pl configuration
 # Edit .env.production manually
+# Note: .env.production is now tracked in git
 
-# 2. Commit changes (optional, but recommended)
-git status
-git add .
-git commit -m "Configure for edubad.zut.edu.pl deployment"
-
-# 3. Push to repository
+# 2. Commit and push changes
+git add .env.production
+git commit -m "Update .env.production for edubad.zut.edu.pl deployment"
 git push origin main
 ```
 
-### Step 2: Transfer Files to Server
+### Step 2: Deploy on Server
 
-**Option A: Using Git (Recommended)**
+**Using Git (Recommended - .env.production is tracked in git)**
 
 ```bash
 # SSH to edubad.zut.edu.pl
@@ -297,16 +295,18 @@ ssh admin@edubad.zut.edu.pl
 # or
 ssh admin@82.145.64.204
 
-# Clone repository
-cd ~
-git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
-cd plat-edu-bad-data-mvp
+# Navigate to project directory (or clone if first time)
+cd ~/plat-edu-bad-data-mvp
+# If first time: git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
 
-# Copy production environment
+# Pull latest changes (includes .env.production)
+git pull origin main
+
+# Copy production environment to .env (docker-compose uses .env)
 cp .env.production .env
 
-# Update .env with server-specific values if needed
-nano .env
+# Build and start services
+sudo docker-compose up -d --build
 ```
 
 **Option B: Using SCP (Alternative)**
@@ -550,18 +550,23 @@ sudo cp -r ./mosquitto/config ~/backups/renewable-energy-iot/$(date +%Y%m%d)/
 ### Updating the Application
 
 ```bash
+# On your local machine
+git push origin main
+
 # SSH to server
 ssh admin@edubad.zut.edu.pl
 
 # Navigate to project
 cd ~/plat-edu-bad-data-mvp
 
-# Pull latest changes
+# Pull latest changes (includes .env.production from git)
 git pull origin main
 
+# Copy .env.production to .env (docker-compose uses .env)
+cp .env.production .env
+
 # Rebuild and restart
-sudo docker-compose build --no-cache api frontend
-sudo docker-compose up -d
+sudo docker-compose up -d --build
 
 # Verify
 sudo docker-compose ps
@@ -580,13 +585,12 @@ sudo docker-compose ps
 - [ ] Commit and push changes to Git
 
 ### Deployment
+- [ ] Push changes to git (includes `.env.production`)
 - [ ] SSH to edubad.zut.edu.pl
-- [ ] Clone/update repository
-- [ ] Copy `.env.production` to `.env`
+- [ ] Pull latest changes: `git pull origin main`
+- [ ] Copy `.env.production` to `.env`: `cp .env.production .env`
 - [ ] Fix directory permissions
-- [ ] Pull Docker images
-- [ ] Build custom images
-- [ ] Start services with `docker-compose up -d`
+- [ ] Build and start services: `sudo docker-compose up -d --build`
 
 ### Post-Deployment
 - [ ] Verify all containers are running

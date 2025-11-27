@@ -8,10 +8,10 @@ Run from Windows PowerShell in the project root:
 
 ```powershell
 # Prepare artifacts for production deployment
-./scripts/deploy-production.ps1 -Prepare
+./scripts/deploy-mikrus.ps1 -Prepare
 
 # Full deployment to VPS (packages, transfers, and deploys)
-./scripts/deploy-production.ps1 -Full
+./scripts/deploy-mikrus.ps1 -Full
 ```
 
 Expected result:

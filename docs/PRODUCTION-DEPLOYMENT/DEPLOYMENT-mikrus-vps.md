@@ -293,11 +293,11 @@ sudo docker compose logs -f
 
 ```bash
 # If you have the deployment script on VPS
-./scripts/deploy-production.ps1 -Full
+./scripts/deploy-mikrus.ps1 -Full
 
 # Or prepare and deploy separately
-./scripts/deploy-production.ps1 -Prepare
-./scripts/deploy-production.ps1 -Deploy
+./scripts/deploy-mikrus.ps1 -Prepare
+./scripts/deploy-mikrus.ps1 -Deploy
 ```
 
 ## Accessing Services on Mikrus VPS
