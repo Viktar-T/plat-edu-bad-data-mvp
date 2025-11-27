@@ -85,50 +85,181 @@ function Test-RequiredFiles {
     return $missing
 }
 
-function Ensure-EnvProductionExists {
-    if (-not (Test-Path ".env.production")) {
-        if (Test-Path "env.example") {
-            Write-ColorOutput "Creating .env.production from env.example..." $Yellow
+function Generate-SecurePassword {
+    param([int]$Length = 20)
+    # Generate secure random password using base64 encoding
+    $bytes = New-Object byte[] $Length
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $rng.GetBytes($bytes)
+    return [Convert]::ToBase64String($bytes).Substring(0, [Math]::Min($Length, [Convert]::ToBase64String($bytes).Length))
+}
+
+function Generate-SecureToken {
+    param([int]$Length = 32)
+    # Generate secure random hex token
+    $chars = "0123456789abcdef"
+    $token = ""
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    for ($i = 0; $i -lt $Length; $i++) {
+        $bytes = New-Object byte[] 1
+        $rng.GetBytes($bytes)
+        $token += $chars[$bytes[0] % 16]
+    }
+    return $token
+}
+
+function Generate-SecureSecrets {
+    Write-ColorOutput "🔐 Generating secure passwords and tokens..." $Yellow
+    
+    # Generate secure passwords (20 characters base64)
+    $mqttPassword = Generate-SecurePassword -Length 20
+    $influxPassword = Generate-SecurePassword -Length 20
+    $noderedPassword = Generate-SecurePassword -Length 20
+    $grafanaPassword = Generate-SecurePassword -Length 20
+    
+    # Generate secure tokens (32 hex characters)
+    $influxToken = Generate-SecureToken -Length 32
+    $noderedSecret = Generate-SecureToken -Length 32
+    
+    # Read secrets file
+    $secretsContent = Get-Content ".env.secrets" -Raw
+    
+    # Replace all placeholders with generated values
+    $secretsContent = $secretsContent -replace 'your_mqtt_password_here', $mqttPassword
+    $secretsContent = $secretsContent -replace 'your_influxdb_password_here', $influxPassword
+    $secretsContent = $secretsContent -replace 'your_nodered_password_here', $noderedPassword
+    $secretsContent = $secretsContent -replace 'your_grafana_password_here', $grafanaPassword
+    $secretsContent = $secretsContent -replace 'your_influxdb_token_here', $influxToken
+    $secretsContent = $secretsContent -replace 'your_nodered_secret_here', $noderedSecret
+    
+    # Write back to file
+    Set-Content ".env.secrets" -Value $secretsContent -NoNewline
+    
+    Write-ColorOutput "✅ Generated secure secrets:" $Green
+    Write-ColorOutput "   - MQTT Password: Generated" $Cyan
+    Write-ColorOutput "   - InfluxDB Password: Generated" $Cyan
+    Write-ColorOutput "   - InfluxDB Token: Generated" $Cyan
+    Write-ColorOutput "   - Node-RED Password: Generated" $Cyan
+    Write-ColorOutput "   - Node-RED Secret: Generated" $Cyan
+    Write-ColorOutput "   - Grafana Password: Generated" $Cyan
+}
+
+function Setup-EnvironmentFiles {
+    Write-ColorOutput "Setting up production environment files..." $Green
+    
+    $hasConfig = Test-Path ".env.production"
+    $hasSecrets = Test-Path ".env.secrets"
+    $hasConfigTemplate = Test-Path ".env.production.template"
+    $hasSecretsTemplate = Test-Path ".env.secrets.template"
+    $needsSetup = $false
+    
+    # Auto-create .env.production from template if missing
+    if (-not $hasConfig) {
+        if ($hasConfigTemplate) {
+            Copy-Item ".env.production.template" ".env.production"
+            Write-ColorOutput "✅ Created .env.production from template" $Green
+            Write-ColorOutput "   ⚠️  Please review and update: SERVER_IP, ports, URLs for your server" $Yellow
+            $needsSetup = $true
+        } elseif (Test-Path "env.example") {
             Copy-Item "env.example" ".env.production"
-            Write-ColorOutput "Created .env.production" $Green
-            Write-ColorOutput "⚠️  IMPORTANT: Review and update .env.production with production values!" $Red
-            Write-ColorOutput "   - Update all passwords and tokens" $Yellow
-            Write-ColorOutput "   - Update SERVER_IP to edubad.zut.edu.pl" $Yellow
-            Write-ColorOutput "   - Update ports if needed" $Yellow
-            return $false
-        } elseif (Test-Path ".env.edubad.template") {
-            Write-ColorOutput "Creating .env.production from .env.edubad.template..." $Yellow
-            Copy-Item ".env.edubad.template" ".env.production"
-            Write-ColorOutput "Created .env.production from template" $Green
-            Write-ColorOutput "⚠️  IMPORTANT: Update placeholders before deployment!" $Red
-            return $false
-        } else {
-            Write-ColorOutput ".env.production not found and no template available!" $Red
+            Write-ColorOutput "✅ Created .env.production from env.example" $Green
+            Write-ColorOutput "   ⚠️  Please review and update: SERVER_IP, ports, URLs, passwords" $Yellow
+            $needsSetup = $true
+        }
+    }
+    
+    # Auto-create .env.secrets from template if missing
+    if (-not $hasSecrets) {
+        if ($hasSecretsTemplate) {
+            Copy-Item ".env.secrets.template" ".env.secrets"
+            Write-ColorOutput "✅ Created .env.secrets from template" $Green
+            
+            # Auto-generate secure passwords and tokens
+            Generate-SecureSecrets
+            Write-ColorOutput "💾 Secrets saved to .env.secrets" $Cyan
+            $needsSetup = $true
+        }
+    }
+    
+    if ($needsSetup) {
+        Write-ColorOutput "" $Cyan
+        Write-ColorOutput "📝 Next steps:" $Cyan
+        Write-ColorOutput "   1. Review .env.production and update server-specific values:" $Yellow
+        Write-ColorOutput "      - SERVER_IP (e.g., edubad.zut.edu.pl)" $Yellow
+        Write-ColorOutput "      - Ports (if different from defaults)" $Yellow
+        Write-ColorOutput "      - URLs (if different from defaults)" $Yellow
+        Write-ColorOutput "   2. Review .env.secrets (passwords/tokens are auto-generated)" $Yellow
+        Write-ColorOutput "   3. Run deployment again: .\scripts\deploy-edubad.ps1 -Full" $Yellow
+        Write-ColorOutput "" $Cyan
+    }
+    
+    return $needsSetup
+}
+
+function Ensure-EnvProductionExists {
+    # Hybrid approach: Check for separate config and secrets files
+    $hasConfig = Test-Path ".env.production"
+    $hasSecrets = Test-Path ".env.secrets"
+    $hasConfigTemplate = Test-Path ".env.production.template"
+    $hasSecretsTemplate = Test-Path ".env.secrets.template"
+    
+    # Auto-setup files if they don't exist
+    if ((-not $hasConfig) -or (-not $hasSecrets)) {
+        $needsSetup = Setup-EnvironmentFiles
+        if ($needsSetup) {
             return $false
         }
     }
     
-    # Check for placeholders in .env.production
-    $envContent = Get-Content ".env.production" -Raw
-    $placeholders = @()
-    
-    if ($envContent -match '\[CHANGE_ME') {
-        $placeholders += "Passwords/Tokens need to be updated"
-    }
-    if ($envContent -match '\[PLACEHOLDER\]') {
-        $placeholders += "Port placeholders need to be updated"
-    }
-    
-    if ($placeholders.Count -gt 0) {
-        Write-ColorOutput "Found placeholders in .env.production:" $Yellow
-        foreach ($ph in $placeholders) {
-            Write-ColorOutput "  - $ph" $Yellow
+    # If both .env.production and .env.secrets exist, use hybrid approach
+    if ($hasConfig -and $hasSecrets) {
+        Write-ColorOutput "Using hybrid approach: separate config and secrets files" $Green
+        
+        # Check for placeholders in secrets file
+        $secretsContent = Get-Content ".env.secrets" -Raw
+        if ($secretsContent -match 'your_.*_here') {
+            Write-ColorOutput "⚠️  Found placeholders in .env.secrets!" $Red
+            Write-ColorOutput "   Auto-generating secure secrets..." $Yellow
+            Generate-SecureSecrets
+            Write-ColorOutput "✅ Secrets generated successfully" $Green
         }
-        Write-ColorOutput "Please update .env.production before deployment" $Yellow
-        return $false
+        
+        return $true
     }
     
-    return $true
+    # Legacy approach: single .env.production file
+    if ($hasConfig -and -not $hasSecrets) {
+        Write-ColorOutput "Using legacy approach: single .env.production file" $Yellow
+        
+        # Check for placeholders
+        $envContent = Get-Content ".env.production" -Raw
+        $placeholders = @()
+        
+        if ($envContent -match '\[CHANGE_ME') {
+            $placeholders += "Passwords/Tokens need to be updated"
+        }
+        if ($envContent -match '\[PLACEHOLDER\]') {
+            $placeholders += "Port placeholders need to be updated"
+        }
+        if ($envContent -match 'your_.*_here') {
+            $placeholders += "Password/token placeholders need to be updated"
+        }
+        
+        if ($placeholders.Count -gt 0) {
+            Write-ColorOutput "Found placeholders in .env.production:" $Yellow
+            foreach ($ph in $placeholders) {
+                Write-ColorOutput "  - $ph" $Yellow
+            }
+            Write-ColorOutput "Please update .env.production before deployment" $Yellow
+            return $false
+        }
+        
+        return $true
+    }
+    
+    Write-ColorOutput ".env.production or .env.secrets not found and no templates available!" $Red
+    Write-ColorOutput "Please create .env.production and .env.secrets files" $Yellow
+    return $false
 }
 
 function Prepare-Production {
@@ -232,11 +363,51 @@ function Transfer-ToVps {
         Write-ColorOutput "[WARNING] Failed to transfer nginx config" $Yellow
     }
     
-    Write-ColorOutput "Transferring production environment (.env)..." $Yellow
-    scp .env.production "${VpsUser}@${VpsHost}:${remoteDir}/.env"
-    if ($LASTEXITCODE -ne 0) {
-        Write-ColorOutput "[ERROR] Failed to transfer .env file" $Red
-        return $false
+    # Hybrid approach: Transfer config and secrets separately
+    if (Test-Path ".env.secrets") {
+        Write-ColorOutput "Transferring production environment files (hybrid approach)..." $Yellow
+        
+        # Transfer non-sensitive config
+        scp .env.production "${VpsUser}@${VpsHost}:${remoteDir}/.env.production"
+        if ($LASTEXITCODE -ne 0) {
+            Write-ColorOutput "[ERROR] Failed to transfer .env.production" $Red
+            return $false
+        }
+        
+        # Transfer secrets separately
+        scp .env.secrets "${VpsUser}@${VpsHost}:${remoteDir}/.env.secrets"
+        if ($LASTEXITCODE -ne 0) {
+            Write-ColorOutput "[ERROR] Failed to transfer .env.secrets" $Red
+            return $false
+        }
+        
+        # Combine files on remote server and set secure permissions
+        Write-ColorOutput "Combining environment files on remote server..." $Yellow
+        $combineCmd = @"
+cd $remoteDir
+cat .env.production .env.secrets > .env
+chmod 600 .env .env.secrets
+chown ${VpsUser}:${VpsUser} .env .env.secrets
+rm -f .env.production .env.secrets
+"@
+        ssh "${VpsUser}@${VpsHost}" $combineCmd
+        if ($LASTEXITCODE -ne 0) {
+            Write-ColorOutput "[WARNING] Failed to combine environment files on remote" $Yellow
+            Write-ColorOutput "You may need to combine them manually on the server" $Yellow
+        } else {
+            Write-ColorOutput "Environment files combined and secured on remote server" $Green
+        }
+    } else {
+        # Legacy approach: single .env.production file
+        Write-ColorOutput "Transferring production environment (.env)..." $Yellow
+        scp .env.production "${VpsUser}@${VpsHost}:${remoteDir}/.env"
+        if ($LASTEXITCODE -ne 0) {
+            Write-ColorOutput "[ERROR] Failed to transfer .env file" $Red
+            return $false
+        }
+        
+        # Set secure permissions on remote
+        ssh "${VpsUser}@${VpsHost}" "chmod 600 ${remoteDir}/.env && chown ${VpsUser}:${VpsUser} ${remoteDir}/.env"
     }
     
     Write-ColorOutput "[OK] Files transferred to $remoteDir" $Green

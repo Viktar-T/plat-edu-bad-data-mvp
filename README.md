@@ -119,7 +119,7 @@ cd plat-edu-bad-data-mvp
 
 ### **Production Deployment**
 
-Production deployments use **Nginx reverse proxy** for path-based routing, allowing all services to be accessed through a single port with different paths.
+Production deployments use **Nginx reverse proxy** for path-based routing, allowing all web services to be accessed through a single port with different paths. MQTT broker uses direct port access as it requires the MQTT protocol.
 
 #### **Mikrus VPS (robert108.mikrus.xyz)**
 
@@ -173,6 +173,42 @@ sudo docker-compose up -d
 - **Password**: `XXXXXX`
 - **Privileges**: Administrator access through `sudo`
 
+**Port Availability:**
+- ✅ **Ports verified and available**: 8080, 1883, 3000, 8086, 40098, 40099, 40100, 40101
+- ✅ All required ports are free and ready for deployment
+
+**Architecture:**
+- **Nginx Reverse Proxy**: The project uses **Nginx reverse proxy** for path-based routing
+- **Access Method**: All web services are accessible through Nginx on port **8080** (configurable)
+- **MQTT**: Direct connection on port **40098** (MQTT protocol, not HTTP)
+
+**Recommended: Automated Deployment (Hybrid Approach)**
+
+```powershell
+# On your local Windows machine
+# Just run the deployment script - it handles everything automatically!
+
+.\scripts\deploy-edubad.ps1 -Full
+
+# The script will automatically:
+# 1. Create .env.production from template (if missing)
+# 2. Create .env.secrets from template (if missing)
+# 3. Generate secure passwords and tokens
+# 4. Prompt you to review server-specific values (SERVER_IP, ports, URLs)
+# 5. Transfer files via SCP (encrypted)
+# 6. Combine files on remote server
+# 7. Deploy services
+
+# Or step by step:
+.\scripts\deploy-edubad.ps1 -Prepare   # Auto-create files, validate
+.\scripts\deploy-edubad.ps1 -Transfer  # Transfer files via SCP
+.\scripts\deploy-edubad.ps1 -Deploy    # Deploy on server
+```
+
+**First-time setup:** The script will create environment files and generate secure secrets automatically. You only need to review and update server-specific values like `SERVER_IP`, ports, and URLs in `.env.production`.
+
+**Manual Deployment:**
+
 ```bash
 # SSH to your server
 ssh admin@edubad.zut.edu.pl
@@ -183,7 +219,15 @@ ssh admin@82.145.64.204
 git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
 cd plat-edu-bad-data-mvp
 
-# Set up environment
+# Set up environment (hybrid approach)
+# Option 1: If you have separate files (recommended)
+cp .env.production.template .env.production
+cp .env.secrets.template .env.secrets
+# Edit both files, then combine:
+cat .env.production .env.secrets > .env
+chmod 600 .env .env.secrets
+
+# Option 2: Legacy single file approach
 cp .env.production .env
 
 # Fix permissions (IMPORTANT for deployment)
@@ -197,20 +241,63 @@ sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/d
 # Start services
 sudo docker-compose up -d
 
-# Access your services (replace [PORT] with actual configured ports):
-# - Frontend Dashboard: http://edubad.zut.edu.pl:[FRONTEND_PORT]
-# - API Endpoints: http://edubad.zut.edu.pl:[API_PORT]
-#   - Health: http://edubad.zut.edu.pl:[API_PORT]/health
-#   - Summary: http://edubad.zut.edu.pl:[API_PORT]/api/summary/{device}
-# - Grafana: http://edubad.zut.edu.pl:[GRAFANA_PORT] (admin/admin)
-# - Node-RED: http://edubad.zut.edu.pl:[NODE_RED_PORT] (admin/adminpassword)
-# - InfluxDB: http://edubad.zut.edu.pl:[INFLUXDB_PORT] (admin/admin_password_123)
-# - MQTT: edubad.zut.edu.pl:[MQTT_PORT] (admin/admin_password_456)
+# Access your services through Nginx reverse proxy at http://edubad.zut.edu.pl:8080:
+# - React Frontend: http://edubad.zut.edu.pl:8080/app/
+# - Express API: http://edubad.zut.edu.pl:8080/api/
+#   - Health: http://edubad.zut.edu.pl:8080/api/health
+#   - Summary: http://edubad.zut.edu.pl:8080/api/summary/{device}
+# - Grafana: http://edubad.zut.edu.pl:8080/grafana/ (admin/admin)
+# - Node-RED: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
+# - InfluxDB Admin: http://edubad.zut.edu.pl:8080/influxdb/ (admin/admin_password_123)
+# - MQTT: edubad.zut.edu.pl:40098 (admin/admin_password_456) - Direct connection only
 ```
 
-> **💡 Note**: Replace port placeholders with your actual configured ports for edubad.zut.edu.pl deployment. The `admin` user has administrator privileges through `sudo`.
+**Quick Access Links:**
+- 🌐 [React Frontend](http://edubad.zut.edu.pl:8080/app/) - Main dashboard application
+- 🔌 [Express API](http://edubad.zut.edu.pl:8080/api/) - REST API endpoints
+- 📊 [Grafana Dashboards](http://edubad.zut.edu.pl:8080/grafana/) - Data visualization (admin/admin)
+- 🔄 [Node-RED Editor](http://edubad.zut.edu.pl:8080/nodered/) - Flow editor (admin/adminpassword)
+- 💾 [InfluxDB Admin](http://edubad.zut.edu.pl:8080/influxdb/) - Database administration (admin/admin_password_123)
+- 📡 MQTT Broker: `edubad.zut.edu.pl:40098` - Direct connection (admin/admin_password_456)
+```
+
+> **💡 Note**: 
+> - **Nginx Reverse Proxy**: All web services are accessible through the Nginx reverse proxy on port **8080**. MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
+> - **Port Availability**: Ports 8080, 1883, 3000, 8086, 40098, 40099, 40100, 40101 are verified and available for deployment.
+> - **Hybrid Approach**: Use separate `.env.production` (config) and `.env.secrets` (passwords) files for better security. The deployment script automatically combines them.
+> - **Legacy Approach**: Single `.env.production` file still works but is less secure.
+> - The `admin` user has administrator privileges through `sudo`.
 
 ### **Quick Production Deployment**
+
+**For edubad.zut.edu.pl (Hybrid Approach - Recommended):**
+
+```powershell
+# Just run the deployment script - it handles everything automatically!
+.\scripts\deploy-edubad.ps1 -Full
+
+# The script automatically:
+# 1. Creates .env.production from template (if missing)
+# 2. Creates .env.secrets from template (if missing)
+# 3. Generates secure passwords and tokens
+# 4. Transfers files via SCP (encrypted)
+# 5. Combines files on remote server
+# 6. Deploys services
+
+# Or step by step:
+.\scripts\deploy-edubad.ps1 -Prepare   # Auto-create files, validate
+.\scripts\deploy-edubad.ps1 -Transfer  # Transfer via SCP
+.\scripts\deploy-edubad.ps1 -Deploy    # Deploy on server
+
+# Management commands
+.\scripts\deploy-edubad.ps1 -Status    # Check service status
+.\scripts\deploy-edubad.ps1 -Logs      # View service logs
+.\scripts\deploy-edubad.ps1 -Restart   # Restart services
+```
+
+> **💡 First-time setup**: The script will automatically create environment files and generate secure secrets. You only need to review and update server-specific values like `SERVER_IP`, ports, and URLs in `.env.production`.
+
+**For Mikrus VPS (Git-based):**
 
 ```powershell
 # Build production images
@@ -262,13 +349,66 @@ cd tests/manual-tests/
 
 ### **Environment Variables**
 
-The system uses environment variables for configuration. Copy `env.example` to create your environment files:
+The system uses environment variables for configuration. We support two approaches:
+
+#### **Hybrid Approach (Recommended for Production)**
+
+For production deployments, we use a **hybrid approach** that separates non-sensitive configuration from secrets:
+
+- **`.env.production.template`**: Non-sensitive config (ports, URLs, server info) - **safe for Git**
+- **`.env.secrets.template`**: Sensitive data (passwords, tokens) - **NOT in Git**
+
+**Automated Setup (Recommended):**
+
+The deployment script automatically creates and configures environment files:
+
+```powershell
+# Just run the deployment script - it handles everything!
+.\scripts\deploy-edubad.ps1 -Full
+
+# The script will automatically:
+# 1. Create .env.production from template (if missing)
+# 2. Create .env.secrets from template (if missing)
+# 3. Generate secure passwords and tokens automatically
+# 4. Prompt you to review server-specific values (SERVER_IP, ports, URLs)
+```
+
+**Manual Setup (Optional):**
+
+If you prefer manual control:
+
+```bash
+# 1. Copy templates
+cp .env.production.template .env.production
+cp .env.secrets.template .env.secrets
+
+# 2. Edit .env.production (update ports, URLs, domain)
+# 3. Edit .env.secrets (replace ALL 'your_*_here' with actual values)
+
+# 4. Generate strong passwords/tokens:
+openssl rand -base64 20  # For passwords
+openssl rand -hex 32     # For tokens
+
+# 5. Deploy (script combines files automatically)
+.\scripts\deploy-edubad.ps1 -Full
+```
+
+**Benefits:**
+- ✅ **Fully automated**: Script creates files and generates secrets automatically
+- ✅ Non-sensitive config can be version controlled
+- ✅ Secrets are transferred separately via SCP (encrypted)
+- ✅ Better security practices with auto-generated strong passwords
+- ✅ Easier to manage and update
+
+#### **Legacy Approach (Single File)**
+
+For local development or simple setups:
 
 ```bash
 # For local development
 cp env.example .env.local
 
-# For production
+# For production (legacy)
 cp env.example .env.production
 ```
 
@@ -280,6 +420,14 @@ cp env.example .env.production
 - **Grafana**: Authentication, InfluxDB data source
 - **Development**: Simulation settings, debug modes
 - **Production**: Security settings, performance tuning
+
+### **Security Best Practices**
+
+- 🔒 **Never commit** `.env.secrets` or `.env.production` to Git
+- 🔒 **Set file permissions**: `chmod 600 .env.secrets` (owner read/write only)
+- 🔒 **Use strong passwords**: Generate with `openssl rand -base64 20`
+- 🔒 **Use unique tokens**: Generate with `openssl rand -hex 32`
+- 🔒 **Transfer secrets securely**: Via SCP (encrypted SSH connection)
 
 ### **Data Retention**
 
