@@ -27,6 +27,14 @@ docker-compose/data/
 # .env
 # .env.local
 # .env.production
+# Secrets files (NEVER commit these!)
+.env.secrets
+# Allow template files (safe to commit - they only contain placeholders)
+!.env.secrets.template
+!.env.production.template
+*.secrets
+# Production config with secrets
+.env.production
 
 # Logs
 *.log
