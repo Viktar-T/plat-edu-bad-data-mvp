@@ -5,21 +5,24 @@ import { useNavigate } from "react-router-dom";
 export const CloudSize = [600, 300]
 const url = "/device/"
 
+// Base URL for assets (set by Vite based on base path configuration)
+const BASE_URL = import.meta.env.BASE_URL || '/'
+
 // Mapping of marker keys to lab images
-// Note: All paths include /app/ prefix to match Vite base path configuration
+// Note: All paths use BASE_URL to match Vite base path configuration
 export const MarkerImageMap = {
-    "algae-farm-1-simulation": "/app/labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg",
-    "huljanogi_converter": "/app/labs/1.1. PV-Hulajnogi-Outside-R06/1.1.2 Inverter.jpg",
-    "pv-hulajnogi-simulation": "/app/labs/1.1. PV-Hulajnogi-Outside-R06/1.1.1 PV-Hulajnogi.jpg",
-    "wind-vawt-simulation": "/app/labs/2.1. Wind-Big-Vertical-Storage/2.1.1. Wind-Big-Vertical.jpg",
-    "energy-storage-simulation": "/app/labs/2.1. Wind-Big-Vertical-Storage/2.1.3. Wind-Big-Vertical-inverter-storage.jpg",
-    "engine-test-bench-simulation": "/app/labs/6.1. Engine_bench-R121/6.1. Engine_bench.jpg",
-    "biogas-plant-simulation": "/app/labs/3.1. Biogaz-KIOZE-small_plan/3.1. Biogaz-KIOZE.jpg",
-    "wind-hawt-hybrid-simulation": "/app/labs/2.2. Solar-Wind Hybrid Station/2.2.1-Wind-Small-Horizontal.jpg",
-    "pv-hybrid-simulation": "/app/labs/2.2. Solar-Wind Hybrid Station/2.2.5-PV-roof.jpg",
-    "algae-farm-2-simulation": "/app/labs/5.3. Algae-outside/5.3. Algae-outside.jpg",
-    "hybride_is": "/app/labs/2.2. Solar-Wind Hybrid Station/2.2.4-Controler.jpg",
-    "heat-boiler-simulation": "/app/labs/4.1. Heat-Sterling-Storage/4.1. Heat-Sterling-Storage.jpg",
+    "algae-farm-1-simulation": `${BASE_URL}labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg`,
+    "huljanogi_converter": `${BASE_URL}labs/1.1. PV-Hulajnogi-Outside-R06/1.1.2 Inverter.jpg`,
+    "pv-hulajnogi-simulation": `${BASE_URL}labs/1.1. PV-Hulajnogi-Outside-R06/1.1.1 PV-Hulajnogi.jpg`,
+    "wind-vawt-simulation": `${BASE_URL}labs/2.1. Wind-Big-Vertical-Storage/2.1.1. Wind-Big-Vertical.jpg`,
+    "energy-storage-simulation": `${BASE_URL}labs/2.1. Wind-Big-Vertical-Storage/2.1.3. Wind-Big-Vertical-inverter-storage.jpg`,
+    "engine-test-bench-simulation": `${BASE_URL}labs/6.1. Engine_bench-R121/6.1. Engine_bench.jpg`,
+    "biogas-plant-simulation": `${BASE_URL}labs/3.1. Biogaz-KIOZE-small_plan/3.1. Biogaz-KIOZE.jpg`,
+    "wind-hawt-hybrid-simulation": `${BASE_URL}labs/2.2. Solar-Wind Hybrid Station/2.2.1-Wind-Small-Horizontal.jpg`,
+    "pv-hybrid-simulation": `${BASE_URL}labs/2.2. Solar-Wind Hybrid Station/2.2.5-PV-roof.jpg`,
+    "algae-farm-2-simulation": `${BASE_URL}labs/5.3. Algae-outside/5.3. Algae-outside.jpg`,
+    "hybride_is": `${BASE_URL}labs/2.2. Solar-Wind Hybrid Station/2.2.4-Controler.jpg`,
+    "heat-boiler-simulation": `${BASE_URL}labs/4.1. Heat-Sterling-Storage/4.1. Heat-Sterling-Storage.jpg`,
 }
 
 export const MarkersData = {
@@ -31,7 +34,7 @@ export const MarkersData = {
         circlePos: [800 - 20, 20],
         cloudPos: [150, 400],
         imgSize: [150, 300],
-        img: "/app/icon_algae.png"
+        img: `${BASE_URL}icon_algae.png`
     },
     "huljanogi_converter": {
         name: "Inverter",
@@ -56,7 +59,7 @@ export const MarkersData = {
         cloudSize: [800, 300],
         imgSize: [350, 300],
         interactive:true,
-        img: "/app/hulajnogi.png"
+        img: `${BASE_URL}hulajnogi.png`
     },
     "wind-vawt-simulation": {
         name: "Turbina wiatrowa VAWT",
@@ -67,7 +70,7 @@ export const MarkersData = {
         cloudPos: [200, 0],
         imgSize: [122, 280],
         interactive:true,
-        img: "/app/wiatrak.png"
+        img: `${BASE_URL}wiatrak.png`
     },
     "energy-storage-simulation": {
         name: "Converter & Storage",
@@ -86,7 +89,7 @@ export const MarkersData = {
         circlePos: [1000 - 20, 800 - 20],
         cloudPos: [0, 180],
         imgSize: [280, 280],
-        img: "/app/icon_engine_bench_white_bg.png",
+        img: `${BASE_URL}icon_engine_bench_white_bg.png`,
         text: [
             "Silnik Benzynowy: 4.5 kW przy 3600 obr/min",
             "Silnik Diesla: 3.1 kW przy 3000 obr/min",
@@ -100,7 +103,7 @@ export const MarkersData = {
         circlePos: [20, 300 / 2],
         cloudPos: [100, 0],
         imgSize: [280, 280],
-        img: "/app/icon-biogaz.png"
+        img: `${BASE_URL}icon-biogaz.png`
     },
     "wind-hawt-hybrid-simulation": {
         name: "Turbina wiatrowa HAWT",
@@ -110,7 +113,7 @@ export const MarkersData = {
         circlePos: [20, 280],
         cloudPos: [150, 0],
         imgSize: [164, 280],
-        img: "/app/icon-wind-hawt-hybride.jpg"
+        img: `${BASE_URL}icon-wind-hawt-hybride.jpg`
     },
     "pv-hybrid-simulation": {
         name: "Panele fotowoltaiczne",
@@ -120,7 +123,7 @@ export const MarkersData = {
         circlePos: [20, 300 / 2 - 10],
         cloudPos: [150, 0],
         imgSize: [181, 280],
-        img: "/app/icon-pv-hybride.jpg"
+        img: `${BASE_URL}icon-pv-hybride.jpg`
     },
     "algae-farm-2-simulation": {
         name: "Farma do produkcji Alg 2",
@@ -130,7 +133,7 @@ export const MarkersData = {
         circlePos: [20, 250],
         cloudPos: [300, 0],
         imgSize: [150, 300],
-        img: "/app/icon_algae.png"
+        img: `${BASE_URL}icon_algae.png`
     },
     "hybride_is": {
         name: "Wind/Solar Controler",

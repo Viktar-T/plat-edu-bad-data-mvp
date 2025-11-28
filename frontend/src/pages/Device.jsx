@@ -9,7 +9,8 @@ function Device() {
     const device = MarkersData[deviceID];
     if (!device) return (<>DEVICE NOT FOUND</>)
     
-    const imagePath = MarkerImageMap[deviceID] || "/app/labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg";
+    const BASE_URL = import.meta.env.BASE_URL || '/';
+    const imagePath = MarkerImageMap[deviceID] || `${BASE_URL}labs/5.1. Algae-inside-farm-R121/5.1. Algae-inside.jpg`;
     
     return (
             <div className="device">
