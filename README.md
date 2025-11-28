@@ -1,4 +1,4 @@
-# 🌱 IoT Renewable Energy Monitoring System
+﻿# 🌱 IoT Renewable Energy Monitoring System
 
 > **A comprehensive IoT-based real-time monitoring system for renewable energy sources** including photovoltaic panels, wind turbines, biogas plants, heat boilers, and energy storage systems. Built with Node-RED, MQTT, InfluxDB 2.x, and Grafana using Docker containerization.
 
@@ -14,13 +14,9 @@
 
 - [🏗️ System Architecture](#-system-architecture)
 - [🚀 Quick Start Guide](#-quick-start-guide)
-- [🧪 Testing Framework](#-testing-framework)
+- [edubad.zut.edu.pl — Production Deployment](#edubad-zutedupl--main-production-deployment)
+- [📊 Deployment Summary](#-deployment-summary)
 - [🔧 Configuration](#-configuration)
-- [🛡️ Security](#-security)
-- [🔄 Development](#-development)
-- [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [🆘 Support](#-support)
 
 ---
 
@@ -70,16 +66,16 @@ The system follows a **pipeline architecture** where data flows through multiple
 
 ```mermaid
 graph LR
-    A[IoT Devices<br/>Simulated] --> B[MQTT Broker<br/>Mosquitto]
-    B --> C[Node-RED<br/>Processing]
-    C --> D[InfluxDB 2.x<br/>Time-Series DB]
-    D --> E[Grafana<br/>Visualization]
+    A[IoT Devices Simulated] --> B[MQTT Broker Mosquitto]
+    B --> C[Node-RED Processing]
+    C --> D[InfluxDB 2.x Time-Series DB]
+    D --> E[Grafana Visualization]
     
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#fff3e0
-    style D fill:#e8f5e8
-    style E fill:#fce4ec
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style C fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style D fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    style E fill:#fce4ec,stroke:#880e4f,stroke-width:2px
 ```
 
 ---
@@ -105,14 +101,14 @@ cd plat-edu-bad-data-mvp
 .\scripts\dev-local.ps1
 
 # Access all services through Nginx reverse proxy at http://localhost:8080:
-# - React Frontend: http://localhost:8080/app/
-# - Express API: http://localhost:8080/api/
-#   - Health: http://localhost:8080/api/health
-#   - Summary: http://localhost:8080/api/summary/{device}
-# - Grafana: http://localhost:8080/grafana/ (admin/admin)
-# - Node-RED: http://localhost:8080/nodered/ (admin/adminpassword)
-# - InfluxDB Admin: http://localhost:8080/influxdb/ (admin/admin_password_123)
-# - MQTT: localhost:1883 (admin/admin_password_456) - Direct connection only
+- React Frontend: http://localhost:8080/app/
+- Express API: http://localhost:8080/api/
+- Health: http://localhost:8080/api/health
+- Summary: http://localhost:8080/api/summary/{device}
+- Grafana: http://localhost:8080/grafana/ (admin/admin)
+- Node-RED: http://localhost:8080/nodered/ (admin/adminpassword)
+- InfluxDB Admin: http://localhost:8080/influxdb/ (admin/admin_password_123)
+- MQTT: localhost:1883 (admin/admin_password_456) - Direct connection only
 ```
 
 > **💡 Note**: All web services are accessible through the Nginx reverse proxy on port 8080. MQTT broker (port 1883) requires direct connection as it uses the MQTT protocol, not HTTP.
@@ -165,7 +161,7 @@ sudo docker-compose up -d
 
 > **💡 Note**: All web services are accessible through the Nginx reverse proxy on port **20108**. MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
 
-#### **edubad.zut.edu.pl**
+## **edubad.zut.edu.pl -- main Production Deployment**
 
 **Server Information:**
 - **Server**: [edubad.zut.edu.pl](http://edubad.zut.edu.pl/) (82.145.64.204)
@@ -182,235 +178,407 @@ sudo docker-compose up -d
 - **Access Method**: All web services are accessible through Nginx on port **8080** (configurable)
 - **MQTT**: Direct connection on port **40098** (MQTT protocol, not HTTP)
 
-**Recommended: Automated Deployment (Hybrid Approach)**
+**Manual Deployment (Step-by-Step Guide):**
 
-```powershell
-# On your local Windows machine
-# Just run the deployment script - it handles everything automatically!
-
-.\scripts\deploy-edubad.ps1 -Full
-
-# The script will automatically:
-# 1. Create .env.production from template (if missing)
-# 2. Create .env.secrets from template (if missing)
-# 3. Generate secure passwords and tokens
-# 4. Prompt you to review server-specific values (SERVER_IP, ports, URLs)
-# 5. Transfer files via SCP (encrypted)
-# 6. Combine files on remote server
-# 7. Deploy services
-
-# Or step by step:
-.\scripts\deploy-edubad.ps1 -Prepare   # Auto-create files, validate
-.\scripts\deploy-edubad.ps1 -Transfer  # Transfer files via SCP
-.\scripts\deploy-edubad.ps1 -Deploy    # Deploy on server
-```
-
-**First-time setup:** The script will create environment files and generate secure secrets automatically. You only need to review and update server-specific values like `SERVER_IP`, ports, and URLs in `.env.production`.
-
-**Manual Deployment:**
+#### **Step 1: Connect to Server**
 
 ```bash
 # SSH to your server
 ssh admin@edubad.zut.edu.pl
 # or using IP address
 ssh admin@82.145.64.204
+```
 
+#### **Step 2: Clone Repository**
+
+```bash
 # Clone the repository
 git clone https://github.com/Viktar-T/plat-edu-bad-data-mvp.git
 cd plat-edu-bad-data-mvp
 
-# Set up environment (hybrid approach)
-# Option 1: If you have separate files (recommended)
-cp .env.production.template .env.production
-cp .env.secrets.template .env.secrets
-# Edit both files, then combine:
-cat .env.production .env.secrets > .env
-chmod 600 .env .env.secrets
+# or Pull the repository
+git pull origin main
 
-# Option 2: Legacy single file approach
+# Verify you're in the correct directory
+pwd
+# Should show: /home/admin/plat-edu-bad-data-mvp
+```
+
+#### **Step 3: Set Up Environment Configuration**
+
+**Setup `.env.production` using SCP (Secure Copy) — Recommended**
+
+If you have `.env.production` on your local machine and want to transfer it securely:
+
+```powershell
+# On your local Windows machine (PowerShell)
+# Navigate to project directory
+cd C:\Users\Vikta\Code\plat-edu-bad-data-mvp
+
+# Transfer .env.production to server using SCP
+scp .env.production admin@edubad.zut.edu.pl:~/plat-edu-bad-data-mvp/.env.production
+
+# Or using IP address
+scp .env.production admin@82.145.64.204:~/plat-edu-bad-data-mvp/.env.production
+
+# If you need to specify SSH key
+scp -i ~/.ssh/id_ed25519 .env.production admin@edubad.zut.edu.pl:~/plat-edu-bad-data-mvp/.env.production
+```
+
+**Then on the server, set secure permissions:**
+
+```bash
+# SSH to server
+ssh admin@edubad.zut.edu.pl
+
+# Navigate to project directory
+cd ~/plat-edu-bad-data-mvp
+
+# Set secure file permissions (owner read/write only)
+chmod 600 .env.production
+
+# Copy to .env (Docker Compose reads .env by default)
 cp .env.production .env
+chmod 600 .env
 
-# Fix permissions (IMPORTANT for deployment)
-# Note: Administrator privileges required (use sudo)
+# Verify the files were set up correctly
+ls -la .env.production .env
+cat .env.production | grep -E "PASSWORD|TOKEN|SECRET"
+```
+
+> **💡 Note**: Docker Compose automatically reads `.env` file by default. We copy `.env.production` to `.env` so that `docker-compose up -d` works without needing the `--env-file` flag. This keeps the workflow simple and consistent.
+
+#### **Transfer Method Comparison**
+
+| Method | Security | Convenience | Best For |
+|:-------|:---------|:-----------|:---------|
+| **SCP** | ✅ Encrypted | ✅ Fast, automated | **Recommended: First-time setup and updates** |
+| **SFTP** | ✅ Encrypted | ✅ GUI-friendly | Visual file management |
+| **Copy-Paste** | ⚠️ Manual | ⚠️ Error-prone | Quick edits |
+| **Git** | ❌ Not secure | ✅ Automated | ❌ Don't use for secrets |
+
+**Our Approach:**
+
+This project uses a **simplified MVP approach** that prioritizes ease of setup while maintaining basic security:
+
+1. **Primary Method: SCP Transfer — Recommended**
+   - ✅ **Best for MVP/Study projects**: Edit `.env.production` locally with your preferred tools, then transfer securely
+   - ✅ **Consistent workflow**: Same method for first-time setup and updates
+   - ✅ **Local editing**: Use your local editor (VS Code, Notepad++, etc.) instead of server-side editors
+   - ✅ **Secure transfer**: Encrypted via SSH
+   - ✅ **Fast and automated**: Single command to transfer
+   - ✅ **Version control**: Keep `.env.production` locally (not in Git) for your own tracking
+
+2. **Why Not Git for `.env.production`?**
+   - ❌ **Security risk**: Even in private repos, secrets shouldn't be committed
+   - ❌ **Git history**: Once committed, secrets remain in history forever
+
+2. **Docker Compose Environment File Behavior:**
+   - 📝 **Default behavior**: `docker-compose up -d` automatically reads `.env` file (not `.env.production`)
+   - 📝 **Why we copy**: After transferring/creating `.env.production`, we copy it to `.env` so Docker Compose can read it automatically
+   - 📝 **Alternative**: You can use `docker-compose --env-file .env.production up -d` instead, but copying to `.env` is simpler
+
+3. **Security Notes:**
+   - 🔒 Always set `chmod 600 .env.production .env` after creation/transfer (owner read/write only)
+   - 🔒 Use SCP/SFTP for encrypted transfer when updating files
+   - 🔒 For production deployments, change all default passwords
+   - 🔒 Never commit `.env.production` or `.env` to Git (only the template)
+
+**What's in `.env.production`?**
+- ✅ All default passwords are already included
+- ✅ All tokens are already included
+- ✅ Server configuration (ports, URLs)
+- ✅ Service configurations
+
+**Default Passwords (already in template):**
+- **MQTT**: `admin` / `admin_password_456`
+- **InfluxDB**: `admin` / `admin_password_123`
+- **InfluxDB Token**: `simple_token_12345678901234567890123456789012`
+- **Node-RED**: `admin` / `adminpassword`
+- **Node-RED Secret**: `simple_secret_12345678901234567890123456789012`
+- **Grafana**: `admin` / `admin`
+
+#### **Step 4: Create Required Directories**
+
+```bash
+# Create data directories for Docker volumes
+mkdir -p grafana/data grafana/plugins
+mkdir -p node-red/data
+mkdir -p mosquitto/data mosquitto/log
+mkdir -p influxdb/data
+
+# Verify directories were created
+ls -la grafana/ node-red/ mosquitto/ influxdb/
+```
+
+#### **Step 5: Fix Directory Permissions (IMPORTANT)**
+
+Docker containers run as specific user IDs and need proper permissions to write data:
+
+```bash
+# Fix Grafana permissions (runs as user ID 472)
+sudo chown -R 472:472 ./grafana/data ./grafana/plugins
+
+# Fix Node-RED permissions (runs as user ID 1000)
+sudo chown -R 1000:1000 ./node-red/data
+
+# Fix Mosquitto permissions (runs as user ID 1883)
+sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
+
+# Fix InfluxDB permissions (runs as user ID 472)
+sudo chown -R 472:472 ./influxdb/data
+
+# Set directory permissions (readable/executable by all, writable by owner)
+sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
+
+# Verify permissions
+ls -la grafana/data node-red/data mosquitto/data influxdb/data
+```
+
+**Why this is important:**
+- Without proper permissions, containers will fail to start or restart repeatedly
+- Each service runs as a specific user ID for security
+- Data directories must be writable by these users
+
+#### **Step 6: Verify Docker and Docker Compose**
+
+```bash
+# Check Docker is installed and running
+sudo docker --version
+sudo systemctl status docker
+
+# Check Docker Compose is available
+sudo docker-compose --version
+# or
+sudo docker compose version
+
+# Test Docker with a simple command
+sudo docker run hello-world
+```
+
+#### **Step 7: Start Services**
+
+```bash
+# Start all services in detached mode
+sudo docker-compose up -d
+```
+
+#### **Step 8: Verify Services Are Running**
+
+```bash
+# Check container status
+sudo docker-compose ps
+
+# Expected output: All containers should show "Up" status
+# - iot-mosquitto
+# - iot-influxdb2
+# - iot-node-red
+# - iot-grafana
+# - iot-nginx
+# - iot-api
+# - iot-frontend
+
+# Check container logs (if any are not running)
+sudo docker-compose logs [service-name]
+# Example: sudo docker-compose logs influxdb
+
+# Check all logs
+sudo docker-compose logs --tail=50
+```
+
+#### **Step 9: Verify Services Are Healthy**
+
+```bash
+# Wait a few seconds for services to initialize
+sleep 10
+
+# Check container health
+sudo docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Test MQTT connection
+sudo docker exec iot-mosquitto mosquitto_pub -h localhost -u admin -P admin_password_456 -t test/topic -m "test"
+
+# Test InfluxDB (should return HTTP 204)
+curl -I http://localhost:8086/health
+
+# Test Node-RED (should return HTTP 200)
+curl -I http://localhost:1880
+
+# Test Grafana (should return HTTP 200)
+curl -I http://localhost:3000
+```
+
+#### **Step 10: Access Your Services**
+
+Once services are running, access them through the Nginx reverse proxy:
+
+**Web Services (via Nginx on port 8080):**
+- 🌐 **React Frontend**: http://edubad.zut.edu.pl:8080/app/
+- 🔌 **Express API**: http://edubad.zut.edu.pl:8080/api/
+  - Health Check: http://edubad.zut.edu.pl:8080/api/health
+  - Summary Endpoint: http://edubad.zut.edu.pl:8080/api/summary/{device}
+- 📊 **Grafana Dashboards**: http://edubad.zut.edu.pl:8080/grafana/ (admin/admin)
+- 🔄 **Node-RED Editor**: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
+- 💾 **InfluxDB Admin**: http://edubad.zut.edu.pl:8080/influxdb/ (admin/admin_password_123)
+
+**Direct Access (MQTT only):**
+- 📡 **MQTT Broker**: `edubad.zut.edu.pl:40098` (admin/admin_password_456)
+- 📡 **MQTT WebSocket**: `edubad.zut.edu.pl:9001`
+
+#### **Step 11: Common Management Commands**
+
+```bash
+# View service status
+sudo docker-compose ps
+
+# View logs for all services
+sudo docker-compose logs -f
+
+# View logs for specific service
+sudo docker-compose logs -f [service-name]
+# Examples:
+sudo docker-compose logs -f influxdb
+sudo docker-compose logs -f node-red
+sudo docker-compose logs -f grafana
+
+# Restart a specific service
+sudo docker-compose restart [service-name]
+
+# Restart all services
+sudo docker-compose restart
+
+# Stop all services
+sudo docker-compose down
+
+# Stop and remove all containers (keeps data)
+sudo docker-compose down
+
+# Stop and remove everything including volumes (⚠️ deletes data)
+sudo docker-compose down -v
+
+# Update and restart services (after git pull)
+git pull
+sudo docker-compose up -d --build
+```
+
+#### **Troubleshooting**
+
+**If containers fail to start:**
+
+```bash
+# Check logs for errors
+sudo docker-compose logs [service-name]
+
+# Check if ports are already in use
+sudo netstat -tlnp | grep -E "(8080|1883|3000|8086|40098)"
+
+# Check disk space
+df -h
+
+# Check Docker system resources
+sudo docker system df
+
+# Restart Docker daemon (if needed)
+sudo systemctl restart docker
+```
+
+**If permission errors occur:**
+
+```bash
+# Re-run permission fixes
 sudo chown -R 472:472 ./grafana/data ./grafana/plugins
 sudo chown -R 1000:1000 ./node-red/data
 sudo chown -R 1883:1883 ./mosquitto/data ./mosquitto/log
 sudo chown -R 472:472 ./influxdb/data
 sudo chmod -R 755 ./grafana/data ./grafana/plugins ./node-red/data ./mosquitto/data ./mosquitto/log ./influxdb/data
 
-# Start services
-sudo docker-compose up -d
-
-# Access your services through Nginx reverse proxy at http://edubad.zut.edu.pl:8080:
-# - React Frontend: http://edubad.zut.edu.pl:8080/app/
-# - Express API: http://edubad.zut.edu.pl:8080/api/
-#   - Health: http://edubad.zut.edu.pl:8080/api/health
-#   - Summary: http://edubad.zut.edu.pl:8080/api/summary/{device}
-# - Grafana: http://edubad.zut.edu.pl:8080/grafana/ (admin/admin)
-# - Node-RED: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
-# - InfluxDB Admin: http://edubad.zut.edu.pl:8080/influxdb/ (admin/admin_password_123)
-# - MQTT: edubad.zut.edu.pl:40098 (admin/admin_password_456) - Direct connection only
+# Restart services
+sudo docker-compose restart
 ```
 
-**Quick Access Links:**
-- 🌐 [React Frontend](http://edubad.zut.edu.pl:8080/app/) - Main dashboard application
-- 🔌 [Express API](http://edubad.zut.edu.pl:8080/api/) - REST API endpoints
-- 📊 [Grafana Dashboards](http://edubad.zut.edu.pl:8080/grafana/) - Data visualization (admin/admin)
-- 🔄 [Node-RED Editor](http://edubad.zut.edu.pl:8080/nodered/) - Flow editor (admin/adminpassword)
-- 💾 [InfluxDB Admin](http://edubad.zut.edu.pl:8080/influxdb/) - Database administration (admin/admin_password_123)
-- 📡 MQTT Broker: `edubad.zut.edu.pl:40098` - Direct connection (admin/admin_password_456)
+**If services are not accessible:**
+
+```bash
+# Check if containers are running
+sudo docker ps
+
+# Check if Nginx is routing correctly
+sudo docker-compose logs nginx
+
+# Test internal connectivity
+sudo docker exec iot-nginx curl http://iot-grafana:3000
+sudo docker exec iot-nginx curl http://iot-node-red:1880
+sudo docker exec iot-nginx curl http://iot-influxdb2:8086/health
 ```
+
 
 > **💡 Note**: 
 > - **Nginx Reverse Proxy**: All web services are accessible through the Nginx reverse proxy on port **8080**. MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
 > - **Port Availability**: Ports 8080, 1883, 3000, 8086, 40098, 40099, 40100, 40101 are verified and available for deployment.
-> - **Hybrid Approach**: Use separate `.env.production` (config) and `.env.secrets` (passwords) files for better security. The deployment script automatically combines them.
-> - **Legacy Approach**: Single `.env.production` file still works but is less secure.
+> - **Simplified Approach**: Single `.env.production` file with all configuration including simple default passwords (MVP/Study version).
 > - The `admin` user has administrator privileges through `sudo`.
 
-### **Quick Production Deployment**
+### **📊 Deployment Summary**
 
-**For edubad.zut.edu.pl (Hybrid Approach - Recommended):**
+#### **Configuration Comparison**
 
-```powershell
-# Just run the deployment script - it handles everything automatically!
-.\scripts\deploy-edubad.ps1 -Full
+| Aspect | Local Development | Production (edubad.zut.edu.pl) | Production (Mikrus VPS) |
+|:-------|:------------------|:-------------------------------|:------------------------|
+| **Docker Compose File** | `docker-compose.local.yml` | `docker-compose.yml` | `docker-compose.yml` |
+| **Environment File** | `.env.local` | `.env.production` | `.env.production` |
+| **Nginx Port** | `8080` | `8080` | `20108` |
+| **MQTT Port** | `1883` | `40098` | `40098` |
+| **Base URL** | `http://localhost:8080` | `http://edubad.zut.edu.pl:8080` | `http://robert108.mikrus.xyz:20108` |
+| **Container Names** | `iot-*-local` | `iot-*` | `iot-*` |
+| **Network Name** | `iot-network-local` | `iot-network` | `iot-network` |
+| **Node-RED Config** | `settings.local.js` | `settings.js` | `settings.js` |
+| **Nginx Config** | `nginx.local.conf` | `nginx.conf` | `nginx.conf` |
+| **Node Environment** | `development` | `production` | `production` |
+| **Environment Variables** | Hardcoded in compose file | From `.env.production` | From `.env.production` |
+| **Command** | `docker-compose -f docker-compose.local.yml up -d` | `docker-compose up -d` | `docker-compose up -d` |
 
-# The script automatically:
-# 1. Creates .env.production from template (if missing)
-# 2. Creates .env.secrets from template (if missing)
-# 3. Generates secure passwords and tokens
-# 4. Transfers files via SCP (encrypted)
-# 5. Combines files on remote server
-# 6. Deploys services
+#### **Quick Access URLs**
 
-# Or step by step:
-.\scripts\deploy-edubad.ps1 -Prepare   # Auto-create files, validate
-.\scripts\deploy-edubad.ps1 -Transfer  # Transfer via SCP
-.\scripts\deploy-edubad.ps1 -Deploy    # Deploy on server
+| Service | Local | edubad.zut.edu.pl | Mikrus VPS |
+|:--------|:------|:------------------|:-----------|
+| **React Frontend** | http://localhost:8080/app/ | http://edubad.zut.edu.pl:8080/app/ | http://robert108.mikrus.xyz:20108/app/ |
+| **Express API** | http://localhost:8080/api/ | http://edubad.zut.edu.pl:8080/api/ | http://robert108.mikrus.xyz:20108/api/ |
+| **Grafana** | http://localhost:8080/grafana/ | http://edubad.zut.edu.pl:8080/grafana/ | http://robert108.mikrus.xyz:20108/grafana/ |
+| **Node-RED** | http://localhost:8080/nodered/ | http://edubad.zut.edu.pl:8080/nodered/ | http://robert108.mikrus.xyz:20108/nodered/ |
+| **InfluxDB Admin** | http://localhost:8080/influxdb/ | http://edubad.zut.edu.pl:8080/influxdb/ | http://robert108.mikrus.xyz:20108/influxdb/ |
+| **MQTT Broker** | `localhost:1883` | `edubad.zut.edu.pl:40098` | `robert108.mikrus.xyz:40098` |
 
-# Management commands
-.\scripts\deploy-edubad.ps1 -Status    # Check service status
-.\scripts\deploy-edubad.ps1 -Logs      # View service logs
-.\scripts\deploy-edubad.ps1 -Restart   # Restart services
-```
+**Default Credentials (All Environments):**
+- **Grafana**: `admin` / `admin`
+- **Node-RED**: `admin` / `adminpassword`
+- **InfluxDB**: `admin` / `admin_password_123`
+- **MQTT**: `admin` / `admin_password_456`
 
-> **💡 First-time setup**: The script will automatically create environment files and generate secure secrets. You only need to review and update server-specific values like `SERVER_IP`, ports, and URLs in `.env.production`.
-
-**For Mikrus VPS (Git-based):**
-
-```powershell
-# Build production images
-.\scripts\deploy-production-apps.ps1 -Build
-
-# Deploy to production
-.\scripts\deploy-production-apps.ps1 -Deploy
-
-# Check status
-.\scripts\deploy-production-apps.ps1 -Status
-
-# View logs
-.\scripts\deploy-production-apps.ps1 -Logs
-```
 
 ---
 
-## 🧪 Testing Framework
-
-### **Manual Testing**
-
-The project includes comprehensive manual testing procedures:
-
-```bash
-# Navigate to tests directory
-cd tests/manual-tests/
-
-# Run tests in order:
-# 1. Prerequisites check
-# 2. MQTT broker testing
-# 3. Node-RED data processing
-# 4. InfluxDB data storage
-# 5. Grafana data visualization
-# 6. End-to-end data flow
-```
-
-### **Test Coverage**
-
-- ✅ **MQTT Communication**: Topic publishing/subscribing
-- ✅ **Node-RED Flows**: Data processing and transformation
-- ✅ **InfluxDB Integration**: Data storage and retrieval
-- ✅ **Grafana Dashboards**: Data visualization
-- ✅ **Device Simulation**: Realistic data generation
-- ✅ **Error Handling**: System resilience testing
-
----
 
 ## 🔧 Configuration
 
 ### **Environment Variables**
 
-The system uses environment variables for configuration. We support two approaches:
+The system uses a **simplified approach** with a single `.env.production` file containing all configuration including simple default passwords (MVP/Study version).
 
-#### **Hybrid Approach (Recommended for Production)**
+**Setup:**
 
-For production deployments, we use a **hybrid approach** that separates non-sensitive configuration from secrets:
+Create `.env.production` locally with all required configuration values (passwords, tokens, server settings, ports, URLs). Then transfer it to the server using SCP as described in the deployment steps above.
 
-- **`.env.production.template`**: Non-sensitive config (ports, URLs, server info) - **safe for Git**
-- **`.env.secrets.template`**: Sensitive data (passwords, tokens) - **NOT in Git**
-
-**Automated Setup (Recommended):**
-
-The deployment script automatically creates and configures environment files:
-
-```powershell
-# Just run the deployment script - it handles everything!
-.\scripts\deploy-edubad.ps1 -Full
-
-# The script will automatically:
-# 1. Create .env.production from template (if missing)
-# 2. Create .env.secrets from template (if missing)
-# 3. Generate secure passwords and tokens automatically
-# 4. Prompt you to review server-specific values (SERVER_IP, ports, URLs)
-```
-
-**Manual Setup (Optional):**
-
-If you prefer manual control:
-
-```bash
-# 1. Copy templates
-cp .env.production.template .env.production
-cp .env.secrets.template .env.secrets
-
-# 2. Edit .env.production (update ports, URLs, domain)
-# 3. Edit .env.secrets (replace ALL 'your_*_here' with actual values)
-
-# 4. Generate strong passwords/tokens:
-openssl rand -base64 20  # For passwords
-openssl rand -hex 32     # For tokens
-
-# 5. Deploy (script combines files automatically)
-.\scripts\deploy-edubad.ps1 -Full
-```
+**Default Passwords (MVP/Study Version):**
+- **MQTT**: `admin` / `admin_password_456`
+- **InfluxDB**: `admin` / `admin_password_123`
+- **Node-RED**: `admin` / `adminpassword`
+- **Grafana**: `admin` / `admin`
 
 **Benefits:**
-- ✅ **Fully automated**: Script creates files and generates secrets automatically
-- ✅ Non-sensitive config can be version controlled
-- ✅ Secrets are transferred separately via SCP (encrypted)
-- ✅ Better security practices with auto-generated strong passwords
-- ✅ Easier to manage and update
-
-#### **Legacy Approach (Single File)**
-
-For local development or simple setups:
-
-```bash
-# For local development
-cp env.example .env.local
-
-# For production (legacy)
-cp env.example .env.production
-```
+- ✅ **Simple**: Single file with all configuration
+- ✅ **Ready to use**: Default passwords included (no generation needed)
+- ✅ **Consistent**: Same structure across environments
+- ✅ **Easy to manage**: One file to edit
 
 ### **Key Configuration Sections**
 
@@ -423,11 +591,12 @@ cp env.example .env.production
 
 ### **Security Best Practices**
 
-- 🔒 **Never commit** `.env.secrets` or `.env.production` to Git
-- 🔒 **Set file permissions**: `chmod 600 .env.secrets` (owner read/write only)
-- 🔒 **Use strong passwords**: Generate with `openssl rand -base64 20`
-- 🔒 **Use unique tokens**: Generate with `openssl rand -hex 32`
-- 🔒 **Transfer secrets securely**: Via SCP (encrypted SSH connection)
+- 🔒 **Never commit** `.env.production` to Git (template is safe)
+- 🔒 **Set file permissions**: `chmod 600 .env.production` (owner read/write only)
+- 🔒 **Change default passwords**: For production use, update passwords in `.env.production`
+- 🔒 **Transfer securely**: Via SCP (encrypted SSH connection)
+
+> **⚠️ Note**: This MVP/Study version uses simple default passwords. For production deployments, change all default passwords!
 
 ### **Data Retention**
 
@@ -441,179 +610,3 @@ CUSTOM_RETENTION_POLICIES=system_metrics:7d,alerts:90d,analytics:365d
 
 ---
 
-## 🛡️ Security
-
-### **Authentication**
-
-All services implement authentication:
-
-- **Grafana**: `admin/admin`
-- **Node-RED**: `admin/adminpassword`
-- **InfluxDB**: `admin/admin_password_123`
-- **MQTT**: `admin/admin_password_456`
-
-### **Network Security**
-
-- **Firewall Configuration**: Only required ports open
-- **SSH Security**: Custom port (10108), fail2ban protection
-- **Docker Security**: Container isolation, resource limits
-
-### **Data Security**
-
-- **Encryption**: TLS/SSL ready configuration
-- **Access Control**: Role-based permissions
-- **Audit Logging**: Comprehensive activity logging
-
----
-
-## 🔄 Development
-
-### **Local Development**
-
-```powershell
-# Start development environment (rebuilds containers by default)
-.\scripts\dev-local.ps1
-
-# Available commands
-.\scripts\dev-local.ps1 -Status    # Check service status
-.\scripts\dev-local.ps1 -Logs      # View service logs
-.\scripts\dev-local.ps1 -Stop      # Stop services
-
-# Rebuild options (to see code changes)
-.\scripts\dev-local.ps1                    # Default start: Rebuilds and starts all containers
-.\scripts\dev-local.ps1 -Restart           # Restart: Stops, rebuilds, and starts all containers
-.\scripts\dev-local.ps1 -NoRebuild         # Start without rebuild: Starts without rebuilding
-.\scripts\dev-local.ps1 -Restart -NoRebuild # Restart without rebuild: Restarts without rebuilding
-```
-
-> **💡 Tip**: By default, the script rebuilds containers to ensure you see all code changes. Use `-NoRebuild` only when you want faster startup without code changes.
-
-### **Production Updates**
-
-```bash
-# SSH to VPS
-ssh viktar@robert108.mikrus.xyz -p10108
-
-# Update services
-cd ~/plat-edu-bad-data-mvp
-git pull --ff-only
-cp .env.production .env
-sudo docker-compose up -d
-
-# Check status
-sudo docker-compose ps
-```
-
-### **Custom Development**
-
-- **Node-RED Flows**: Edit flows in Node-RED editor
-- **Grafana Dashboards**: Customize dashboards in Grafana
-- **InfluxDB Queries**: Use Flux language for custom queries
-- **MQTT Topics**: Extend topic structure for new devices
-
----
-
-## 📚 Documentation
-
-### **Comprehensive Documentation**
-
-- **README-DUAL-SETUP.md**: Dual environment setup guide
-- **docs/deployment-vps/**: VPS deployment documentation
-- **docs/prompts/**: Development and testing guides
-- **web-app-for-testing/**: Custom web app documentation
-
-### **API Documentation**
-
-- **InfluxDB API**: Time-series database queries
-- **MQTT API**: Message broker communication
-- **Grafana API**: Dashboard and user management
-- **Node-RED API**: Flow management and execution
-
----
-
-## 🤝 Contributing
-
-### **Development Guidelines**
-
-1. **Local Testing**: Always test changes locally first
-2. **Documentation**: Update documentation for any changes
-3. **Environment Files**: Maintain environment file consistency
-4. **Git Workflow**: Use feature branches for development
-5. **Testing**: Run manual tests before deployment
-
-### **Code Standards**
-
-- **Node-RED**: Follow Node-RED best practices
-- **Grafana**: Use consistent dashboard design patterns
-- **InfluxDB**: Follow Flux query optimization guidelines
-- **Docker**: Maintain container best practices
-
----
-
-## 🆘 Support
-
-### **Troubleshooting**
-
-```bash
-# Check service status
-sudo docker-compose ps
-
-# View service logs
-sudo docker-compose logs -f [service_name]
-
-# Restart services
-sudo docker-compose restart
-
-# Check system resources
-htop
-df -h
-free -h
-```
-
-### **Common Issues**
-
-- **Permission Errors**: Fix Docker volume permissions
-- **Port Conflicts**: Check for port availability
-- **Memory Issues**: Monitor system resources
-- **Network Issues**: Verify connectivity and firewall settings
-
-### **Getting Help**
-
-- **Documentation**: Check comprehensive docs in `docs/`
-- **Logs**: Review service logs for error details
-- **Health Checks**: Monitor service health status
-- **Community**: Use GitHub issues for bug reports
-
----
-
-## 🎯 Project Status
-
-### **✅ Completed Features**
-
-- **Core Infrastructure**: MQTT, Node-RED, InfluxDB, Grafana
-- **Device Simulation**: 5 renewable energy device types
-- **Data Pipeline**: Complete MQTT → Node-RED → InfluxDB → Grafana flow
-- **Dashboards**: 7 specialized Grafana dashboards
-- **Deployment**: Local and production deployment scripts
-- **Documentation**: Comprehensive documentation suite
-- **Testing**: Manual testing framework
-- **Security**: Authentication and basic security measures
-
-### **🔄 In Development**
-
-- **Custom Web App**: React + Express application (basic structure)
-- **FUXA SCADA**: Industrial HMI integration planning
-- **Advanced Analytics**: Machine learning and predictive analytics
-- **Mobile App**: Mobile monitoring application
-
-### **📋 Planned Features**
-
-- **SSL/HTTPS**: Secure communication implementation
-- **Advanced Alerts**: Sophisticated alerting system
-- **Backup Automation**: Automated backup and recovery
-- **Performance Optimization**: Advanced performance tuning
-- **API Development**: RESTful API for external integrations
-
----
-
-**🚀 Ready to monitor your renewable energy infrastructure with this comprehensive IoT system!** 
