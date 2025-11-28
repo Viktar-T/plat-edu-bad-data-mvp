@@ -214,7 +214,8 @@ services:
       dockerfile: Dockerfile
       args:
         # API Configuration (accessed via Nginx) - Must be build args for Vite
-        - VITE_API_URL=${VITE_API_URL:-http://edubad.zut.edu.pl:8080/api}
+        # Note: VITE_API_URL should NOT include /api since frontend code appends /api/summary/...
+        - VITE_API_URL=${VITE_API_URL:-http://edubad.zut.edu.pl:8080}
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://edubad.zut.edu.pl:8080/api}
         - NODE_ENV=production
     container_name: iot-frontend
