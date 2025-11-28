@@ -160,7 +160,7 @@
     "z": "photovoltaic-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "photovoltaic_data",
+    "measurement": "pv-hulajnogi",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

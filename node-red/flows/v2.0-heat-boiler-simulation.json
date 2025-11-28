@@ -160,7 +160,7 @@
     "z": "heat-boiler-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "heat_boiler_data",
+    "measurement": "heat-boiler",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

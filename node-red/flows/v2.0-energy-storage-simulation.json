@@ -160,7 +160,7 @@
     "z": "energy-storage-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "energy_storage_data",
+    "measurement": "energy-storage",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

@@ -160,7 +160,7 @@
     "z": "engine-test-bench-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "engine_test_bench_data",
+    "measurement": "engine-test-bench",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

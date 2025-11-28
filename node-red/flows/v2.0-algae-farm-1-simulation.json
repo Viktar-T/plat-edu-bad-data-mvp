@@ -160,7 +160,7 @@
     "z": "algae-farm-1-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "algae_farm_data",
+    "measurement": "algae-farm-1",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

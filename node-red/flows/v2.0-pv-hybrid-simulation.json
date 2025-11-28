@@ -160,7 +160,7 @@
     "z": "pv-panels-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "photovoltaic_data",
+    "measurement": "pv-hybrid",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

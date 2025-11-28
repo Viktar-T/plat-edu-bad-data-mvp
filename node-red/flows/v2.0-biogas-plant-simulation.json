@@ -160,7 +160,7 @@
     "z": "biogas-plant-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "biogas_plant_data",
+    "measurement": "biogas-plant",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",

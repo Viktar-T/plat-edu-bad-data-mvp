@@ -160,7 +160,7 @@
     "z": "wind-turbine-simulation",
     "influxdb": "influxdb-config",
     "name": "InfluxDB Writer",
-    "measurement": "wind_turbine_data",
+    "measurement": "wind-vawt",
     "precision": "ms",
     "precisionV18FluxV20": "ms",
     "org": "renewable_energy_org",
