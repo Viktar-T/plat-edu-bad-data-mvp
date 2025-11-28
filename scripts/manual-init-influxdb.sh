@@ -12,7 +12,7 @@ cd ~/plat-edu-bad-data-mvp
 # Configuration
 ADMIN_USER="admin"
 ADMIN_PASSWORD="admin_password_123"
-ADMIN_TOKEN="renewable_energy_admin_token_123"
+ADMIN_TOKEN="simple_token_12345678901234567890123456789012"
 ORG_NAME="renewable_energy_org"
 BUCKET_NAME="renewable_energy"
 RETENTION="30d"

@@ -113,6 +113,11 @@ cd plat-edu-bad-data-mvp
 
 > **💡 Note**: All web services are accessible through the Nginx reverse proxy on port 8080. MQTT broker (port 1883) requires direct connection as it uses the MQTT protocol, not HTTP.
 
+> **⚠️ Important**: After starting services, you must configure InfluxDB authentication in Node-RED UI:
+> 1. Open http://localhost:8080/nodered/ (admin/adminpassword)
+> 2. Go to Configuration nodes → Update each InfluxDB config node with token: `simple_token_12345678901234567890123456789012`
+> 3. Click "Deploy" to save credentials
+
 ### **Production Deployment**
 
 Production deployments use **Nginx reverse proxy** for path-based routing, allowing all web services to be accessed through a single port with different paths. MQTT broker uses direct port access as it requires the MQTT protocol.
@@ -424,6 +429,25 @@ Once services are running, access them through the Nginx reverse proxy:
 **Direct Access (MQTT only):**
 - 📡 **MQTT Broker**: `edubad.zut.edu.pl:40098` (admin/admin_password_456)
 - 📡 **MQTT WebSocket**: `edubad.zut.edu.pl:9001`
+
+#### **Step 10.5: Configure InfluxDB in Node-RED UI (IMPORTANT)**
+
+After services are running, you **must** configure InfluxDB authentication in Node-RED UI:
+
+1. **Open Node-RED**: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
+2. **Access Configuration Nodes**: Click menu (☰) → "Configuration nodes"
+3. **Configure Each InfluxDB Config Node**:
+   - Double-click each "InfluxDB" configuration node
+   - Set the following values:
+     - **URL**: `http://influxdb:8086`
+     - **Version**: `2.0`
+     - **Organization**: `renewable_energy_org`
+     - **Bucket**: `renewable_energy`
+     - **Token**: `simple_token_12345678901234567890123456789012` (lock icon 🔒 should appear)
+   - Click "Done"
+4. **Deploy**: Click the red "Deploy" button (this saves encrypted credentials to `flows_cred.json`)
+
+> **💡 Note**: Node-RED stores InfluxDB tokens in encrypted `flows_cred.json`, not in flow JSON files. You must configure credentials in the UI and deploy for them to be saved. Without this step, Node-RED will show "unauthorized access" errors when writing to InfluxDB.
 
 #### **Step 11: Common Management Commands**
 

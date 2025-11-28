@@ -87,7 +87,7 @@ fi
 echo ""
 echo "🔍 Step 7: Verifying token..."
 sleep 5
-TOKEN="renewable_energy_admin_token_123"
+TOKEN="simple_token_12345678901234567890123456789012"
 if sudo docker exec iot-influxdb2 influx auth list --host http://localhost:8086 --token "$TOKEN" > /dev/null 2>&1; then
     echo "✅ Token '$TOKEN' is valid!"
 else

@@ -28,7 +28,7 @@ echo ""
 
 # Check InfluxDB token
 echo "3. Verifying InfluxDB token..."
-TOKEN="renewable_energy_admin_token_123"
+TOKEN="simple_token_12345678901234567890123456789012"
 ORG="renewable_energy_org"
 BUCKET="renewable_energy"
 
@@ -70,7 +70,7 @@ if sudo docker exec iot-node-red test -f /data/flows.json; then
     echo "   Found $INFLUXDB_CONFIGS InfluxDB configuration node(s)"
     
     # Check if token is in flows.json (should be, but credentials are in flows_cred.json)
-    TOKEN_IN_FLOWS=$(sudo docker exec iot-node-red grep -c "renewable_energy_admin_token_123" /data/flows.json || echo "0")
+    TOKEN_IN_FLOWS=$(sudo docker exec iot-node-red grep -c "simple_token_12345678901234567890123456789012" /data/flows.json || echo "0")
     echo "   Token reference found in flows.json: $TOKEN_IN_FLOWS time(s)"
 else
     echo "❌ flows.json does not exist"
@@ -99,7 +99,7 @@ echo "   - Verify/Set the following:"
 echo "     • URL: http://influxdb:8086"
 echo "     • Organization: renewable_energy_org"
 echo "     • Bucket: renewable_energy"
-echo "     • Token: renewable_energy_admin_token_123"
+echo "     • Token: simple_token_12345678901234567890123456789012"
 echo "     • Version: 2.0"
 echo "   - Click 'Done'"
 echo ""

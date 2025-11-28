@@ -83,7 +83,7 @@ fi
 
 echo ""
 echo "🔍 Verifying token..."
-TOKEN="renewable_energy_admin_token_123"
+TOKEN="simple_token_12345678901234567890123456789012"
 if sudo docker exec iot-influxdb2 influx auth list --host http://localhost:8086 --token "$TOKEN" > /dev/null 2>&1; then
     echo "✅ Token '$TOKEN' is valid!"
 else
@@ -100,7 +100,7 @@ echo "✅ InfluxDB reset complete!"
 echo ""
 echo "📋 Next steps:"
 echo "   1. Wait 30-60 seconds for InfluxDB to fully initialize"
-echo "   2. Verify token: sudo docker exec iot-influxdb2 influx auth list --host http://localhost:8086 --token renewable_energy_admin_token_123"
+echo "   2. Verify token: sudo docker exec iot-influxdb2 influx auth list --host http://localhost:8086 --token simple_token_12345678901234567890123456789012"
 echo "   3. Check Node-RED logs: sudo docker logs iot-node-red --tail 50"
 echo "   4. If errors persist, reconfigure InfluxDB config nodes in Node-RED UI and deploy"
 
