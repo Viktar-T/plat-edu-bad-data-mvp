@@ -190,7 +190,7 @@ services:
       - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-renewable_energy}
       - TEST_TOKEN=${INFLUXDB_ADMIN_TOKEN:-renewable_energy_admin_token_123}
       # CORS Configuration
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://edubad.zut.edu.pl:8080}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://edubad.zut.edu.pl}
     volumes:
       - ./api/src:/app/src:ro
       - ./api/public:/app/public:ro
@@ -215,8 +215,9 @@ services:
       args:
         # API Configuration (accessed via Nginx) - Must be build args for Vite
         # Note: VITE_API_URL should NOT include /api since frontend code appends /api/summary/...
-        - VITE_API_URL=${VITE_API_URL:-http://edubad.zut.edu.pl:8080}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://edubad.zut.edu.pl:8080/api}
+        - VITE_API_URL=${VITE_API_URL:-http://edubad.zut.edu.pl}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://edubad.zut.edu.pl/api}
+        - VITE_BASE_PATH=${VITE_BASE_PATH:-/}
         - NODE_ENV=production
     container_name: iot-frontend
     expose:

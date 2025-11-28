@@ -6,11 +6,13 @@ WORKDIR /app
 # Build arguments for Vite environment variables
 ARG VITE_API_URL
 ARG VITE_API_BASE_URL
+ARG VITE_BASE_PATH=/
 ARG NODE_ENV=production
 
 # Set environment variables for build
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_BASE_PATH=$VITE_BASE_PATH
 ENV NODE_ENV=$NODE_ENV
 
 # Copy package files
