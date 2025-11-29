@@ -175,12 +175,13 @@ sudo docker-compose up -d
 - **Privileges**: Administrator access through `sudo`
 
 **Port Availability:**
-- ✅ **Ports verified and available**: 8080, 1883, 3000, 8086, 40098, 40099, 40100, 40101
+- ✅ **Ports verified and available**: 80, 1883, 3000, 8086, 40098, 40099, 40100, 40101
 - ✅ All required ports are free and ready for deployment
+- ✅ **Nginx uses port 80** (standard HTTP port, URLs don't require port number)
 
 **Architecture:**
 - **Nginx Reverse Proxy**: The project uses **Nginx reverse proxy** for path-based routing
-- **Access Method**: All web services are accessible through Nginx on port **8080** (configurable)
+- **Access Method**: All web services are accessible through Nginx on port **80** (standard HTTP port, no port number in URL)
 - **MQTT**: Direct connection on port **40098** (MQTT protocol, not HTTP)
 
 **Manual Deployment (Step-by-Step Guide):**
@@ -417,14 +418,14 @@ curl -I http://localhost:3000
 
 Once services are running, access them through the Nginx reverse proxy:
 
-**Web Services (via Nginx on port 8080):**
-- 🌐 **React Frontend**: http://edubad.zut.edu.pl:8080/app/
-- 🔌 **Express API**: http://edubad.zut.edu.pl:8080/api/
-  - Health Check: http://edubad.zut.edu.pl:8080/api/health
-  - Summary Endpoint: http://edubad.zut.edu.pl:8080/api/summary/{device}
-- 📊 **Grafana Dashboards**: http://edubad.zut.edu.pl:8080/grafana/ (admin/admin)
-- 🔄 **Node-RED Editor**: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
-- 💾 **InfluxDB Admin**: http://edubad.zut.edu.pl:8080/influxdb/ (admin/admin_password_123)
+**Web Services (via Nginx on port 80):**
+- 🌐 **React Frontend**: http://edubad.zut.edu.pl/
+- 🔌 **Express API**: http://edubad.zut.edu.pl/api/
+  - Health Check: http://edubad.zut.edu.pl/api/health
+  - Summary Endpoint: http://edubad.zut.edu.pl/api/summary/{device}
+- 📊 **Grafana Dashboards**: http://edubad.zut.edu.pl/grafana/ (admin/admin)
+- 🔄 **Node-RED Editor**: http://edubad.zut.edu.pl/nodered/ (admin/adminpassword)
+- 💾 **InfluxDB Admin**: http://edubad.zut.edu.pl/influxdb/ (admin/admin_password_123)
 
 **Direct Access (MQTT only):**
 - 📡 **MQTT Broker**: `edubad.zut.edu.pl:40098` (admin/admin_password_456)
@@ -434,7 +435,7 @@ Once services are running, access them through the Nginx reverse proxy:
 
 After services are running, you **must** configure InfluxDB authentication in Node-RED UI:
 
-1. **Open Node-RED**: http://edubad.zut.edu.pl:8080/nodered/ (admin/adminpassword)
+1. **Open Node-RED**: http://edubad.zut.edu.pl/nodered/ (admin/adminpassword)
 2. **Access Configuration Nodes**: Click menu (☰) → "Configuration nodes"
 3. **Configure Each InfluxDB Config Node**:
    - Double-click each "InfluxDB" configuration node
@@ -506,6 +507,71 @@ sudo docker system df
 sudo systemctl restart docker
 ```
 
+**If you run out of disk space (ENOSPC errors):**
+
+When building Docker images, you may encounter "no space left on device" errors. Use these commands to free up disk space by removing unused Docker resources:
+
+```bash
+# Option 1: Use the cleanup script (interactive)
+bash scripts/cleanup-docker-space.sh
+
+# OR Option 2: Run commands directly (faster)
+sudo docker container prune -f
+sudo docker image prune -a -f
+sudo docker volume prune -f
+sudo docker builder prune -a -f
+
+# Check disk space after cleanup
+df -h /
+```
+
+> **💡 Note**: These commands remove **all unused** Docker resources system-wide (not just frontend):
+> - `docker container prune`: Removes all stopped containers
+> - `docker image prune -a`: Removes all unused images (including old builds)
+> - `docker volume prune`: Removes all unused volumes (only unused, not in-use data)
+> - `docker builder prune -a`: Removes all build cache (usually the biggest space saver)
+>
+> **Safe to use**: These commands only remove unused resources and won't affect running containers or volumes in use. Your data is safe.
+
+**Rebuild frontend (after configuration changes):**
+
+When you update frontend configuration (API URLs, base paths, etc.), you need to rebuild the frontend because Vite embeds these values at build time. Use these commands:
+
+```bash
+cd ~/plat-edu-bad-data-mvp
+
+# 1. First, clean up disk space (if you haven't already)
+sudo docker container prune -f
+sudo docker image prune -a -f
+sudo docker volume prune -f
+sudo docker builder prune -a -f
+
+# 2. Stop and remove frontend
+sudo docker-compose stop frontend
+sudo docker-compose rm -f frontend
+
+# 3. Remove old frontend image
+sudo docker rmi plat-edu-bad-data-mvp_frontend 2>/dev/null || true
+
+# 4. Rebuild frontend with --no-cache (ensures clean build with new config)
+sudo docker-compose build --no-cache frontend
+
+# 5. Start frontend
+sudo docker-compose up -d frontend
+
+# 6. Verify it's running
+sudo docker-compose ps frontend
+
+# 7. Check logs
+sudo docker-compose logs --tail=20 frontend
+```
+
+> **💡 Note**: The `--no-cache` flag ensures Docker rebuilds everything from scratch and picks up new environment variables from `docker-compose.yml`. This is necessary when:
+> - Changing `VITE_API_URL` or `VITE_API_BASE_URL`
+> - Changing `VITE_BASE_PATH`
+> - Updating frontend dependencies
+> - Fixing build-related issues
+
 **If permission errors occur:**
 
 ```bash
@@ -537,8 +603,8 @@ sudo docker exec iot-nginx curl http://iot-influxdb2:8086/health
 
 
 > **💡 Note**: 
-> - **Nginx Reverse Proxy**: All web services are accessible through the Nginx reverse proxy on port **8080**. MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
-> - **Port Availability**: Ports 8080, 1883, 3000, 8086, 40098, 40099, 40100, 40101 are verified and available for deployment.
+> - **Nginx Reverse Proxy**: All web services are accessible through the Nginx reverse proxy on port **80** (standard HTTP port, no port number in URL). MQTT broker requires direct connection on port **40098** as it uses the MQTT protocol, not HTTP.
+> - **Port Availability**: Ports 80, 1883, 3000, 8086, 40098, 40099, 40100, 40101 are verified and available for deployment.
 > - **Simplified Approach**: Single `.env.production` file with all configuration including simple default passwords (MVP/Study version).
 > - The `admin` user has administrator privileges through `sudo`.
 
@@ -550,9 +616,9 @@ sudo docker exec iot-nginx curl http://iot-influxdb2:8086/health
 |:-------|:------------------|:-------------------------------|:------------------------|
 | **Docker Compose File** | `docker-compose.local.yml` | `docker-compose.yml` | `docker-compose.yml` |
 | **Environment File** | `.env.local` | `.env.production` | `.env.production` |
-| **Nginx Port** | `8080` | `8080` | `20108` |
+| **Nginx Port** | `8080` | `80` | `20108` |
 | **MQTT Port** | `1883` | `40098` | `40098` |
-| **Base URL** | `http://localhost:8080` | `http://edubad.zut.edu.pl:8080` | `http://robert108.mikrus.xyz:20108` |
+| **Base URL** | `http://localhost:8080` | `http://edubad.zut.edu.pl` | `http://robert108.mikrus.xyz:20108` |
 | **Container Names** | `iot-*-local` | `iot-*` | `iot-*` |
 | **Network Name** | `iot-network-local` | `iot-network` | `iot-network` |
 | **Node-RED Config** | `settings.local.js` | `settings.js` | `settings.js` |
@@ -565,11 +631,11 @@ sudo docker exec iot-nginx curl http://iot-influxdb2:8086/health
 
 | Service | Local | edubad.zut.edu.pl | Mikrus VPS |
 |:--------|:------|:------------------|:-----------|
-| **React Frontend** | http://localhost:8080/app/ | http://edubad.zut.edu.pl:8080/app/ | http://robert108.mikrus.xyz:20108/app/ |
-| **Express API** | http://localhost:8080/api/ | http://edubad.zut.edu.pl:8080/api/ | http://robert108.mikrus.xyz:20108/api/ |
-| **Grafana** | http://localhost:8080/grafana/ | http://edubad.zut.edu.pl:8080/grafana/ | http://robert108.mikrus.xyz:20108/grafana/ |
-| **Node-RED** | http://localhost:8080/nodered/ | http://edubad.zut.edu.pl:8080/nodered/ | http://robert108.mikrus.xyz:20108/nodered/ |
-| **InfluxDB Admin** | http://localhost:8080/influxdb/ | http://edubad.zut.edu.pl:8080/influxdb/ | http://robert108.mikrus.xyz:20108/influxdb/ |
+| **React Frontend** | http://localhost:8080/app/ | http://edubad.zut.edu.pl/ | http://robert108.mikrus.xyz:20108/app/ |
+| **Express API** | http://localhost:8080/api/ | http://edubad.zut.edu.pl/api/ | http://robert108.mikrus.xyz:20108/api/ |
+| **Grafana** | http://localhost:8080/grafana/ | http://edubad.zut.edu.pl/grafana/ | http://robert108.mikrus.xyz:20108/grafana/ |
+| **Node-RED** | http://localhost:8080/nodered/ | http://edubad.zut.edu.pl/nodered/ | http://robert108.mikrus.xyz:20108/nodered/ |
+| **InfluxDB Admin** | http://localhost:8080/influxdb/ | http://edubad.zut.edu.pl/influxdb/ | http://robert108.mikrus.xyz:20108/influxdb/ |
 | **MQTT Broker** | `localhost:1883` | `edubad.zut.edu.pl:40098` | `robert108.mikrus.xyz:40098` |
 
 **Default Credentials (All Environments):**
